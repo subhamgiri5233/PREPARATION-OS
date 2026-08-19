@@ -40,16 +40,34 @@ export default function Notifications() {
 
   // Request browser notification permission
   const requestPermission = async () => {
-    const result = await Notification.requestPermission();
+    const { requestNotificationPermission, sendNativeNotification } = await import('../services/nativeNotificationService');
+    const result = await requestNotificationPermission();
     if (result === 'granted') {
+      await sendNativeNotification({
+        title: '🎯 PrepOS Alerts Enabled!',
+        body: 'Real device notifications are now active for study sessions, revisions, and targets.',
+        url: '/notifications'
+      });
       await addNotification({
         type: 'system',
-        title: 'Notifications Enabled',
-        message: 'You will now receive study reminders',
+        title: 'Real Device Notifications Enabled',
+        message: 'You will now receive native alerts on this device.',
         scheduledAt: new Date().toISOString(),
         idempotencyKey: 'notifications-enabled'
       });
       loadNotifications();
+    }
+  };
+
+  const handleTestNotification = async () => {
+    const { sendNativeNotification } = await import('../services/nativeNotificationService');
+    const sent = await sendNativeNotification({
+      title: '⚡ PrepOS Study Reminder',
+      body: 'Great job staying consistent! Spaced repetition revision is ready.',
+      url: '/revision'
+    });
+    if (!sent) {
+      requestPermission();
     }
   };
 
@@ -59,13 +77,16 @@ export default function Notifications() {
     <div>
       <div className="page-header">
         <div className="page-header-left">
-          <h1 className="page-title">Notifications</h1>
+          <h1 className="page-title">Notifications & Device Alerts</h1>
           <p className="page-subtitle">{unreadCount > 0 ? `${unreadCount} unread notifications` : 'All caught up!'}</p>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button className="btn btn-primary" onClick={handleTestNotification}>
+            <Bell size={14} /> Test Device Alert
+          </button>
           {typeof Notification !== 'undefined' && Notification.permission !== 'granted' && (
             <button className="btn btn-ghost" onClick={requestPermission}>
-              <Bell size={14} /> Enable Browser Alerts
+              Enable Real Push Alerts
             </button>
           )}
           {unreadCount > 0 && (

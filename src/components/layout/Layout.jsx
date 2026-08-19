@@ -4,6 +4,7 @@ import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
 import BottomNav from './BottomNav';
+import InstallAppBanner from '../InstallAppBanner';
 import { useAppStore } from '../../store/useAppStore';
 
 export default function Layout() {
@@ -12,6 +13,8 @@ export default function Layout() {
 
   return (
     <div className="app-layout">
+      <InstallAppBanner />
+
       <Sidebar
         mobileOpen={mobileOpen}
         onMobileClose={() => setMobileOpen(false)}

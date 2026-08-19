@@ -80,18 +80,29 @@ async function generateDailyNotifications() {
   // Check revisions due today
   const revisionsDue = await getRevisionsDueToday();
   if (revisionsDue.length > 0) {
+    const notifMsg = (() => {
+      const uniqueNames = [...new Set(revisionsDue.map((r) => r.topicName || `Topic #${r.topicId}`))];
+      const shown = uniqueNames.slice(0, 3).join(', ');
+      const extra = uniqueNames.length > 3 ? ` and ${uniqueNames.length - 3} more` : '';
+      return shown + extra;
+    })();
+
     await addNotification({
       type: 'revision',
       title: `${revisionsDue.length} Revision${revisionsDue.length > 1 ? 's' : ''} Due Today`,
-      message: (() => {
-        const uniqueNames = [...new Set(revisionsDue.map((r) => r.topicName || `Topic #${r.topicId}`))];
-        const shown = uniqueNames.slice(0, 3).join(', ');
-        const extra = uniqueNames.length > 3 ? ` and ${uniqueNames.length - 3} more` : '';
-        return shown + extra;
-      })(),
+      message: notifMsg,
       scheduledAt: new Date().toISOString(),
       idempotencyKey: `revisions-due-${today}`
     });
+
+    // Real Native Device Notification
+    const { sendNativeNotification } = await import('./services/nativeNotificationService');
+    sendNativeNotification({
+      title: `🎯 ${revisionsDue.length} Revision${revisionsDue.length > 1 ? 's' : ''} Due Today`,
+      body: notifMsg,
+      url: '/revision',
+      tag: `revisions-${today}`
+    }).catch(() => {});
   }
 
   // Daily vocabulary reminder
