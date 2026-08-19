@@ -1,6 +1,6 @@
 // src/pages/TeachingSchedule.jsx
 import { useEffect, useState } from 'react';
-import { Plus, Trash2, Edit2, X } from 'lucide-react';
+import { Plus, Trash2, Edit2, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getTeachingSchedule, addTeachingSlot, updateTeachingSlot, deleteTeachingSlot } from '../services/db';
 import { useAppStore } from '../store/useAppStore';
 import { requireEditPermission, canEdit } from '../services/mutationGuard.js';

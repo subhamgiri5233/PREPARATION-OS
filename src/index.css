@@ -617,8 +617,29 @@ ul, ol { list-style: none; }
 .btn-ghost:hover { background: var(--surface); color: var(--text); }
 
 .btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-xs { padding: 3px 8px; font-size: 11px; }
 .btn-lg { padding: 12px 24px; font-size: 14px; }
 .btn-icon { width: 32px; height: 32px; padding: 0; justify-content: center; }
+
+/* ─── Responsive Visibility Helpers ──────────────────────── */
+/* desktop-only: visible on tablets/desktops, hidden on mobile */
+.desktop-only { display: block; }
+.mobile-only  { display: none; }
+
+@media (max-width: 768px) {
+  .desktop-only { display: none !important; }
+  .mobile-only  { display: block !important; }
+}
+
+/* When mobile-only wraps a flex container keep it flex */
+@media (max-width: 768px) {
+  .mobile-only.flex-col,
+  .mobile-only[style*="flex-direction: column"],
+  .mobile-only[style*="flexDirection: column"] {
+    display: flex !important;
+    flex-direction: column;
+  }
+}
 
 /* ─── Badges ─────────────────────────────────────────────── */
 .badge {
