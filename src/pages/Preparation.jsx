@@ -661,16 +661,17 @@ export default function Preparation() {
                     <div style={{ padding: '4px 0' }}>
                       {/* Chapters Grouping */}
                       {subjectChapters.map((chapter) => {
-                        const chapterTopics = filteredTopics.filter((t) => t.chapterId === chapter.id);
-                        const allChapTopics = allSubTopics.filter((t) => t.chapterId === chapter.id);
-                        const isChapCollapsed = collapsedChapters[chapter.id];
-                        const chapStats = calculateChapterProgress(chapter.id, allChapTopics);
+                        const chapId = String(chapter.id || chapter._id);
+                        const chapterTopics = filteredTopics.filter((t) => String(t.chapterId) === chapId);
+                        const allChapTopics = allSubTopics.filter((t) => String(t.chapterId) === chapId);
+                        const isChapCollapsed = collapsedChapters[chapId];
+                        const chapStats = calculateChapterProgress(chapId, allChapTopics);
 
                         return (
-                          <div key={chapter.id} style={{ margin: '6px 12px', border: '1px solid var(--border-light, rgba(255,255,255,0.06))', borderRadius: 'var(--radius)' }}>
+                          <div key={chapId} style={{ margin: '6px 12px', border: '1px solid var(--border-light, rgba(255,255,255,0.06))', borderRadius: 'var(--radius)' }}>
                             {/* Chapter Header */}
                             <div
-                              onClick={() => toggleChapterCollapse(chapter.id)}
+                              onClick={() => toggleChapterCollapse(chapId)}
                               style={{
                                 padding: '10px 14px', background: 'var(--surface-2)',
                                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -694,7 +695,7 @@ export default function Preparation() {
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     setEditingTopic(null);
-                                    setTopicContextForNewTopic({ subjectId: subject.id, chapterId: chapter.id });
+                                    setTopicContextForNewTopic({ subjectId: subjId, chapterId: chapId });
                                     setShowAddTopic(true);
                                   }}
                                   title="Add topic to chapter"
@@ -722,11 +723,11 @@ export default function Preparation() {
 
                       {/* Direct Topics (no chapter assigned) */}
                       {(() => {
-                        const directTopics = filteredTopics.filter((t) => t.subjectId === subject.id && !t.chapterId);
+                        const directTopics = filteredTopics.filter((t) => String(t.subjectId) === subjId && !t.chapterId);
                         if (directTopics.length === 0 && subjectChapters.length === 0) {
                           return (
                             <div style={{ padding: '16px 20px', fontSize: 12, color: 'var(--text-3)', textAlign: 'center' }}>
-                              No topics found matching your filters in {subject.name}.
+                              No topics found in {subject.name}. Click <strong>+Topic</strong> above to add one.
                             </div>
                           );
                         }
