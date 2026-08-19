@@ -125,10 +125,6 @@ export default function StudyPlanner() {
   const { isAuthenticated, openLoginModal } = useAuthStore();
 
   const handleOpenAdd = (dateStr) => {
-    if (!isAuthenticated) {
-      openLoginModal();
-      return;
-    }
     setEditTask(null);
     setForm({
       type: 'Concept Study',
@@ -140,10 +136,6 @@ export default function StudyPlanner() {
   };
 
   const handleOpenEdit = (task) => {
-    if (!isAuthenticated) {
-      openLoginModal();
-      return;
-    }
     setEditTask(task);
     setForm({
       ...task,
@@ -582,17 +574,39 @@ export default function StudyPlanner() {
                           {task.startTime}–{task.endTime} ({task.durationMinutes || 60}m)
                         </div>
 
-                        {/* Provenance Badge */}
-                        <div>
-                          {isLocked ? (
-                            <span className="badge" style={{ fontSize: 8, padding: '1px 4px', background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444' }}>🔒 Locked</span>
-                          ) : isEdited ? (
-                            <span className="badge badge-warning" style={{ fontSize: 8, padding: '1px 4px' }}>✏️ Edited</span>
-                          ) : isAi ? (
-                            <span className="badge badge-primary" style={{ fontSize: 8, padding: '1px 4px' }}>✨ AI</span>
-                          ) : (
-                            <span className="badge badge-muted" style={{ fontSize: 8, padding: '1px 4px' }}>👤 Manual</span>
-                          )}
+                        {/* Provenance Badge & Quick Actions */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
+                          <div>
+                            {isLocked ? (
+                              <span className="badge" style={{ fontSize: 8, padding: '1px 4px', background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444' }}>🔒 Locked</span>
+                            ) : isEdited ? (
+                              <span className="badge badge-warning" style={{ fontSize: 8, padding: '1px 4px' }}>✏️ Edited</span>
+                            ) : isAi ? (
+                              <span className="badge badge-primary" style={{ fontSize: 8, padding: '1px 4px' }}>✨ AI</span>
+                            ) : (
+                              <span className="badge badge-muted" style={{ fontSize: 8, padding: '1px 4px' }}>👤 Manual</span>
+                            )}
+                          </div>
+                          <div style={{ display: 'flex', gap: 2 }}>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleOpenEdit(task); }}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', color: 'var(--text-3)' }}
+                              title="Edit Task"
+                            >
+                              <Edit3 size={11} />
+                            </button>
+                            <button
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                await deleteTask(task.id || task._id);
+                                loadTasks();
+                              }}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', color: 'var(--danger)' }}
+                              title="Delete Task"
+                            >
+                              <Trash2 size={11} />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     );
@@ -969,35 +983,33 @@ function DayView({ date, tasks, teachingBlocks, onAddTask, onEditTask, onToggleL
                         <span className="badge badge-muted" style={{ fontSize: 8 }}>👤 Manual</span>
                       )}
 
-                      {isAuthenticated && (
-                        <div style={{ display: 'flex', gap: 4, marginLeft: 'auto' }}>
+                      <div style={{ display: 'flex', gap: 4, marginLeft: 'auto' }}>
+                        <button
+                          className="btn btn-xs btn-ghost"
+                          onClick={() => onEditTask(task)}
+                          title="Edit Task"
+                        >
+                          <Edit3 size={11} />
+                        </button>
+                        {task.status !== 'Completed' && (
                           <button
                             className="btn btn-xs btn-ghost"
-                            onClick={() => onEditTask(task)}
-                            title="Edit Task"
+                            style={{ color: 'var(--success)' }}
+                            onClick={() => onCompleteTask(task.id || task._id)}
+                            title="Mark Complete"
                           >
-                            <Edit3 size={11} />
+                            <CheckCircle2 size={12} />
                           </button>
-                          {task.status !== 'Completed' && (
-                            <button
-                              className="btn btn-xs btn-ghost"
-                              style={{ color: 'var(--success)' }}
-                              onClick={() => onCompleteTask(task.id || task._id)}
-                              title="Mark Complete"
-                            >
-                              <CheckCircle2 size={12} />
-                            </button>
-                          )}
-                          <button
-                            className="btn btn-xs btn-ghost"
-                            style={{ color: 'var(--danger)' }}
-                            onClick={() => onDeleteTask(task.id || task._id)}
-                            title="Delete"
-                          >
-                            <Trash2 size={11} />
-                          </button>
-                        </div>
-                      )}
+                        )}
+                        <button
+                          className="btn btn-xs btn-ghost"
+                          style={{ color: 'var(--danger)' }}
+                          onClick={() => onDeleteTask(task.id || task._id)}
+                          title="Delete Task"
+                        >
+                          <Trash2 size={11} />
+                        </button>
+                      </div>
                     </div>
                   );
                 })}

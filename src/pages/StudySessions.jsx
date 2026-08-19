@@ -744,28 +744,22 @@ export default function StudySessions() {
                       {s.notes || '—'}
                     </td>
                     <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                      {isAuthenticated ? (
-                        <>
-                          <button
-                            className="btn btn-xs btn-ghost btn-icon"
-                            onClick={() => setEditingSession({ ...s })}
-                            title="Edit Session"
-                            style={{ marginRight: 4 }}
-                          >
-                            <Edit2 size={13} />
-                          </button>
-                          <button
-                            className="btn btn-xs btn-ghost btn-icon"
-                            onClick={() => handleDeleteSession(s.id || s._id)}
-                            title="Delete Session"
-                            style={{ color: 'var(--danger)' }}
-                          >
-                            <Trash2 size={13} />
-                          </button>
-                        </>
-                      ) : (
-                        <span style={{ fontSize: 11, color: 'var(--text-3)' }}>🔒 Locked</span>
-                      )}
+                      <button
+                        className="btn btn-xs btn-ghost btn-icon"
+                        onClick={() => setEditingSession({ ...s })}
+                        title="Edit Session"
+                        style={{ marginRight: 4 }}
+                      >
+                        <Edit2 size={13} />
+                      </button>
+                      <button
+                        className="btn btn-xs btn-ghost btn-icon"
+                        onClick={() => handleDeleteSession(s.id || s._id)}
+                        title="Delete Session"
+                        style={{ color: 'var(--danger)' }}
+                      >
+                        <Trash2 size={13} />
+                      </button>
                     </td>
                   </tr>
                 ))}
