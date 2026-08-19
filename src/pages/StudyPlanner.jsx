@@ -1,19 +1,22 @@
 // src/pages/StudyPlanner.jsx
+// Phase 9: Final Smart Daily Routine, Editable Schedule & Smart Reminders
+
 import { useEffect, useState } from 'react';
 import { format, addDays, startOfWeek, eachDayOfInterval, isSameDay, parseISO } from 'date-fns';
-import { Plus, X, ChevronLeft, ChevronRight, Clock, AlertTriangle } from 'lucide-react';
+import {
+  Plus, X, ChevronLeft, ChevronRight, Clock, AlertTriangle,
+  Lock, Unlock, Edit3, Trash2, CheckCircle2, Sparkles, User, Zap, RefreshCw
+} from 'lucide-react';
 import {
   getTasksByDate, addTask, updateTask, deleteTask, getAllTopics, getAllTasks,
   getAllSubjects, getAllAreas, getTeachingSchedule, getAllSessions, getAllMocks, getSettings
 } from '../services/db';
 import { getRevisionsDueToday } from '../services/revisionService';
-import { generateDailyPlan } from '../services/studyPlanningEngine';
+import { generateDailyPlan, optimizeDailyRoutine } from '../services/studyPlanningEngine';
 import { scanAndMarkMissedTasks, getRescheduleRecommendations } from '../services/reschedulingEngine';
-import { useAppStore } from '../store/useAppStore';
 
 const PRIORITIES = ['High', 'Medium', 'Low'];
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const FULL_DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 export default function StudyPlanner() {
   const [view, setView] = useState('week');
@@ -23,32 +26,44 @@ export default function StudyPlanner() {
   const [subjects, setSubjects] = useState([]);
   const [areas, setAreas] = useState([]);
   const [teachingSlots, setTeachingSlots] = useState([]);
+  const [settings, setSettings] = useState(null);
+  const [sessions, setSessions] = useState([]);
   const [showAddTask, setShowAddTask] = useState(null); // date string
   const [editTask, setEditTask] = useState(null);
-  const [form, setForm] = useState({ topicId: '', subjectId: '', preparationAreaId: '', title: '', startTime: '09:00', endTime: '10:00', priority: 'Medium', notes: '' });
+  const [form, setForm] = useState({
+    topicId: '', subjectId: '', preparationAreaId: '', title: '',
+    startTime: '09:00', endTime: '10:00', durationMinutes: 60,
+    priority: 'Medium', notes: '', isLocked: false, source: 'manual', isUserEdited: false
+  });
   const [missedTasks, setMissedTasks] = useState([]);
   const [rescheduleRecs, setRescheduleRecs] = useState([]);
+
+  // Regeneration Modal State
+  const [regenTargetDate, setRegenTargetDate] = useState(null);
+  const [showRegenModal, setShowRegenModal] = useState(false);
+
+  // Conflict Modal State
+  const [conflictData, setConflictData] = useState(null);
 
   useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
-    const [t, s, a, ts, sessions, settings] = await Promise.all([
+    const [t, s, a, ts, sess, sett] = await Promise.all([
       getAllTopics(), getAllSubjects(), getAllAreas(), getTeachingSchedule(), getAllSessions(), getSettings()
     ]);
-    setTopics(t); setSubjects(s); setAreas(a); setTeachingSlots(ts);
+    setTopics(t); setSubjects(s); setAreas(a); setTeachingSlots(ts); setSessions(sess); setSettings(sett);
     
     // Check for missed tasks globally
     const allTasks = await getAllTasks();
     const todayStr = format(new Date(), 'yyyy-MM-dd');
     const newlyMissed = await scanAndMarkMissedTasks(allTasks, todayStr);
     
-    // Refresh all tasks if we mutated them
     const freshTasks = newlyMissed > 0 ? await getAllTasks() : allTasks;
-    const missed = freshTasks.filter(task => task.status === 'Missed');
+    const missed = freshTasks.filter((task) => task.status === 'Missed');
     setMissedTasks(missed);
     
     if (missed.length > 0) {
-      const recs = await getRescheduleRecommendations(missed, ts, sessions, settings, new Date());
+      const recs = await getRescheduleRecommendations(missed, ts, sess, sett, new Date());
       setRescheduleRecs(recs);
     }
     
@@ -56,7 +71,6 @@ export default function StudyPlanner() {
   };
 
   const loadTasks = async () => {
-    // Load tasks for visible range
     const start = view === 'week' ? startOfWeek(currentDate) : currentDate;
     const end = view === 'week' ? addDays(startOfWeek(currentDate), 6) : currentDate;
     const days = eachDayOfInterval({ start, end });
@@ -67,90 +81,245 @@ export default function StudyPlanner() {
   useEffect(() => { loadTasks(); }, [currentDate, view]);
 
   const getTeachingBlocksForDay = (dayOfWeek) => {
-    return teachingSlots.filter((s) => s.dayOfWeek === dayOfWeek);
+    return teachingSlots.filter((s) => {
+      if (!s.active) return false;
+      const day = s.day || s.dayOfWeek;
+      const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek];
+      return day && (day.toLowerCase() === dayName.toLowerCase() || day === dayOfWeek);
+    });
   };
 
-  const isTeachingTime = (dayOfWeek, time) => {
-    const blocks = getTeachingBlocksForDay(dayOfWeek);
-    return blocks.some((b) => time >= b.startTime && time < b.endTime);
+  const checkConflict = (dateStr, startTime, endTime, taskIdToIgnore = null) => {
+    if (!startTime || !endTime) return null;
+    const dateObj = parseISO(dateStr);
+    const dayOfWeek = dateObj.getDay();
+    const dayName = format(dateObj, 'EEEE');
+
+    // 1. Check Teaching Conflict
+    for (const slot of teachingSlots) {
+      if (!slot.active) continue;
+      const slotDay = slot.day || slot.dayOfWeek;
+      if (slotDay && (slotDay.toLowerCase() === dayName.toLowerCase() || slotDay === dayOfWeek)) {
+        if (startTime < slot.endTime && endTime > slot.startTime) {
+          return { type: 'teaching', title: slot.title || 'Teaching Period', time: `${slot.startTime}–${slot.endTime}` };
+        }
+      }
+    }
+
+    // 2. Check Study Task Overlap
+    const dayTasks = tasks.filter((t) => t.date === dateStr && String(t.id || t._id) !== String(taskIdToIgnore));
+    for (const other of dayTasks) {
+      if (other.startTime && other.endTime) {
+        if (startTime < other.endTime && endTime > other.startTime) {
+          return { type: 'task', title: other.topicName || other.title || 'Study Session', time: `${other.startTime}–${other.endTime}` };
+        }
+      }
+    }
+
+    return null;
   };
 
   const getTasksForDate = (dateStr) => tasks.filter((t) => t.date === dateStr);
 
-  const handleAddTask = async () => {
+  const handleOpenAdd = (dateStr) => {
+    setEditTask(null);
+    setForm({
+      topicId: '', subjectId: '', preparationAreaId: '', title: '',
+      startTime: '09:00', endTime: '10:00', durationMinutes: 60,
+      priority: 'Medium', notes: '', isLocked: false, source: 'manual', isUserEdited: false
+    });
+    setShowAddTask(dateStr);
+  };
+
+  const handleOpenEdit = (task) => {
+    setEditTask(task);
+    setForm({
+      ...task,
+      topicId: task.topicId || '',
+      subjectId: task.subjectId || '',
+      preparationAreaId: task.preparationAreaId || '',
+      startTime: task.startTime || '09:00',
+      endTime: task.endTime || '10:00',
+      durationMinutes: task.durationMinutes || 60,
+      priority: task.priority || 'Medium',
+      notes: task.notes || '',
+      isLocked: !!task.isLocked,
+      source: task.source || 'auto',
+      isUserEdited: task.source === 'auto' ? true : !!task.isUserEdited,
+    });
+    setShowAddTask(task.date);
+  };
+
+  const handleSaveTask = async (forceSave = false) => {
+    const targetDate = showAddTask || format(currentDate, 'yyyy-MM-dd');
+    
+    // Check conflict if not forcing save
+    if (!forceSave) {
+      const conflict = checkConflict(targetDate, form.startTime, form.endTime, editTask?.id || editTask?._id);
+      if (conflict) {
+        setConflictData({ conflict, pendingTaskData: form });
+        return;
+      }
+    }
+
     const topic = topics.find((t) => String(t.id || t._id) === String(form.topicId));
-    const subject = subjects.find((s) => String(s.id || s._id) === String(form.subjectId));
+    const subject = subjects.find((s) => String(s.id || s._id) === String(form.subjectId || topic?.subjectId));
+    
+    // Calculate duration in minutes
+    let duration = form.durationMinutes;
+    if (form.startTime && form.endTime) {
+      const [sh, sm] = form.startTime.split(':').map(Number);
+      const [eh, em] = form.endTime.split(':').map(Number);
+      duration = Math.max(15, (eh * 60 + em) - (sh * 60 + sm));
+    }
+
     const taskData = {
       ...form,
-      date: showAddTask || format(currentDate, 'yyyy-MM-dd'),
-      topicName: topic?.name,
-      topicId: topic?.id || topic?._id || form.topicId,
-      subjectName: subject?.name,
-      subjectId: subject?.id || subject?._id || form.subjectId,
-      preparationAreaId: form.preparationAreaId || null,
-      status: 'Not Started',
+      date: targetDate,
+      durationMinutes: duration,
+      topicName: topic?.name || form.title || 'Study Session',
+      topicId: topic?.id || topic?._id || form.topicId || null,
+      subjectName: subject?.name || 'Study Subject',
+      subjectId: subject?.id || subject?._id || form.subjectId || null,
+      preparationAreaId: form.preparationAreaId || topic?.preparationAreaId || null,
+      status: editTask ? editTask.status : 'Not Started',
+      source: editTask?.source === 'auto' ? 'auto' : (editTask?.source || 'manual'),
+      isUserEdited: editTask ? true : (form.isUserEdited || false),
+      isLocked: !!form.isLocked,
     };
+
     if (editTask) {
-      await updateTask(editTask.id, taskData);
+      await updateTask(editTask.id || editTask._id, taskData);
     } else {
       await addTask(taskData);
     }
+
     setShowAddTask(null);
     setEditTask(null);
-    setForm({ topicId: '', subjectId: '', preparationAreaId: '', title: '', startTime: '09:00', endTime: '10:00', priority: 'Medium', notes: '' });
+    setConflictData(null);
     loadTasks();
   };
 
-  const handleGeneratePlan = async (daysAhead = 0) => {
+  const handleToggleLock = async (task, e) => {
+    e.stopPropagation();
+    const newLockState = !task.isLocked;
+    await updateTask(task.id || task._id, { isLocked: newLockState, isUserEdited: true });
+    loadTasks();
+  };
+
+  const handleRequestGenerate = (daysAhead = 0) => {
     const targetDate = addDays(new Date(), daysAhead);
-    
-    // Fetch context
-    const [revDue, sessions, mocks, settings] = await Promise.all([
+    const targetDateStr = format(targetDate, 'yyyy-MM-dd');
+    const dayTasks = getTasksForDate(targetDateStr);
+
+    const hasUserEdits = dayTasks.some((t) => t.isUserEdited || t.isLocked || t.source === 'manual');
+    if (hasUserEdits) {
+      setRegenTargetDate(targetDate);
+      setShowRegenModal(true);
+    } else {
+      executeGeneratePlan(targetDate, { preserveUserEdits: true });
+    }
+  };
+
+  const executeGeneratePlan = async (targetDate, options) => {
+    setShowRegenModal(false);
+    const [revDue, sess, mocks, sett] = await Promise.all([
       getRevisionsDueToday(),
       getAllSessions(),
       getAllMocks(),
       getSettings()
     ]);
-    
+
     const context = {
       topics,
-      revisionsDue: daysAhead === 0 ? revDue : [], // Simplify: only apply revisions if planning for today
+      revisionsDue: revDue,
       teachingSlots,
       scheduledTasks: tasks,
-      sessions,
+      sessions: sess,
       mocks,
       prepAreas: areas,
       subjects,
-      settings,
+      settings: sett,
       today: format(new Date(), 'yyyy-MM-dd'),
-      vocabToday: 0 // Simplification for planner
+      vocabToday: 0
     };
-    
-    const result = await generateDailyPlan(targetDate, context);
+
+    const result = await generateDailyPlan(targetDate, context, options);
     if (result.success) {
-      alert(`Successfully planned ${result.tasksPlanned} tasks (${result.minutesPlanned} mins) for ${format(targetDate, 'MMM d')}.`);
+      alert(`✨ Successfully generated daily routine (${result.tasksPlanned} sessions planned, ${Math.round(result.minutesPlanned / 60 * 10) / 10} hours).`);
       loadTasks();
     } else {
-      alert(result.reason || 'Failed to generate plan.');
+      alert(result.reason || 'Failed to generate routine.');
     }
   };
+
+  const handleOptimizeDay = async () => {
+    const targetDate = currentDate;
+    const [revDue, sess, mocks, sett] = await Promise.all([
+      getRevisionsDueToday(),
+      getAllSessions(),
+      getAllMocks(),
+      getSettings()
+    ]);
+
+    const context = {
+      topics,
+      revisionsDue: revDue,
+      teachingSlots,
+      scheduledTasks: tasks,
+      sessions: sess,
+      mocks,
+      prepAreas: areas,
+      subjects,
+      settings: sett,
+      today: format(new Date(), 'yyyy-MM-dd'),
+      vocabToday: 0
+    };
+
+    const result = await optimizeDailyRoutine(targetDate, context);
+    if (result.success) {
+      alert(`⚡ Routine optimized! Preserved your fixed commitments & filled available study gaps.`);
+      loadTasks();
+    }
+  };
+
+  // Compute daily hours stats for current date
+  const currentDateStr = format(currentDate, 'yyyy-MM-dd');
+  const currentDayTasks = getTasksForDate(currentDateStr);
+  const targetStudyHours = settings?.dailyStudyHours || 8;
+  
+  let plannedMinutesToday = 0;
+  let completedMinutesToday = 0;
+  for (const t of currentDayTasks) {
+    const dur = Number(t.durationMinutes || 60);
+    plannedMinutesToday += dur;
+    if ((t.status || '').toLowerCase() === 'completed') {
+      completedMinutesToday += dur;
+    }
+  }
+  const plannedHoursToday = Math.round((plannedMinutesToday / 60) * 10) / 10;
+  const completedHoursToday = Math.round((completedMinutesToday / 60) * 10) / 10;
+  const remainingHoursToday = Math.max(0, Math.round((plannedHoursToday - completedHoursToday) * 10) / 10);
 
   const weekStart = startOfWeek(currentDate);
   const weekDays = eachDayOfInterval({ start: weekStart, end: addDays(weekStart, 6) });
 
   return (
     <div>
-      <div className="page-header">
+      <div className="page-header" style={{ marginBottom: 14 }}>
         <div className="page-header-left">
-          <h1 className="page-title">Study Planner</h1>
-          <p className="page-subtitle">Schedule your study sessions around teaching periods</p>
+          <h1 className="page-title">Smart Study Planner & Daily Routine</h1>
+          <p className="page-subtitle">Auto-generated intelligent routine with full editing control</p>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn btn-ghost" onClick={() => handleGeneratePlan(0)}>
-            ✨ Generate Today
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button className="btn btn-ghost" onClick={() => handleRequestGenerate(0)}>
+            <Sparkles size={14} /> Generate Today
           </button>
-          <button className="btn btn-ghost" onClick={() => handleGeneratePlan(1)}>
-            ✨ Generate Tomorrow
+          <button className="btn btn-ghost" onClick={() => handleRequestGenerate(1)}>
+            <Sparkles size={14} /> Generate Tomorrow
+          </button>
+          <button className="btn btn-ghost" onClick={handleOptimizeDay} title="Optimize remaining gaps while preserving your edits">
+            <Zap size={14} /> Optimize My Day
           </button>
           <div className="tabs">
             {['day', 'week'].map((v) => (
@@ -159,18 +328,46 @@ export default function StudyPlanner() {
               </button>
             ))}
           </div>
-          <button className="btn btn-primary" onClick={() => setShowAddTask(format(currentDate, 'yyyy-MM-dd'))}>
+          <button className="btn btn-primary" onClick={() => handleOpenAdd(format(currentDate, 'yyyy-MM-dd'))}>
             <Plus size={14} /> Add Task
           </button>
         </div>
       </div>
 
+      {/* ── DAILY TARGET & PLANNED HOURS SUMMARY BAR ──────────────── */}
+      <div style={{
+        display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12,
+        background: 'var(--surface-2)', padding: '12px 18px', borderRadius: 'var(--radius)',
+        border: '1px solid var(--border)', marginBottom: 16, alignItems: 'center'
+      }}>
+        <div>
+          <div style={{ fontSize: 11, color: 'var(--text-3)', textTransform: 'uppercase', fontWeight: 700 }}>Daily Goal</div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--primary-light)' }}>{targetStudyHours}h Target</div>
+        </div>
+        <div>
+          <div style={{ fontSize: 11, color: 'var(--text-3)', textTransform: 'uppercase', fontWeight: 700 }}>Planned Routine</div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: plannedHoursToday >= targetStudyHours ? 'var(--success)' : 'var(--warning)' }}>
+            {plannedHoursToday}h Planned
+          </div>
+        </div>
+        <div>
+          <div style={{ fontSize: 11, color: 'var(--text-3)', textTransform: 'uppercase', fontWeight: 700 }}>Completed Today</div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--success)' }}>{completedHoursToday}h Done</div>
+        </div>
+        <div>
+          <div style={{ fontSize: 11, color: 'var(--text-3)', textTransform: 'uppercase', fontWeight: 700 }}>Remaining</div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: remainingHoursToday > 0 ? 'var(--text)' : 'var(--success)' }}>
+            {remainingHoursToday}h Remaining
+          </div>
+        </div>
+      </div>
+
       {/* Navigation */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
         <button className="btn btn-ghost btn-icon" onClick={() => setCurrentDate((d) => view === 'week' ? addDays(d, -7) : addDays(d, -1))}>
           <ChevronLeft size={16} />
         </button>
-        <span style={{ fontSize: 15, fontWeight: 600 }}>
+        <span style={{ fontSize: 15, fontWeight: 700 }}>
           {view === 'week'
             ? `${format(weekStart, 'MMM d')} – ${format(addDays(weekStart, 6), 'MMM d, yyyy')}`
             : format(currentDate, 'EEEE, MMMM d, yyyy')}
@@ -183,17 +380,17 @@ export default function StudyPlanner() {
 
       {/* Missed Tasks Banner */}
       {missedTasks.length > 0 && (
-        <div style={{ background: 'var(--danger-glass)', border: '1px solid var(--danger)', padding: 16, borderRadius: 'var(--radius)', marginBottom: 20 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--danger)', fontWeight: 600, marginBottom: 8 }}>
+        <div style={{ background: 'var(--danger-glass)', border: '1px solid var(--danger)', padding: 14, borderRadius: 'var(--radius)', marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--danger)', fontWeight: 700, marginBottom: 6 }}>
             <AlertTriangle size={16} /> You have {missedTasks.length} missed study task(s)
           </div>
-          <div style={{ fontSize: 13, color: 'var(--text-2)' }}>
+          <div style={{ fontSize: 12, color: 'var(--text-2)' }}>
             {rescheduleRecs.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {rescheduleRecs.slice(0, 2).map((rec, i) => (
-                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface-2)', padding: '8px 12px', borderRadius: 'var(--radius-sm)' }}>
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface-2)', padding: '6px 10px', borderRadius: 'var(--radius-sm)' }}>
                     <span>Reschedule <strong>{rec.task.title}</strong> to {format(parseISO(rec.suggestedDate), 'MMM d')} at {rec.suggestedStartTime}</span>
-                    <button className="btn btn-sm btn-ghost" onClick={async () => {
+                    <button className="btn btn-xs btn-ghost" onClick={async () => {
                       await updateTask(rec.task.id, { date: rec.suggestedDate, startTime: rec.suggestedStartTime, endTime: rec.suggestedEndTime, status: 'Not Started' });
                       loadData();
                     }}>Accept</button>
@@ -207,15 +404,23 @@ export default function StudyPlanner() {
         </div>
       )}
 
-      {/* Teaching legend */}
-      <div style={{ display: 'flex', gap: 12, marginBottom: 16, fontSize: 12 }}>
+      {/* Teaching legend & Provenance Badges Legend */}
+      <div style={{ display: 'flex', gap: 14, marginBottom: 14, fontSize: 12, flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <div style={{ width: 12, height: 12, background: 'var(--warning)', opacity: 0.7, borderRadius: 2 }} />
-          Teaching Period (unavailable)
+          Teaching (unavailable)
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <div style={{ width: 12, height: 12, background: 'var(--primary)', borderRadius: 2 }} />
-          Study Task
+          <span className="badge badge-primary" style={{ fontSize: 10 }}>✨ AI Generated</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span className="badge badge-warning" style={{ fontSize: 10 }}>✏️ Edited by You</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span className="badge badge-muted" style={{ fontSize: 10 }}>👤 Manually Added</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span className="badge" style={{ fontSize: 10, background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444' }}>🔒 Locked</span>
         </div>
       </div>
 
@@ -236,14 +441,18 @@ export default function StudyPlanner() {
                   background: isToday ? 'var(--primary-glass)' : 'var(--card)',
                   border: `1px solid ${isToday ? 'var(--border-accent)' : 'var(--border)'}`,
                   borderRadius: 'var(--radius-lg)',
-                  padding: 12,
-                  minHeight: 200,
+                  padding: 10,
+                  minHeight: 220,
+                  display: 'flex',
+                  flexDirection: 'column',
                 }}
               >
-                <div style={{ marginBottom: 10 }}>
-                  <div style={{ fontSize: 11, color: 'var(--text-2)', fontWeight: 600 }}>{DAY_NAMES[dayOfWeek]}</div>
-                  <div style={{ fontSize: 18, fontWeight: 700, color: isToday ? 'var(--primary-light)' : 'var(--text)' }}>
-                    {format(day, 'd')}
+                <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 700 }}>{DAY_NAMES[dayOfWeek]}</div>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: isToday ? 'var(--primary-light)' : 'var(--text)' }}>
+                      {format(day, 'd')}
+                    </div>
                   </div>
                 </div>
 
@@ -252,36 +461,69 @@ export default function StudyPlanner() {
                   <div key={i} style={{
                     background: 'var(--warning-glass)', border: '1px solid var(--warning)',
                     borderRadius: 'var(--radius-sm)', padding: '4px 6px', marginBottom: 4,
-                    fontSize: 10, color: 'var(--warning)',
+                    fontSize: 10, color: 'var(--warning)', fontWeight: 600,
                   }}>
                     🏫 {block.startTime}–{block.endTime}
                   </div>
                 ))}
 
-                {/* Tasks */}
-                {dayTasks.map((task) => (
-                  <div
-                    key={task.id}
-                    style={{
-                      background: task.status === 'Completed' ? 'var(--success-glass)' : 'var(--primary-glass)',
-                      border: `1px solid ${task.status === 'Completed' ? 'var(--success)' : 'var(--primary)'}`,
-                      borderRadius: 'var(--radius-sm)', padding: '4px 6px', marginBottom: 4,
-                      fontSize: 10, cursor: 'pointer',
-                    }}
-                    onClick={() => { setEditTask(task); setForm({ ...task }); setShowAddTask(task.date); }}
-                  >
-                    <div style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {task.topicName || task.title || 'Task'}
-                    </div>
-                    <div style={{ color: 'var(--text-2)' }}>{task.startTime}–{task.endTime}</div>
-                  </div>
-                ))}
+                {/* Study Tasks */}
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {dayTasks.map((task) => {
+                    const isAi = task.source === 'auto' && !task.isUserEdited;
+                    const isEdited = !!task.isUserEdited;
+                    const isLocked = !!task.isLocked;
+
+                    return (
+                      <div
+                        key={task.id || task._id}
+                        style={{
+                          background: task.status === 'Completed' ? 'var(--success-glass)' : 'var(--surface-2)',
+                          border: `1px solid ${task.status === 'Completed' ? 'var(--success)' : isLocked ? '#ef4444' : 'var(--border)'}`,
+                          borderRadius: 'var(--radius-sm)', padding: '6px 8px',
+                          fontSize: 11, cursor: 'pointer', position: 'relative',
+                        }}
+                        onClick={() => handleOpenEdit(task)}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+                          <span style={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '80%' }}>
+                            {task.topicName || task.title}
+                          </span>
+                          <button
+                            onClick={(e) => handleToggleLock(task, e)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: isLocked ? '#ef4444' : 'var(--text-3)' }}
+                            title={isLocked ? 'Locked (will not be moved)' : 'Unlocked'}
+                          >
+                            {isLocked ? <Lock size={11} /> : <Unlock size={11} />}
+                          </button>
+                        </div>
+
+                        <div style={{ color: 'var(--text-2)', fontSize: 10, marginBottom: 3 }}>
+                          {task.startTime}–{task.endTime} ({task.durationMinutes || 60}m)
+                        </div>
+
+                        {/* Provenance Badge */}
+                        <div>
+                          {isLocked ? (
+                            <span className="badge" style={{ fontSize: 8, padding: '1px 4px', background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444' }}>🔒 Locked</span>
+                          ) : isEdited ? (
+                            <span className="badge badge-warning" style={{ fontSize: 8, padding: '1px 4px' }}>✏️ Edited</span>
+                          ) : isAi ? (
+                            <span className="badge badge-primary" style={{ fontSize: 8, padding: '1px 4px' }}>✨ AI</span>
+                          ) : (
+                            <span className="badge badge-muted" style={{ fontSize: 8, padding: '1px 4px' }}>👤 Manual</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
 
                 <button
-                  style={{ width: '100%', padding: '4px', borderRadius: 'var(--radius-sm)', border: '1px dashed var(--border)', background: 'transparent', color: 'var(--text-3)', fontSize: 11, cursor: 'pointer', marginTop: 4 }}
-                  onClick={() => setShowAddTask(dateStr)}
+                  style={{ width: '100%', padding: '4px', borderRadius: 'var(--radius-sm)', border: '1px dashed var(--border)', background: 'transparent', color: 'var(--text-3)', fontSize: 11, cursor: 'pointer', marginTop: 6 }}
+                  onClick={() => handleOpenAdd(dateStr)}
                 >
-                  + Add
+                  + Add Task
                 </button>
               </div>
             );
@@ -295,10 +537,11 @@ export default function StudyPlanner() {
           date={currentDate}
           tasks={getTasksForDate(format(currentDate, 'yyyy-MM-dd'))}
           teachingBlocks={getTeachingBlocksForDay(currentDate.getDay())}
-          onAddTask={() => setShowAddTask(format(currentDate, 'yyyy-MM-dd'))}
-          onEditTask={(task) => { setEditTask(task); setForm({ ...task }); setShowAddTask(task.date); }}
+          onAddTask={() => handleOpenAdd(format(currentDate, 'yyyy-MM-dd'))}
+          onEditTask={handleOpenEdit}
+          onToggleLock={handleToggleLock}
           onCompleteTask={async (taskId) => {
-            await updateTask(taskId, { status: 'Completed' });
+            await updateTask(taskId, { status: 'Completed', completedAt: new Date().toISOString() });
             loadTasks();
           }}
           onDeleteTask={async (taskId) => {
@@ -308,25 +551,30 @@ export default function StudyPlanner() {
         />
       )}
 
-      {/* Add/Edit Task Modal */}
+      {/* Add / Edit Task Modal */}
       {showAddTask && (
         <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && (setShowAddTask(null), setEditTask(null))}>
-          <div className="modal">
+          <div className="modal" style={{ maxWidth: 440 }}>
             <div className="modal-header">
-              <h2 className="modal-title">{editTask ? 'Edit Task' : 'Add Study Task'}</h2>
+              <h2 className="modal-title">{editTask ? 'Edit Study Session' : 'Add Study Task'}</h2>
               <button className="modal-close" onClick={() => { setShowAddTask(null); setEditTask(null); }}><X size={14} /></button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div style={{ fontSize: 12, color: 'var(--text-2)', background: 'var(--surface)', padding: '6px 10px', borderRadius: 'var(--radius-sm)' }}>
-                📅 {showAddTask}
+              <div style={{ fontSize: 12, color: 'var(--text-2)', background: 'var(--surface-2)', padding: '6px 10px', borderRadius: 'var(--radius-sm)', display: 'flex', justifyContent: 'space-between' }}>
+                <span>📅 {showAddTask}</span>
+                {editTask && (
+                  <span>Provenance: <strong>{editTask.source === 'auto' ? (editTask.isUserEdited ? 'Edited AI' : 'AI Generated') : 'Manual'}</strong></span>
+                )}
               </div>
+
               <div className="form-group">
                 <label className="form-label">Preparation Area</label>
                 <select className="form-select" value={form.preparationAreaId} onChange={(e) => setForm({ ...form, preparationAreaId: e.target.value })}>
-                  <option value="">Select...</option>
+                  <option value="">Select Area...</option>
                   {areas.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
                 </select>
               </div>
+
               <div className="form-group">
                 <label className="form-label">Topic</label>
                 <select className="form-select" value={form.topicId} onChange={(e) => setForm({ ...form, topicId: e.target.value })}>
@@ -335,6 +583,7 @@ export default function StudyPlanner() {
                     .map((t) => <option key={t.id || t._id} value={t.id || t._id}>{t.name}</option>)}
                 </select>
               </div>
+
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div className="form-group">
                   <label className="form-label">Start Time</label>
@@ -345,21 +594,126 @@ export default function StudyPlanner() {
                   <input type="time" className="form-input" value={form.endTime} onChange={(e) => setForm({ ...form, endTime: e.target.value })} />
                 </div>
               </div>
-              <div className="form-group">
-                <label className="form-label">Priority</label>
-                <select className="form-select" value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })}>
-                  {PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}
-                </select>
-              </div>
-              {form.topicId && form.startTime && form.endTime && isTeachingTime(new Date(showAddTask + 'T00:00:00').getDay(), form.startTime) && (
-                <div style={{ background: 'var(--warning-glass)', border: '1px solid var(--warning)', borderRadius: 'var(--radius)', padding: '8px 12px', fontSize: 12, color: 'var(--warning)' }}>
-                  ⚠️ Warning: This overlaps with a teaching period!
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div className="form-group">
+                  <label className="form-label">Priority</label>
+                  <select className="form-select" value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })}>
+                    {PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}
+                  </select>
                 </div>
-              )}
-              <div style={{ display: 'flex', gap: 8 }}>
+                <div className="form-group">
+                  <label className="form-label">Lock Time 🔒</label>
+                  <button
+                    type="button"
+                    className={`btn ${form.isLocked ? 'btn-danger' : 'btn-ghost'}`}
+                    style={{ width: '100%', justifyContent: 'center' }}
+                    onClick={() => setForm({ ...form, isLocked: !form.isLocked })}
+                  >
+                    {form.isLocked ? '🔒 Time Locked' : '🔓 Unlocked'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Notes (Optional)</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="Focus points, questions, reminders..."
+                  value={form.notes || ''}
+                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
                 <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => { setShowAddTask(null); setEditTask(null); }}>Cancel</button>
-                <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleAddTask}>
-                  {editTask ? 'Update' : 'Add Task'}
+                <button className="btn btn-primary" style={{ flex: 1 }} onClick={() => handleSaveTask(false)}>
+                  {editTask ? 'Save Changes' : 'Add Task'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── CONFLICT DETECTION MODAL ──────────────────────────────── */}
+      {conflictData && (
+        <div className="modal-overlay">
+          <div className="modal" style={{ maxWidth: 420, border: '1px solid var(--danger)' }}>
+            <div className="modal-header">
+              <h2 className="modal-title" style={{ color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <AlertTriangle size={18} /> Schedule Conflict
+              </h2>
+              <button className="modal-close" onClick={() => setConflictData(null)}><X size={14} /></button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <p style={{ fontSize: 13, color: 'var(--text)' }}>
+                This study session overlaps with:
+              </p>
+              <div style={{ background: 'var(--danger-glass)', border: '1px solid var(--danger)', padding: 12, borderRadius: 'var(--radius)', fontSize: 13 }}>
+                <strong>{conflictData.conflict.title}</strong>
+                <div style={{ color: 'var(--text-2)', marginTop: 2 }}>Time: {conflictData.conflict.time}</div>
+              </div>
+              <p style={{ fontSize: 12, color: 'var(--text-2)' }}>
+                How would you like to proceed?
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <button
+                  className="btn btn-primary"
+                  onClick={() => {
+                    // Move automatically 1 hour ahead
+                    const [eh, em] = (conflictData.conflict.time.split('–')[1] || '11:00').trim().split(':').map(Number);
+                    const newStart = `${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`;
+                    const newEnd = `${String(eh + 1).padStart(2, '0')}:${String(em).padStart(2, '0')}`;
+                    setForm({ ...form, startTime: newStart, endTime: newEnd });
+                    setConflictData(null);
+                  }}
+                >
+                  Move Automatically
+                </button>
+                <button className="btn btn-ghost" onClick={() => setConflictData(null)}>
+                  Choose Another Time
+                </button>
+                <button className="btn btn-ghost" style={{ color: 'var(--danger)' }} onClick={() => handleSaveTask(true)}>
+                  Save Anyway
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── REGENERATION PRESERVATION MODAL ───────────────────────── */}
+      {showRegenModal && (
+        <div className="modal-overlay">
+          <div className="modal" style={{ maxWidth: 420 }}>
+            <div className="modal-header">
+              <h2 className="modal-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Sparkles size={18} color="var(--primary-light)" /> Regenerate Study Routine
+              </h2>
+              <button className="modal-close" onClick={() => setShowRegenModal(false)}><X size={14} /></button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <p style={{ fontSize: 13, color: 'var(--text)' }}>
+                Some study sessions have been manually edited or locked. Do you want to preserve your changes?
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <button
+                  className="btn btn-primary"
+                  onClick={() => executeGeneratePlan(regenTargetDate, { preserveUserEdits: true })}
+                >
+                  ✓ Preserve My Changes (Recommended)
+                </button>
+                <button
+                  className="btn btn-ghost"
+                  style={{ color: 'var(--danger)' }}
+                  onClick={() => executeGeneratePlan(regenTargetDate, { preserveUserEdits: false })}
+                >
+                  Regenerate Everything
+                </button>
+                <button className="btn btn-ghost" onClick={() => setShowRegenModal(false)}>
+                  Cancel
                 </button>
               </div>
             </div>
@@ -370,53 +724,109 @@ export default function StudyPlanner() {
   );
 }
 
-function DayView({ date, tasks, teachingBlocks, onAddTask, onEditTask, onCompleteTask, onDeleteTask }) {
+function DayView({ date, tasks, teachingBlocks, onAddTask, onEditTask, onToggleLock, onCompleteTask, onDeleteTask }) {
   const hours = Array.from({ length: 17 }, (_, i) => i + 6); // 6am to 10pm
 
   return (
     <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
       <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ fontSize: 14, fontWeight: 600 }}>{format(date, 'EEEE, MMMM d')}</div>
+        <div style={{ fontSize: 15, fontWeight: 700 }}>{format(date, 'EEEE, MMMM d, yyyy')}</div>
         <button className="btn btn-sm btn-primary" onClick={onAddTask}><Plus size={12} /> Add Task</button>
       </div>
-      <div style={{ overflowY: 'auto', maxHeight: 600 }}>
+      <div style={{ overflowY: 'auto', maxHeight: 650 }}>
         {hours.map((hour) => {
           const timeStr = `${String(hour).padStart(2, '0')}:00`;
-          const isTeaching = teachingBlocks.some((b) => hour >= parseInt(b.startTime) && hour < parseInt(b.endTime));
-          const hourTasks = tasks.filter((t) => t.startTime && parseInt(t.startTime.split(':')[0]) === hour);
+          const isTeaching = teachingBlocks.some((b) => {
+            const sh = parseInt((b.startTime || '00:00').split(':')[0], 10);
+            const eh = parseInt((b.endTime || '00:00').split(':')[0], 10);
+            return hour >= sh && hour < eh;
+          });
+          const hourTasks = tasks.filter((t) => t.startTime && parseInt(t.startTime.split(':')[0], 10) === hour);
 
           return (
             <div key={hour} style={{
-              display: 'flex', minHeight: 60,
+              display: 'flex', minHeight: 64,
               borderBottom: '1px solid var(--border)',
               background: isTeaching ? 'var(--warning-glass)' : 'transparent',
             }}>
-              <div style={{ width: 60, padding: '8px 12px', fontSize: 11, color: 'var(--text-3)', flexShrink: 0, borderRight: '1px solid var(--border)' }}>
+              <div style={{ width: 64, padding: '8px 12px', fontSize: 11, color: 'var(--text-3)', flexShrink: 0, borderRight: '1px solid var(--border)', fontWeight: 600 }}>
                 {timeStr}
               </div>
-              <div style={{ flex: 1, padding: '6px 12px', display: 'flex', gap: 6, flexWrap: 'wrap', alignContent: 'flex-start' }}>
+              <div style={{ flex: 1, padding: '6px 12px', display: 'flex', gap: 8, flexWrap: 'wrap', alignContent: 'flex-start' }}>
                 {isTeaching && (
-                  <div style={{ fontSize: 11, color: 'var(--warning)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
-                    🏫 Teaching Period
+                  <div style={{ fontSize: 11, color: 'var(--warning)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
+                    🏫 Teaching Period (unavailable)
                   </div>
                 )}
-                {hourTasks.map((task) => (
-                  <div key={task.id} style={{
-                    background: task.status === 'Completed' ? 'var(--success-glass)' : 'var(--primary-glass)',
-                    border: `1px solid ${task.status === 'Completed' ? 'var(--success)' : 'var(--primary)'}`,
-                    borderRadius: 'var(--radius-sm)', padding: '4px 8px', fontSize: 12,
-                    display: 'flex', gap: 6, alignItems: 'center',
-                  }}>
-                    <span>{task.topicName || task.title}</span>
-                    <span style={{ color: 'var(--text-2)', fontSize: 11 }}>{task.startTime}–{task.endTime}</span>
-                    {task.status !== 'Completed' && (
-                      <button style={{ fontSize: 11, color: 'var(--success)', background: 'none', border: 'none', cursor: 'pointer' }}
-                        onClick={() => onCompleteTask(task.id)}>✓</button>
-                    )}
-                    <button style={{ fontSize: 11, color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer' }}
-                      onClick={() => onDeleteTask(task.id)}>✕</button>
-                  </div>
-                ))}
+                {hourTasks.map((task) => {
+                  const isAi = task.source === 'auto' && !task.isUserEdited;
+                  const isEdited = !!task.isUserEdited;
+                  const isLocked = !!task.isLocked;
+
+                  return (
+                    <div key={task.id || task._id} style={{
+                      background: task.status === 'Completed' ? 'var(--success-glass)' : 'var(--card)',
+                      border: `1px solid ${task.status === 'Completed' ? 'var(--success)' : isLocked ? '#ef4444' : 'var(--border)'}`,
+                      borderRadius: 'var(--radius-sm)', padding: '6px 10px', fontSize: 12,
+                      display: 'flex', gap: 8, alignItems: 'center',
+                    }}>
+                      <button
+                        onClick={(e) => onToggleLock(task, e)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: isLocked ? '#ef4444' : 'var(--text-3)', padding: 0 }}
+                        title={isLocked ? 'Locked' : 'Unlocked'}
+                      >
+                        {isLocked ? <Lock size={12} /> : <Unlock size={12} />}
+                      </button>
+
+                      <span style={{ fontWeight: 700 }} onClick={() => onEditTask(task)}>
+                        {task.topicName || task.title}
+                      </span>
+                      
+                      <span style={{ color: 'var(--text-2)', fontSize: 11 }}>
+                        {task.startTime}–{task.endTime}
+                      </span>
+
+                      {/* Provenance */}
+                      {isLocked ? (
+                        <span className="badge" style={{ fontSize: 8, background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444' }}>🔒</span>
+                      ) : isEdited ? (
+                        <span className="badge badge-warning" style={{ fontSize: 8 }}>✏️ Edited</span>
+                      ) : isAi ? (
+                        <span className="badge badge-primary" style={{ fontSize: 8 }}>✨ AI</span>
+                      ) : (
+                        <span className="badge badge-muted" style={{ fontSize: 8 }}>👤 Manual</span>
+                      )}
+
+                      <div style={{ display: 'flex', gap: 4, marginLeft: 'auto' }}>
+                        <button
+                          className="btn btn-xs btn-ghost"
+                          onClick={() => onEditTask(task)}
+                          title="Edit Task"
+                        >
+                          <Edit3 size={11} />
+                        </button>
+                        {task.status !== 'Completed' && (
+                          <button
+                            className="btn btn-xs btn-ghost"
+                            style={{ color: 'var(--success)' }}
+                            onClick={() => onCompleteTask(task.id || task._id)}
+                            title="Mark Complete"
+                          >
+                            <CheckCircle2 size={12} />
+                          </button>
+                        )}
+                        <button
+                          className="btn btn-xs btn-ghost"
+                          style={{ color: 'var(--danger)' }}
+                          onClick={() => onDeleteTask(task.id || task._id)}
+                          title="Delete"
+                        >
+                          <Trash2 size={11} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           );

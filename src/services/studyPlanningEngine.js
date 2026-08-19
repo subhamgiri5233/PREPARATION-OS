@@ -2,44 +2,104 @@
 import { format, addMinutes, parseISO, differenceInMinutes, isBefore } from 'date-fns';
 import { calculateAvailableSlots, chunkSlots } from './availabilityEngine.js';
 import { calculatePriorityScore, determineSessionType } from './priorityEngine.js';
-import { addTask } from './db.js';
+import { addTask, deleteTask } from './db.js';
 
 /**
  * Generates a full daily plan by calculating availability, sorting pending work, and filling slots.
+ * Strictly respects user-edited, locked, and manual tasks when preserveUserEdits is enabled.
  */
-export async function generateDailyPlan(dateObj, context) {
-  const { topics, revisionsDue, teachingSlots, scheduledTasks, sessions, mocks, prepAreas, subjects, settings, today, vocabToday } = context;
+export async function generateDailyPlan(dateObj, context, options = { preserveUserEdits: true }) {
+  const { topics, revisionsDue, teachingSlots, scheduledTasks = [], sessions = [], mocks, prepAreas, subjects, settings, today, vocabToday } = context;
   const dateStr = format(dateObj, 'yyyy-MM-dd');
+  const targetMinutes = (settings?.dailyStudyHours || 8) * 60;
 
-  // 1. Get raw available slots
-  const rawSlots = calculateAvailableSlots(dateObj, teachingSlots, scheduledTasks, sessions, settings);
-  
-  // 2. Chunk slots into workable sizes (e.g., 60m, 45m, 30m)
-  const blockPrefs = [90, 60, 45, 30]; // Configurable later
-  const availableSlots = chunkSlots(rawSlots, blockPrefs);
-  
-  if (availableSlots.length === 0) {
-    return { success: false, reason: 'No available time slots found for this date.' };
+  // 1. Separate existing tasks into preserved vs replaceable
+  const dayTasks = (scheduledTasks || []).filter((t) => t.date === dateStr);
+  const preservedTasks = [];
+  const replaceableTasks = [];
+
+  for (const t of dayTasks) {
+    const isCompleted = (t.status || '').toLowerCase() === 'completed';
+    const isLocked = t.isLocked === true;
+    const isUserEdited = t.isUserEdited === true;
+    const isManual = t.source === 'manual' || (!t.source && !t.plannedBy);
+
+    if (options.preserveUserEdits && (isCompleted || isLocked || isUserEdited || isManual)) {
+      preservedTasks.push(t);
+    } else {
+      replaceableTasks.push(t);
+    }
   }
 
-  // 3. Collect and score all potential work
+  // Delete replaceable tasks from DB
+  for (const t of replaceableTasks) {
+    if (t.id || t._id) {
+      await deleteTask(t.id || t._id);
+    }
+  }
+
+  // Calculate already planned minutes from preserved tasks
+  let preservedMinutes = 0;
+  for (const pt of preservedTasks) {
+    if (pt.durationMinutes) {
+      preservedMinutes += Number(pt.durationMinutes);
+    } else if (pt.startTime && pt.endTime) {
+      const [sh, sm] = pt.startTime.split(':').map(Number);
+      const [eh, em] = pt.endTime.split(':').map(Number);
+      preservedMinutes += (eh * 60 + em) - (sh * 60 + sm);
+    } else {
+      preservedMinutes += 60;
+    }
+  }
+
+  // If preserved tasks already meet or exceed daily study target, keep them
+  if (preservedMinutes >= targetMinutes) {
+    return {
+      success: true,
+      tasksPlanned: preservedTasks.length,
+      minutesPlanned: preservedMinutes,
+      preservedCount: preservedTasks.length,
+    };
+  }
+
+  // 2. Get raw available slots considering teaching schedule + preserved tasks + completed sessions
+  const rawSlots = calculateAvailableSlots(dateObj, teachingSlots, preservedTasks, sessions, settings);
+
+  // 3. Chunk slots into workable sizes (e.g. 90m, 60m, 45m, 30m)
+  const blockPrefs = [90, 60, 45, 30];
+  const availableSlots = chunkSlots(rawSlots, blockPrefs);
+
+  if (availableSlots.length === 0) {
+    return {
+      success: true,
+      tasksPlanned: preservedTasks.length,
+      minutesPlanned: preservedMinutes,
+      preservedCount: preservedTasks.length,
+      reason: preservedTasks.length > 0 ? 'Preserved existing schedule.' : 'No available time slots found.',
+    };
+  }
+
+  // 4. Collect and score all potential work
   const potentialTasks = [];
-  
   const priorityContext = { mocks, prepAreas, subjects, sessions, today };
 
+  // Collect existing planned topic IDs to prevent scheduling duplicates
+  const plannedTopicIds = new Set(preservedTasks.map((t) => String(t.topicId)).filter(Boolean));
+
   // Add Revisions
-  revisionsDue.forEach(r => {
-    // Revisions get artificially high priority from priorityEngine if due today/overdue
-    const score = calculatePriorityScore({ ...r, type: 'revision' }, priorityContext);
-    potentialTasks.push({
-      item: r,
-      type: 'Revision',
-      score,
-      topicId: r.topicId,
-      title: r.topicName || `Revision #${r.revisionNumber}`,
-      reason: r.dueDate < today ? 'Overdue revision' : 'Revision due today',
-      durationMinutes: 30, // Default revision block
-    });
+  (revisionsDue || []).forEach((r) => {
+    if (!plannedTopicIds.has(String(r.topicId))) {
+      const score = calculatePriorityScore({ ...r, type: 'revision' }, priorityContext);
+      potentialTasks.push({
+        item: r,
+        type: 'Revision',
+        score,
+        topicId: r.topicId,
+        title: r.topicName || `Revision #${r.revisionNumber}`,
+        reason: r.dueDate < today ? 'Overdue revision' : 'Revision due today',
+        durationMinutes: 30,
+      });
+    }
   });
 
   // Add Vocabulary if target not met
@@ -48,7 +108,7 @@ export async function generateDailyPlan(dateObj, context) {
     potentialTasks.push({
       item: null,
       type: 'Vocabulary',
-      score: 85, // Very high priority to build daily habit
+      score: 85,
       title: 'Daily Vocabulary',
       reason: 'Daily target pending',
       durationMinutes: 15,
@@ -56,19 +116,22 @@ export async function generateDailyPlan(dateObj, context) {
   }
 
   // Add Pending Topics
-  const pendingTopics = topics.filter(t => t.status !== 'Completed' && t.status !== 'Mastered');
-  pendingTopics.forEach(t => {
+  const pendingTopics = (topics || []).filter((t) => {
+    if (plannedTopicIds.has(String(t.id || t._id))) return false;
+    const s = (t.status || '').toLowerCase();
+    return s !== 'completed' && s !== 'mastered';
+  });
+
+  pendingTopics.forEach((t) => {
     const score = calculatePriorityScore(t, priorityContext);
     const sessionType = determineSessionType(t, priorityContext);
-    
-    // Determine duration based on topic estimate or fallback
-    let duration = t.estimatedMinutes || 60;
-    
+    const duration = t.estimatedMinutes || 60;
+
     potentialTasks.push({
       item: t,
       type: sessionType,
       score,
-      topicId: t.id,
+      topicId: t.id || t._id,
       subjectId: t.subjectId,
       preparationAreaId: t.preparationAreaId,
       title: t.name,
@@ -77,54 +140,66 @@ export async function generateDailyPlan(dateObj, context) {
     });
   });
 
-  // 4. Sort by highest score first
+  // 5. Sort by highest score first
   potentialTasks.sort((a, b) => b.score - a.score);
 
-  // 5. Fill slots
-  const plannedTasks = [];
-  const targetMinutes = (settings?.dailyStudyHours || 8) * 60;
-  let plannedMinutes = 0;
-  
+  // 6. Fill slots up to remaining target minutes
+  const newlyPlannedTasks = [];
+  let remainingMinutesNeeded = targetMinutes - preservedMinutes;
+  let plannedNewMinutes = 0;
   let taskIndex = 0;
+
   for (const slot of availableSlots) {
-    if (plannedMinutes >= targetMinutes) break; // Reached daily limit (sustainable)
-    if (taskIndex >= potentialTasks.length) break; // Ran out of work
-    
+    if (plannedNewMinutes >= remainingMinutesNeeded) break;
+    if (taskIndex >= potentialTasks.length) break;
+
     const candidate = potentialTasks[taskIndex];
-    
-    // Fit the candidate into the slot.
-    // If the candidate needs more time than the slot, we schedule part of it.
-    // If it needs less, we schedule it and leave the slot partially filled (simplified for MVP: we just use the slot start/end).
-    
+    const slotDuration = slot.durationMinutes || 60;
+
     const taskData = {
       date: dateStr,
       startTime: slot.start,
       endTime: slot.end,
+      durationMinutes: slotDuration,
       title: candidate.title,
       topicId: candidate.topicId,
       subjectId: candidate.subjectId,
       preparationAreaId: candidate.preparationAreaId,
       status: 'Not Started',
       priority: candidate.score > 70 ? 'High' : candidate.score > 40 ? 'Medium' : 'Low',
+      source: 'auto',
+      isUserEdited: false,
+      isLocked: false,
       plannedBy: 'system',
       type: candidate.type,
       reason: candidate.reason,
     };
-    
-    plannedTasks.push(taskData);
-    plannedMinutes += slot.durationMinutes;
-    
-    // If this slot satisfies the candidate, move to the next candidate.
-    // (In a perfect engine, we'd subtract slot duration from candidate duration. Here we just consume the candidate).
+
+    newlyPlannedTasks.push(taskData);
+    plannedNewMinutes += slotDuration;
     taskIndex++;
   }
-  
-  // 6. Save to DB
-  for (const task of plannedTasks) {
+
+  // 7. Save new tasks to DB
+  for (const task of newlyPlannedTasks) {
     await addTask(task);
   }
-  
-  return { success: true, tasksPlanned: plannedTasks.length, minutesPlanned: plannedMinutes };
+
+  return {
+    success: true,
+    tasksPlanned: preservedTasks.length + newlyPlannedTasks.length,
+    minutesPlanned: preservedMinutes + plannedNewMinutes,
+    preservedCount: preservedTasks.length,
+    newCount: newlyPlannedTasks.length,
+  };
+}
+
+/**
+ * Optimizes the daily routine: keeps user-edited, locked, completed tasks and teaching periods fixed,
+ * while rearranging remaining pending tasks into optimal non-conflicting time slots.
+ */
+export async function optimizeDailyRoutine(dateObj, context) {
+  return await generateDailyPlan(dateObj, context, { preserveUserEdits: true });
 }
 
 /**
@@ -132,25 +207,25 @@ export async function generateDailyPlan(dateObj, context) {
  */
 export function getStudyNowRecommendation(context) {
   const { topics, revisionsDue, mocks, prepAreas, subjects, sessions, today, teachingSlots, scheduledTasks, settings } = context;
-  
+
   const now = new Date();
-  
+
   // 1. Check if currently in a teaching period or scheduled task
   const rawSlots = calculateAvailableSlots(now, teachingSlots, scheduledTasks, sessions, settings);
   const nowTime = format(now, 'HH:mm');
-  
+
   // Find a slot that encompasses NOW
-  const currentSlot = rawSlots.find(s => s.start <= nowTime && s.end > nowTime);
-  
+  const currentSlot = rawSlots.find((s) => s.start <= nowTime && s.end > nowTime);
+
   // 2. Score tasks
   const priorityContext = { mocks, prepAreas, subjects, sessions, today };
-  
+
   let topCandidate = null;
   let topScore = -1;
   let isRevision = false;
-  
-  // Check revisions
-  revisionsDue.forEach(r => {
+
+  // Check revisions first
+  (revisionsDue || []).forEach((r) => {
     const score = calculatePriorityScore({ ...r, type: 'revision' }, priorityContext);
     if (score > topScore) {
       topScore = score;
@@ -158,139 +233,54 @@ export function getStudyNowRecommendation(context) {
       isRevision = true;
     }
   });
-  
-  // Check topics
-  topics.filter(t => t.status !== 'Completed' && t.status !== 'Mastered').forEach(t => {
-    const score = calculatePriorityScore(t, priorityContext);
-    if (score > topScore) {
-      topScore = score;
-      topCandidate = t;
-      isRevision = false;
-    }
-  });
-  
-  if (!topics || topics.length === 0) {
-    return { available: false, message: "Add your syllabus/course data to generate intelligent recommendations." };
+
+  // If no high-priority revisions, check pending topics
+  if (!topCandidate || topScore < 60) {
+    const pendingTopics = (topics || []).filter((t) => t.status !== 'Completed' && t.status !== 'Mastered');
+    pendingTopics.forEach((t) => {
+      const score = calculatePriorityScore(t, priorityContext);
+      if (score > topScore) {
+        topScore = score;
+        topCandidate = t;
+        isRevision = false;
+      }
+    });
   }
 
   if (!topCandidate) {
-    return { available: true, message: "No pending tasks found. Take a break!" };
+    return { candidate: null, message: 'Great job! No urgent study tasks pending right now.' };
   }
 
-  // Hierarchical Area -> Subject -> Chapter -> Topic lookup
-  let areaName = '';
-  const areaId = topCandidate.preparationAreaId;
-  if (areaId && prepAreas) {
-    const area = prepAreas.find(a => a.id === areaId);
-    if (area) areaName = area.name;
-  }
+  const topicObj = isRevision
+    ? (topics || []).find((t) => String(t.id || t._id) === String(topCandidate.topicId)) || topCandidate
+    : topCandidate;
 
-  let subjectName = '';
-  const subjectId = topCandidate.subjectId;
-  if (subjectId && subjects) {
-    const subj = subjects.find(s => s.id === subjectId);
-    if (subj) subjectName = subj.name;
-  }
+  const subject = (subjects || []).find((s) => String(s.id || s._id) === String(topicObj.subjectId));
+  const area = (prepAreas || []).find((a) => String(a.id || a._id) === String(topicObj.preparationAreaId || subject?.preparationAreaId));
 
-  let chapterName = '';
-  const chapterId = topCandidate.chapterId;
-  if (chapterId && context.chapters) {
-    const chap = context.chapters.find(c => c.id === chapterId);
-    if (chap) chapterName = chap.name;
-  }
-
-  const topicName = topCandidate.name || topCandidate.topicName || 'Study Topic';
-  const hierarchicalName = subjectName ? `${subjectName} → ${topicName}` : topicName;
-  const fullHierarchicalPath = [areaName, subjectName, chapterName, topicName].filter(Boolean).join(' → ');
-
-  // Build comprehensive justification reasons
-  const reasonsList = [];
-  if (isRevision) {
-    reasonsList.push('Revision due today (Spaced Repetition)');
-    if (topCandidate.priorityData?.reason) {
-      reasonsList.push(topCandidate.priorityData.reason);
-    }
-  } else {
-    if (topCandidate.importance === 'Critical' || topCandidate.importance === 'High') {
-      reasonsList.push(`High syllabus importance (${topCandidate.importance})`);
-    }
-    if (topCandidate.status === 'In Progress' || topCandidate.status === 'Learning') {
-      reasonsList.push('Currently in progress');
-    }
-    if (topCandidate.status === 'Weak') {
-      reasonsList.push('Weak topic from mock error analysis');
-    }
-    if (topCandidate.difficulty === 'Hard' || topCandidate.difficulty === 'Very Hard') {
-      reasonsList.push(`Challenging topic (${topCandidate.difficulty})`);
-    }
-  }
-
-  if (reasonsList.length === 0) {
-    reasonsList.push(topScore > 80 ? 'Critical priority based on deadlines/mocks' : 'Highest ranked pending topic');
-  }
-
-  const reason = reasonsList.join(' · ');
-
-  // Recommended duration in minutes
-  const estMins = topCandidate.estimatedMinutes || (topCandidate.estimatedHours ? topCandidate.estimatedHours * 60 : 60);
-  const recommendedDuration = Math.min(90, Math.max(30, Math.round(estMins)));
+  const hierarchicalName = subject ? `${subject.name} → ${topicObj.name || topCandidate.title}` : (topicObj.name || topCandidate.title);
+  const fullHierarchicalPath = area ? `${area.name} > ${hierarchicalName}` : hierarchicalName;
 
   return {
-    available: !!currentSlot,
-    slot: currentSlot || null,
     candidate: topCandidate,
     isRevision,
     score: topScore,
-    reason,
-    reasonsList,
-    areaName,
-    subjectName,
-    chapterName,
-    topicName,
+    reason: isRevision ? 'Spaced repetition revision due' : 'High priority topic based on target and performance',
+    reasonsList: [
+      isRevision ? 'Due for spaced repetition review' : 'Core syllabus milestone',
+      area ? `High priority area: ${area.name}` : null,
+      topScore > 70 ? 'Identified as focus area from mock test results' : null,
+    ].filter(Boolean),
     hierarchicalName,
     fullHierarchicalPath,
-    recommendedDuration,
-    message: `Top priority: ${hierarchicalName}`
+    recommendedDuration: topicObj.estimatedMinutes || 60,
   };
 }
 
 /**
- * Returns a real-time single recommendation for "What should I REVISE NOW?"
- * Specifically for the Phase 5 Revision Engine.
+ * Returns top recommendation specifically for revision
  */
 export function getReviseNowRecommendation(context) {
-  const { revisionsDue, teachingSlots, scheduledTasks, sessions, settings } = context;
-  
-  const now = new Date();
-  const rawSlots = calculateAvailableSlots(now, teachingSlots, scheduledTasks, sessions, settings);
-  const nowTime = format(now, 'HH:mm');
-  const currentSlot = rawSlots.find(s => s.start <= nowTime && s.end > nowTime);
-  
-  if (!revisionsDue || revisionsDue.length === 0) {
-    return { available: true, message: "No revisions due. You are all caught up!" };
-  }
-
-  // Find the highest priority revision
-  let topCandidate = revisionsDue[0]; // Assuming revisionsDue is sorted by priority
-  let topScore = topCandidate.priorityData ? topCandidate.priorityData.score : 0;
-  
-  // If not sorted, find max
-  revisionsDue.forEach(r => {
-    const score = r.priorityData ? r.priorityData.score : 0;
-    if (score > topScore) {
-      topScore = score;
-      topCandidate = r;
-    }
-  });
-
-  const reason = topCandidate.priorityData ? topCandidate.priorityData.reason : 'Spaced repetition due';
-
-  return {
-    available: !!currentSlot,
-    slot: currentSlot || null,
-    candidate: topCandidate,
-    score: topScore,
-    reason,
-    message: `Top revision priority: ${topCandidate.topicName}`
-  };
+  return getStudyNowRecommendation(context);
 }
+

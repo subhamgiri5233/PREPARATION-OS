@@ -429,11 +429,183 @@ export default function Dashboard() {
             )}
           </div>
 
-          {/* MODULE 2: TODAY'S STUDY SESSIONS */}
+          {/* MODULE 2: TODAY'S ROUTINE (INTEGRATED TIMELINE) */}
+          <div className="card">
+            <div className="card-header" style={{ marginBottom: 12 }}>
+              <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Calendar size={16} /> TODAY'S ROUTINE ({tasks.length + (teachingSlots.filter((s) => s.active).length)} blocks)
+              </div>
+              <a href="/planner" className="btn btn-sm btn-ghost">
+                Open Planner <ChevronRight size={12} />
+              </a>
+            </div>
+
+            {(() => {
+              const now = new Date();
+              const nowMinutes = now.getHours() * 60 + now.getMinutes();
+              const todayDayName = format(now, 'EEEE');
+
+              // 1. Gather active teaching slots for today
+              const todayTeaching = teachingSlots
+                .filter((s) => {
+                  if (!s.active) return false;
+                  const d = s.day || s.dayOfWeek;
+                  return d && (d.toLowerCase() === todayDayName.toLowerCase() || d === now.getDay());
+                })
+                .map((s) => ({
+                  isTeaching: true,
+                  startTime: s.startTime || '00:00',
+                  endTime: s.endTime || '00:00',
+                  title: s.title || 'Teaching Period',
+                }));
+
+              // 2. Gather today's study tasks
+              const todayStudyTasks = tasks.map((t) => {
+                let startM = 0;
+                let endM = 0;
+                if (t.startTime) {
+                  const [sh, sm] = t.startTime.split(':').map(Number);
+                  startM = sh * 60 + sm;
+                }
+                if (t.endTime) {
+                  const [eh, em] = t.endTime.split(':').map(Number);
+                  endM = eh * 60 + em;
+                } else {
+                  endM = startM + (Number(t.durationMinutes) || 60);
+                }
+
+                let statusBadge = '⚪ Not Started';
+                let badgeClass = 'badge-muted';
+                if ((t.status || '').toLowerCase() === 'completed') {
+                  statusBadge = '✅ Completed';
+                  badgeClass = 'badge-success';
+                } else if (nowMinutes >= startM && nowMinutes <= endM) {
+                  statusBadge = '🟡 In Progress';
+                  badgeClass = 'badge-warning';
+                } else if (nowMinutes > endM) {
+                  statusBadge = '🔴 Missed';
+                  badgeClass = 'badge-danger';
+                } else if (nowMinutes < startM) {
+                  statusBadge = '🟣 Upcoming';
+                  badgeClass = 'badge-primary';
+                }
+
+                return {
+                  isTeaching: false,
+                  task: t,
+                  startTime: t.startTime || '09:00',
+                  endTime: t.endTime || '10:00',
+                  title: t.topicName || t.title || 'Study Session',
+                  subjectName: t.subjectName,
+                  statusBadge,
+                  badgeClass,
+                  source: t.source || 'auto',
+                  isUserEdited: !!t.isUserEdited,
+                  isLocked: !!t.isLocked,
+                };
+              });
+
+              // 3. Merge and sort chronologically
+              const routineBlocks = [...todayTeaching, ...todayStudyTasks].sort((a, b) =>
+                (a.startTime || '').localeCompare(b.startTime || '')
+              );
+
+              if (routineBlocks.length === 0) {
+                return (
+                  <div style={{ padding: '20px 16px', textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}>
+                    No scheduled routine for today yet. Use the Study Planner to generate or add your tasks!
+                  </div>
+                );
+              }
+
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {routineBlocks.map((block, idx) => {
+                    if (block.isTeaching) {
+                      return (
+                        <div
+                          key={`teach-${idx}`}
+                          style={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            padding: '10px 14px', background: 'var(--warning-glass)',
+                            border: '1px solid var(--warning)', borderRadius: 'var(--radius-sm)',
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <span style={{ fontSize: 16 }}>🏫</span>
+                            <div>
+                              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--warning)' }}>
+                                {block.title} — Unavailable for study
+                              </div>
+                              <div style={{ fontSize: 11, color: 'var(--text-2)' }}>
+                                {block.startTime} – {block.endTime}
+                              </div>
+                            </div>
+                          </div>
+                          <span className="badge" style={{ background: 'var(--warning)', color: '#000', fontSize: 10, fontWeight: 700 }}>
+                            Teaching
+                          </span>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div
+                        key={block.task.id || block.task._id || `task-${idx}`}
+                        style={{
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          padding: '12px 14px', background: 'var(--surface)',
+                          border: `1px solid ${block.isLocked ? '#ef4444' : 'var(--border)'}`,
+                          borderRadius: 'var(--radius-sm)', flexWrap: 'wrap', gap: 8,
+                        }}
+                      >
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
+                              📚 {block.subjectName ? `${block.subjectName} → ` : ''}{block.title}
+                            </span>
+                            {block.isLocked ? (
+                              <span className="badge" style={{ fontSize: 8, background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444' }}>🔒 Locked</span>
+                            ) : block.isUserEdited ? (
+                              <span className="badge badge-warning" style={{ fontSize: 8 }}>✏️ Edited by You</span>
+                            ) : block.source === 'auto' ? (
+                              <span className="badge badge-primary" style={{ fontSize: 8 }}>✨ AI Generated</span>
+                            ) : (
+                              <span className="badge badge-muted" style={{ fontSize: 8 }}>👤 Manual</span>
+                            )}
+                          </div>
+                          <div style={{ fontSize: 11, color: 'var(--text-2)' }}>
+                            🕒 {block.startTime} – {block.endTime} ({block.task.durationMinutes || 60}m)
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span className={`badge ${block.badgeClass}`} style={{ fontSize: 10 }}>
+                            {block.statusBadge}
+                          </span>
+                          {(block.statusBadge.includes('Upcoming') || block.statusBadge.includes('In Progress') || block.statusBadge.includes('Missed')) && (
+                            <a
+                              href={`/sessions?topicId=${block.task.topicId || ''}&subjectId=${block.task.subjectId || ''}&areaId=${block.task.preparationAreaId || ''}`}
+                              className="btn btn-xs btn-primary"
+                              style={{ display: 'flex', alignItems: 'center', gap: 4 }}
+                            >
+                              <Play size={10} /> Start
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+          </div>
+
+          {/* MODULE 3: TODAY'S STUDY SESSIONS */}
           <div className="card">
             <div className="card-header" style={{ marginBottom: 12 }}>
               <div className="card-title">
-                <Clock size={16} /> Today's Study Sessions ({todaySessions.length})
+                <Clock size={16} /> Completed Session Logs ({todaySessions.length})
               </div>
               <a href="/sessions" className="btn btn-sm btn-ghost">
                 Session Timer <ChevronRight size={12} />
