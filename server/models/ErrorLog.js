@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 
 const errorLogSchema = new mongoose.Schema({
   mockTestId: { type: mongoose.Schema.Types.ObjectId, ref: 'MockTest', default: null },
+  mockId: { type: mongoose.Schema.Types.ObjectId, ref: 'MockTest', default: null },
   subjectId: { type: mongoose.Schema.Types.ObjectId, ref: 'Subject', default: null },
   topicId: { type: mongoose.Schema.Types.ObjectId, ref: 'Topic', default: null },
   subjectName: { type: String, default: '' },

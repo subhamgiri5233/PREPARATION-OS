@@ -6,7 +6,10 @@ const router = express.Router();
 router.get('/', async (req, res) => {
   try {
     const filter = {};
-    if (req.query.mockTestId) filter.mockTestId = req.query.mockTestId;
+    const mockId = req.query.mockTestId || req.query.mockId;
+    if (mockId) {
+      filter.$or = [{ mockTestId: mockId }, { mockId: mockId }];
+    }
     if (req.query.topicId) filter.topicId = req.query.topicId;
     const logs = await ErrorLog.find(filter);
     res.json(logs);
@@ -15,12 +18,15 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
+    const mockId = req.body.mockTestId || req.body.mockId;
     const log = await ErrorLog.create({
       ...req.body,
-      dateAdded: new Date().toISOString(),
-      reviewed: false,
+      mockTestId: mockId || null,
+      mockId: mockId || null,
+      dateAdded: req.body.dateAdded || new Date().toISOString(),
+      reviewed: req.body.reviewed ?? false,
       revisionRequired: req.body.revisionRequired ?? false,
-      revisionTaskId: null,
+      revisionTaskId: req.body.revisionTaskId ?? null,
     });
     res.status(201).json(log);
   } catch (err) { res.status(500).json({ error: err.message }); }
