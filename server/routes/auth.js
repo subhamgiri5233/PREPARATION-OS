@@ -12,32 +12,33 @@ import PasskeyCredential from '../models/PasskeyCredential.js';
 const router = express.Router();
 const SECRET_KEY = process.env.JWT_SECRET || 'prepos-master-secure-key-2026';
 
-// Helper to determine RP_ID and expected origin dynamically
-function getRpConfig(req) {
-  const host = req.hostname || 'localhost';
-  // If running on local network / localhost:
-  let rpID = 'localhost';
-  if (host !== 'localhost' && host !== '127.0.0.1') {
-    // strip port if present
-    rpID = host.split(':')[0];
+// ─── WebAuthn RP Configuration ────────────────────────────────────────────
+// RP ID MUST match the origin where the browser runs WebAuthn (the FRONTEND domain).
+// On Render, req.hostname is the backend hostname — NOT the frontend domain.
+// Therefore we use environment variables, never req.hostname.
+//
+// Set these in Render → Environment Variables:
+//   WEBAUTHN_RP_ID=preparation-os.vercel.app
+//   WEBAUTHN_EXPECTED_ORIGIN=https://preparation-os.vercel.app
+//
+// Local dev uses localhost defaults automatically.
+function getRpConfig() {
+  const rpID = process.env.WEBAUTHN_RP_ID || 'localhost';
+  const rpName = 'Preparation OS';
+
+  // Always allow localhost origins for local dev
+  const localOrigins = ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:5000'];
+
+  let expectedOrigin;
+  if (process.env.WEBAUTHN_EXPECTED_ORIGIN) {
+    // Production: include both the configured production origin and local dev origins
+    expectedOrigin = Array.from(new Set([process.env.WEBAUTHN_EXPECTED_ORIGIN, ...localOrigins]));
+  } else {
+    // Local dev only
+    expectedOrigin = localOrigins;
   }
 
-  const originHeader = req.get('Origin') || req.get('Referer');
-  let expectedOrigin = [`http://localhost:5173`, `http://localhost:3000`, `https://preparation-os.vercel.app`];
-  if (originHeader) {
-    try {
-      const parsed = new URL(originHeader);
-      expectedOrigin.push(parsed.origin);
-    } catch {
-      // ignore
-    }
-  }
-
-  return {
-    rpID,
-    rpName: 'Preparation OS',
-    expectedOrigin: Array.from(new Set(expectedOrigin)),
-  };
+  return { rpID, rpName, expectedOrigin };
 }
 
 function generateToken(ownerName) {
@@ -197,7 +198,7 @@ router.post('/logout', async (req, res) => {
 router.post('/webauthn/register-options', async (req, res) => {
   try {
     const auth = (await Auth.findOne()) || { ownerName: 'Subham' };
-    const { rpID, rpName } = getRpConfig(req);
+    const { rpID, rpName } = getRpConfig();
 
     // Fetch existing credentials to exclude re-registering the same authenticator
     const userCredentials = await PasskeyCredential.find();
@@ -257,7 +258,7 @@ router.post('/webauthn/register-verify', async (req, res) => {
       return res.status(400).json({ error: 'Registration challenge expired. Please try again.' });
     }
 
-    const { rpID, expectedOrigin } = getRpConfig(req);
+    const { rpID, expectedOrigin } = getRpConfig();
     const expectedChallenge = authDoc.currentChallenge;
 
     const verification = await verifyRegistrationResponse({
@@ -309,7 +310,7 @@ router.post('/webauthn/register-verify', async (req, res) => {
 // 1. Generate Authentication Options
 router.post('/webauthn/login-options', async (req, res) => {
   try {
-    const { rpID } = getRpConfig(req);
+    const { rpID } = getRpConfig();
     const credentials = await PasskeyCredential.find();
 
     const allowCredentials = credentials.map((cred) => ({
@@ -365,7 +366,7 @@ router.post('/webauthn/login-verify', async (req, res) => {
       return res.status(404).json({ error: 'Passkey credential not found. Please register or use PIN.' });
     }
 
-    const { rpID, expectedOrigin } = getRpConfig(req);
+    const { rpID, expectedOrigin } = getRpConfig();
     const expectedChallenge = authDoc.currentChallenge;
     const publicKeyBytes = Buffer.from(dbCredential.publicKey, 'base64');
 

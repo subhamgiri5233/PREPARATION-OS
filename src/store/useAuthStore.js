@@ -9,6 +9,7 @@ export const useAuthStore = create((set, get) => ({
   isAuthenticated: false, // alias for router & app state
   token: typeof localStorage !== 'undefined' ? localStorage.getItem('prepos_auth_token') : null,
   isCheckingSession: true,
+  isChecking: true,
   isBiometricSupported: false,
   hasPasskeys: false,
 
@@ -48,21 +49,24 @@ export const useAuthStore = create((set, get) => ({
         if (verifyRes && verifyRes.valid) {
           authValid = true;
         } else {
-          localStorage.removeItem('prepos_auth_token');
+          // Token invalid or expired — clear it
+          if (typeof localStorage !== 'undefined') localStorage.removeItem('prepos_auth_token');
         }
       }
     } catch (err) {
-      console.warn('[useAuthStore] checkAuth warning:', err);
-      // In offline / standalone mock mode, preserve token if valid
-      if (token && token.includes('1234')) {
-        authValid = true;
-      }
+      console.warn('[useAuthStore] checkAuth: server unreachable, defaulting to unauthenticated (secure):', err.message || err);
+      // SECURITY: Do NOT auto-authenticate when server is unreachable.
+      // If we cannot verify the token server-side, treat as unauthenticated.
+      // This prevents bypass via offline/cold-start scenarios.
+      authValid = false;
+      if (typeof localStorage !== 'undefined') localStorage.removeItem('prepos_auth_token');
     }
 
     set({
       isAppAuthenticated: authValid,
       isAuthenticated: authValid,
       isCheckingSession: false,
+      isChecking: false,
       isConfigured: authStatus ? authStatus.isConfigured : true,
       hasPasskeys: authStatus ? authStatus.hasPasskeys : false,
       privacyMode: authStatus?.privacyMode || 'privacy',

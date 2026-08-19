@@ -37,7 +37,21 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
-app.use(cors({ origin: '*' })); // Allow all origins (frontend on 5173, mobile on LAN)
+const ALLOWED_ORIGINS = [
+  'https://preparation-os.vercel.app',
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://localhost:5000',
+];
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (curl, Postman, server-to-server)
+    if (!origin) return callback(null, true);
+    if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+    callback(new Error(`CORS: Origin '${origin}' not allowed`));
+  },
+  credentials: true,
+}));
 app.use(express.json({ limit: '10mb' }));
 
 // ─── Health Check & Root Handlers ──────────────────────────────────────────
