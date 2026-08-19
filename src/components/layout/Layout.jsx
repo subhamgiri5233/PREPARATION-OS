@@ -37,33 +37,17 @@ export default function Layout() {
     );
   }
 
-  // Strict Authentication Gate: Without login, only show the Login Screen
+  // Strict Authentication Gate: Without login, only show the Feature Advertisement & Login Screen
   if (!isAuthenticated) {
     return (
       <div className="app-layout" style={{ display: 'block', minHeight: '100vh', background: 'var(--bg)' }}>
         <InstallAppBanner />
         <LoginModal />
         <div style={{
-          maxWidth: 900,
+          maxWidth: 1200,
           margin: '0 auto',
-          padding: '40px 16px 20px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center'
+          padding: '24px 16px 40px',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
-            <div style={{
-              width: 42, height: 42, borderRadius: 10,
-              background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 20
-            }}>🎯</div>
-            <div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--text)' }}>Preparation OS</div>
-              <div style={{ fontSize: 12, color: 'var(--text-3)' }}>Secure Study & Revision System</div>
-            </div>
-          </div>
-
           <LoginPage />
         </div>
       </div>
