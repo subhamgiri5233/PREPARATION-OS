@@ -3,7 +3,7 @@ import {
   LayoutDashboard, BookOpen, Calendar, Timer, FileText,
   RotateCcw, BookMarked, TrendingUp, BarChart3, Bell,
   Clock, Settings, ChevronLeft, ChevronRight, GraduationCap,
-  LogIn, LogOut, User, ShieldCheck
+  LogIn, LogOut, User, ShieldCheck, Eye, Edit3
 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -38,15 +38,11 @@ const NAV_ITEMS = [
 
 export default function Sidebar({ mobileOpen, onMobileClose }) {
   const { sidebarOpen, toggleSidebar, unreadCount } = useAppStore();
-  const { isAuthenticated, lock, openLoginModal, ownerName } = useAuthStore();
+  const { isAuthenticated, toggleEditMode, lock, openLoginModal, ownerName } = useAuthStore();
   const location = useLocation();
 
   const handleAuthAction = () => {
-    if (isAuthenticated) {
-      lock();
-    } else {
-      openLoginModal();
-    }
+    toggleEditMode();
     if (mobileOpen) onMobileClose();
   };
 
@@ -99,7 +95,7 @@ export default function Sidebar({ mobileOpen, onMobileClose }) {
           ))}
         </nav>
 
-        {/* User Account & Login / Logout Action */}
+        {/* Mode Toggle Switch & User Profile */}
         <div style={{ padding: '8px', borderTop: '1px solid var(--border)' }}>
           {isAuthenticated ? (
             <div style={{
@@ -124,11 +120,10 @@ export default function Sidebar({ mobileOpen, onMobileClose }) {
                   </div>
                   <div style={{ overflow: 'hidden' }}>
                     <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
-                      {ownerName || 'Admin'}
+                      {ownerName || 'Subham'}
                     </div>
                     <div style={{ fontSize: 10, color: 'var(--success)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--success)', display: 'inline-block' }}></span>
-                      Logged In
+                      <Edit3 size={10} /> Edit Mode ON
                     </div>
                   </div>
                 </div>
@@ -136,32 +131,42 @@ export default function Sidebar({ mobileOpen, onMobileClose }) {
               <button
                 className="btn btn-xs btn-ghost"
                 onClick={handleAuthAction}
-                title="Log Out of Preparation OS"
+                title="Switch to View-Only Mode"
                 style={{
-                  color: 'var(--danger)',
+                  color: 'var(--text-3)',
                   padding: sidebarOpen ? '4px 8px' : '6px',
                   display: 'flex', alignItems: 'center', gap: 4
                 }}
               >
                 <LogOut size={14} />
-                {sidebarOpen && <span style={{ fontSize: 11, fontWeight: 600 }}>Logout</span>}
+                {sidebarOpen && <span style={{ fontSize: 11, fontWeight: 600 }}>Lock</span>}
               </button>
             </div>
           ) : (
             <button
-              className="btn btn-primary w-full"
+              className="btn btn-ghost w-full"
               onClick={handleAuthAction}
-              title="Log In with Master PIN"
+              title="Click and enter Master PIN to enable Edit Mode"
               style={{
-                justifyContent: sidebarOpen ? 'flex-start' : 'center',
+                justifyContent: sidebarOpen ? 'space-between' : 'center',
                 padding: sidebarOpen ? '8px 12px' : '8px',
                 fontSize: 12,
-                fontWeight: 700,
-                marginBottom: 6
+                fontWeight: 600,
+                marginBottom: 6,
+                background: 'var(--surface-2)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius)'
               }}
             >
-              <LogIn size={15} />
-              {sidebarOpen && <span>Login</span>}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Eye size={15} color="var(--text-2)" />
+                {sidebarOpen && <span>View Only</span>}
+              </div>
+              {sidebarOpen && (
+                <span className="badge badge-primary" style={{ fontSize: 9, padding: '2px 6px' }}>
+                  Enable Edit
+                </span>
+              )}
             </button>
           )}
 

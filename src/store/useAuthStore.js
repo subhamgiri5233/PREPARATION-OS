@@ -77,6 +77,16 @@ export const useAuthStore = create((set, get) => ({
     set({ isAuthenticated: false });
   },
 
+  toggleEditMode: () => {
+    const { isAuthenticated } = get();
+    if (isAuthenticated) {
+      localStorage.removeItem(TOKEN_KEY);
+      set({ isAuthenticated: false });
+    } else {
+      set({ showLoginModal: true });
+    }
+  },
+
   openLoginModal: () => set({ showLoginModal: true }),
   closeLoginModal: () => set({ showLoginModal: false }),
 }));

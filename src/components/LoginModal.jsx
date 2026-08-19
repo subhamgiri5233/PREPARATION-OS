@@ -71,10 +71,10 @@ export default function LoginModal() {
         </div>
 
         <h2 style={{ fontSize: 20, fontWeight: 800, margin: '0 0 6px 0', color: 'var(--text)' }}>
-          Account Login
+          Enable Edit Mode
         </h2>
         <p style={{ fontSize: 12, color: 'var(--text-2)', margin: '0 0 20px 0' }}>
-          Enter Master PIN to log in and manage your private study tasks and notes.
+          Enter Master PIN (stored in DB) to edit schedules, create tasks, and manage data.
         </p>
 
         {error && (
@@ -190,12 +190,12 @@ export default function LoginModal() {
             disabled={loading}
             style={{ width: '100%', justifyContent: 'center', height: 42, fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}
           >
-            <LogIn size={16} /> {loading ? 'Logging in...' : 'Log In'}
+            <LogIn size={16} /> {loading ? 'Verifying PIN...' : 'Enable Edit Mode'}
           </button>
         </form>
 
         <div style={{ marginTop: 14, fontSize: 11, color: 'var(--text-3)' }}>
-          Initial default PIN is <strong style={{ color: 'var(--primary-light)' }}>1234</strong> (customizable in Settings)
+          Default PIN in DB is <strong style={{ color: 'var(--primary-light)' }}>1234</strong> (customizable in Settings)
         </div>
       </div>
     </div>

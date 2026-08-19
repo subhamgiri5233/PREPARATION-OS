@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Menu, Bell, Zap, Search, X, BookOpen, GraduationCap, FileText, BookMarked, Lock, Unlock, LogIn, LogOut } from 'lucide-react';
+import { Menu, Bell, Zap, Search, X, BookOpen, GraduationCap, FileText, BookMarked, Lock, Unlock, LogIn, LogOut, Eye, Edit3 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -59,7 +59,7 @@ export default function TopBar({ onMobileMenuOpen }) {
     navigate(path);
   };
 
-  const { isAuthenticated, openLoginModal, lock, ownerName } = useAuthStore();
+  const { isAuthenticated, toggleEditMode, openLoginModal, lock, ownerName } = useAuthStore();
 
   return (
     <>
@@ -93,65 +93,99 @@ export default function TopBar({ onMobileMenuOpen }) {
           {/* Active session indicator */}
           <ActiveSessionIndicator />
 
-          {/* Auth Login/Logout Toggle */}
+          {/* Edit Mode vs View-Only Toggle Switch */}
           {isAuthenticated ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                fontSize: 12,
-                color: 'var(--text)',
-                background: 'var(--surface-2)',
-                border: '1px solid var(--border)',
-                padding: '3px 8px',
-                borderRadius: 'var(--radius-full)'
-              }}>
-                <div style={{
-                  width: 18, height: 18, borderRadius: '50%',
-                  background: 'var(--success)', color: 'white',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 10, fontWeight: 700
-                }}>
-                  {ownerName ? ownerName.charAt(0).toUpperCase() : 'S'}
-                </div>
-                <span style={{ fontWeight: 600 }}>{ownerName || 'Subham'}</span>
-              </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <button
-                className="btn btn-xs btn-ghost"
-                onClick={lock}
-                title="Log Out of Preparation OS"
+                className="btn btn-xs"
+                onClick={toggleEditMode}
+                title="Edit Mode is ON. Click to switch to View-Only Mode."
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 4,
-                  fontSize: 12,
-                  color: 'var(--danger)',
-                  border: '1px solid rgba(239, 68, 68, 0.3)',
-                  background: 'rgba(239, 68, 68, 0.1)',
+                  gap: 6,
+                  background: 'rgba(34, 197, 94, 0.15)',
+                  color: 'var(--success)',
+                  border: '1px solid var(--success)',
+                  borderRadius: 'var(--radius-full)',
                   padding: '4px 10px',
-                  borderRadius: 'var(--radius-full)'
+                  fontSize: 12,
+                  fontWeight: 700,
+                  cursor: 'pointer'
                 }}
               >
-                <LogOut size={12} /> Logout
+                <Edit3 size={13} />
+                <span>Edit Mode</span>
+                <div style={{
+                  width: 26,
+                  height: 14,
+                  borderRadius: 7,
+                  background: 'var(--success)',
+                  position: 'relative',
+                  marginLeft: 2
+                }}>
+                  <div style={{
+                    width: 10,
+                    height: 10,
+                    borderRadius: 5,
+                    background: '#fff',
+                    position: 'absolute',
+                    top: 2,
+                    right: 2,
+                    transition: 'all 0.2s ease'
+                  }} />
+                </div>
+              </button>
+
+              <button
+                className="btn btn-xs btn-ghost btn-icon"
+                onClick={lock}
+                title="Lock / Logout"
+                style={{ color: 'var(--danger)', padding: 5 }}
+              >
+                <LogOut size={13} />
               </button>
             </div>
           ) : (
             <button
-              className="btn btn-xs btn-primary"
-              onClick={openLoginModal}
-              title="Log In with Master PIN"
+              className="btn btn-xs btn-ghost"
+              onClick={toggleEditMode}
+              title="View-Only Mode. Click to enter Master PIN and turn ON Edit Mode."
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 5,
+                gap: 6,
+                background: 'var(--surface-2)',
+                color: 'var(--text-2)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-full)',
+                padding: '4px 10px',
                 fontSize: 12,
-                fontWeight: 700,
-                padding: '4px 12px',
-                borderRadius: 'var(--radius-full)'
+                fontWeight: 600,
+                cursor: 'pointer'
               }}
             >
-              <LogIn size={13} /> Login
+              <Eye size={13} />
+              <span>View Only</span>
+              <div style={{
+                width: 26,
+                height: 14,
+                borderRadius: 7,
+                background: 'var(--surface-3)',
+                position: 'relative',
+                marginLeft: 2
+              }}>
+                <div style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: 5,
+                  background: 'var(--text-3)',
+                  position: 'absolute',
+                  top: 2,
+                  left: 2,
+                  transition: 'all 0.2s ease'
+                }} />
+              </div>
             </button>
           )}
 

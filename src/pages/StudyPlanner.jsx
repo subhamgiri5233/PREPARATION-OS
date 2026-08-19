@@ -552,9 +552,7 @@ export default function StudyPlanner() {
                     const isAi = task.source === 'auto' && !task.isUserEdited;
                     const isEdited = !!task.isUserEdited;
                     const isLocked = !!task.isLocked;
-                    const displayTitle = isAuthenticated
-                      ? (task.topicName || task.title)
-                      : (task.title?.startsWith('🔄') ? '🔒 Private Revision' : '🔒 Focus Study');
+                    const displayTitle = task.topicName || task.title;
 
                     return (
                       <div
@@ -935,9 +933,7 @@ function DayView({ date, tasks, teachingBlocks, onAddTask, onEditTask, onToggleL
                   const isEdited = !!task.isUserEdited;
                   const isLocked = !!task.isLocked;
 
-                  const displayTitle = isAuthenticated
-                    ? (task.topicName || task.title)
-                    : (task.title?.startsWith('🔄') ? '🔒 Private Revision' : '🔒 Focus Study');
+                  const displayTitle = task.topicName || task.title;
 
                   return (
                     <div key={task.id || task._id} style={{

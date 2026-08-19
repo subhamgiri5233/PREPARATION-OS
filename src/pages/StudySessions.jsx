@@ -573,7 +573,7 @@ export default function StudySessions() {
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ fontSize: 14, fontWeight: 700, textDecoration: isDone ? 'line-through' : 'none', color: isDone ? 'var(--text-2)' : 'var(--text)' }}>
-                          {isAuthenticated ? (task.topicName || task.title) : (task.title?.startsWith('🔄') ? '🔒 Private Revision' : '🔒 Focus Study Block')}
+                          {task.topicName || task.title}
                         </span>
 
                         {isCurrentActive && (
@@ -722,7 +722,7 @@ export default function StudySessions() {
                 {displaySessions.map((s) => (
                   <tr key={s.id || s._id}>
                     <td style={{ fontWeight: 600, maxWidth: 180 }} className="truncate">
-                      {isAuthenticated ? (s.topicName || getTopicName(s.topicId)) : '🔒 Private Study Session'}
+                      {s.topicName || getTopicName(s.topicId)}
                     </td>
                     <td style={{ color: 'var(--text-2)' }}>
                       {s.subjectName || getSubjectName(s.subjectId)}
@@ -741,7 +741,7 @@ export default function StudySessions() {
                       )}
                     </td>
                     <td style={{ color: 'var(--text-3)', fontSize: 12, maxWidth: 140 }} className="truncate">
-                      {isAuthenticated ? (s.notes || '—') : (s.notes ? '🔒 Private Notes' : '—')}
+                      {s.notes || '—'}
                     </td>
                     <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                       {isAuthenticated ? (

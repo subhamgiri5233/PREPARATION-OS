@@ -37,23 +37,6 @@ export default function Layout() {
     );
   }
 
-  // Strict Authentication Gate: Without login, only show the Feature Advertisement & Login Screen
-  if (!isAuthenticated) {
-    return (
-      <div className="app-layout" style={{ display: 'block', minHeight: '100vh', background: 'var(--bg)' }}>
-        <InstallAppBanner />
-        <LoginModal />
-        <div style={{
-          maxWidth: 1200,
-          margin: '0 auto',
-          padding: '24px 16px 40px',
-        }}>
-          <LoginPage />
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="app-layout">
       <InstallAppBanner />
