@@ -1,8 +1,32 @@
 // src/services/api.js
 // Central API configuration and fetch helper for MongoDB backend
 
-const envApiUrl = import.meta.env.VITE_API_URL || '/api';
-export const BASE_URL = envApiUrl.replace(/\/+$/, '');
+let envApiUrl = import.meta.env.VITE_API_URL;
+
+if (!envApiUrl || envApiUrl.trim() === '') {
+  // If running in development on localhost, use Vite's proxy '/api'
+  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    envApiUrl = '/api';
+  } else {
+    // Production default: Render backend API
+    envApiUrl = 'https://preparation-os.onrender.com/api';
+  }
+}
+
+// Clean and normalize API base URL
+envApiUrl = envApiUrl.trim().replace(/\/+$/, '');
+
+// If user accidentally passed frontend vercel domain or raw domain without /api
+if (envApiUrl.startsWith('http')) {
+  if (envApiUrl.includes('vercel.app')) {
+    // Accidentally set to Vercel frontend URL -> redirect to live Render API
+    envApiUrl = 'https://preparation-os.onrender.com/api';
+  } else if (!envApiUrl.endsWith('/api')) {
+    envApiUrl = `${envApiUrl}/api`;
+  }
+}
+
+export const BASE_URL = envApiUrl;
 
 /**
  * Normalizes MongoDB documents so that:
