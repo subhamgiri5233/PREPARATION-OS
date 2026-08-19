@@ -10,18 +10,17 @@ import { detectRepeatedErrors } from './errorAnalysisEngine.js';
 
 /**
  * Creates the initial revision for a topic completion.
- * The system no longer creates a rigid 5-step schedule upfront.
- * Instead, it creates the first revision, and upon completion, dynamically schedules the next.
+ * The system creates the first revision, and upon completion, dynamically schedules the next.
  */
 export async function createInitialRevision(topicId, topicName, completionDate) {
   const baseDate = typeof completionDate === 'string' ? parseISO(completionDate) : completionDate;
 
   const existingPending = await getPendingRevisions();
-  const alreadyScheduled = existingPending.some((r) => r.topicId === topicId);
+  const alreadyScheduled = existingPending.some((r) => String(r.topicId) === String(topicId));
   if (alreadyScheduled) return null;
 
   const revision = {
-    topicId,
+    topicId: String(topicId),
     topicName: topicName || `Topic #${topicId}`,
     revisionNumber: 1,
     dueDate: format(addDays(baseDate, 1), 'yyyy-MM-dd'),
@@ -39,12 +38,12 @@ export async function createInitialRevision(topicId, topicName, completionDate) 
     createdAt: new Date().toISOString(),
   };
   
-  await addRevisionTask(revision);
-  return revision;
+  const created = await addRevisionTask(revision);
+  return { ...revision, id: created?.id || created?._id || created };
 }
 
 /**
- * Legacy compatibility - if something calls the old method
+ * Legacy compatibility
  */
 export async function createRevisionSchedule(topicId, topicName, completionDate, intervals) {
   return await createInitialRevision(topicId, topicName, completionDate);
@@ -55,7 +54,7 @@ export async function createRevisionSchedule(topicId, topicName, completionDate,
  */
 export async function completeRevision(id, memoryRating, notes = '') {
   const pending = await getPendingRevisions();
-  const rev = pending.find(r => r.id === id);
+  const rev = pending.find((r) => String(r.id || r._id) === String(id));
   if (!rev) throw new Error("Revision not found");
 
   // 1. Mark current as completed
@@ -66,21 +65,21 @@ export async function completeRevision(id, memoryRating, notes = '') {
     notes,
   });
 
-  // 2. Fetch mock performance for Phase 4 intelligence
+  // 2. Fetch mock performance for intelligence
   const errs = await getErrorLogs();
   const mocks = await getAllMocks();
   const topics = await getAllTopics();
-  const topic = topics.find(t => t.id === rev.topicId);
+  const topic = topics.find((t) => String(t.id || t._id) === String(rev.topicId));
   
   let mockPerformance = null;
   if (topic) {
-    const areaMocks = mocks.filter(m => m.preparationAreaId === topic.preparationAreaId).length;
+    const areaMocks = mocks.filter((m) => String(m.preparationAreaId) === String(topic.preparationAreaId)).length;
     const perf = classifyTopicPerformance(topic.id, errs, areaMocks);
     const repeated = detectRepeatedErrors(errs, topics);
-    const isRepeated = repeated.some(r => r.topic.id === topic.id && r.mockCount > 1);
+    const isRepeated = repeated.some((r) => String(r.topic?.id || r.topic?._id) === String(topic.id || topic._id) && r.mockCount > 1);
     
     mockPerformance = {
-      accuracy: 100 - (perf.errorFrequency * 100), // Approximate accuracy from error freq
+      accuracy: 100 - (perf.errorFrequency * 100),
       hasRepeatedErrors: isRepeated,
       isWeak: perf.label === 'Critical' || perf.label === 'Weak'
     };
@@ -96,7 +95,7 @@ export async function completeRevision(id, memoryRating, notes = '') {
 
   // 4. Create the next revision in the sequence
   const nextRevision = {
-    topicId: rev.topicId,
+    topicId: String(rev.topicId),
     topicName: rev.topicName,
     revisionNumber: (rev.revisionNumber || 1) + 1,
     dueDate: format(addDays(new Date(), nextInterval), 'yyyy-MM-dd'),
@@ -112,14 +111,13 @@ export async function completeRevision(id, memoryRating, notes = '') {
     createdAt: new Date().toISOString(),
   };
 
-  await addRevisionTask(nextRevision);
-  return nextRevision;
+  const createdNext = await addRevisionTask(nextRevision);
+  return { ...nextRevision, id: createdNext?.id || createdNext?._id || createdNext };
 }
 
 export async function skipRevision(id) {
-  // If skipped, we might just reschedule it for tomorrow instead of dropping it
   const pending = await getPendingRevisions();
-  const rev = pending.find(r => r.id === id);
+  const rev = pending.find((r) => String(r.id || r._id) === String(id));
   if (rev) {
     await updateRevisionTask(id, {
       dueDate: format(addDays(new Date(), 1), 'yyyy-MM-dd'),
@@ -150,14 +148,14 @@ export async function getAllPendingRevisionsEnriched() {
   const repeated = detectRepeatedErrors(errs, topics);
   
   return pending.map((r) => {
-    const topic = topics.find((t) => t.id === r.topicId);
+    const topic = topics.find((t) => String(t.id || t._id) === String(r.topicId));
     
     // Calculate mock performance for priority
     let mockPerformance = null;
     if (topic) {
-      const areaMocks = mocks.filter(m => m.preparationAreaId === topic.preparationAreaId).length;
+      const areaMocks = mocks.filter((m) => String(m.preparationAreaId) === String(topic.preparationAreaId)).length;
       const perf = classifyTopicPerformance(topic.id, errs, areaMocks);
-      const isRepeated = repeated.some(re => re.topic.id === topic.id && re.mockCount > 1);
+      const isRepeated = repeated.some((re) => String(re.topic?.id || re.topic?._id) === String(topic.id || topic._id) && re.mockCount > 1);
       
       mockPerformance = {
         accuracy: 100 - (perf.errorFrequency * 100),

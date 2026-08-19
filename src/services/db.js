@@ -1,11 +1,10 @@
 // src/services/db.js
 // MongoDB Atlas API client — replaces Dexie/IndexedDB
-// All functions have the same signatures as before so no other files need changing.
+// All functions maintain the same signatures for seamless UI integration.
 
 import { apiFetch } from './api.js';
 
 // ─── Database Initialization ──────────────────────────────────────────────────
-// Seeding is handled server-side; this just checks connectivity
 export async function initializeDatabase() {
   try {
     await apiFetch('/health');
@@ -28,7 +27,8 @@ export async function getAllAreas() {
   return await apiFetch('/areas');
 }
 export async function addArea(area) {
-  return await apiFetch('/areas', { method: 'POST', body: area });
+  const res = await apiFetch('/areas', { method: 'POST', body: area });
+  return res?.id || res?._id || res;
 }
 export async function updateArea(id, updates) {
   return await apiFetch(`/areas/${id}`, { method: 'PUT', body: updates });
@@ -45,7 +45,8 @@ export async function getCoursesByArea(preparationAreaId) {
   return await apiFetch(`/courses?preparationAreaId=${preparationAreaId}`);
 }
 export async function addCourse(course) {
-  return await apiFetch('/courses', { method: 'POST', body: course });
+  const res = await apiFetch('/courses', { method: 'POST', body: course });
+  return res?.id || res?._id || res;
 }
 export async function updateCourse(id, updates) {
   return await apiFetch(`/courses/${id}`, { method: 'PUT', body: updates });
@@ -71,7 +72,8 @@ export async function getChaptersByArea(preparationAreaId) {
   return await apiFetch(`/chapters?preparationAreaId=${preparationAreaId}`);
 }
 export async function addChapter(chapter) {
-  return await apiFetch('/chapters', { method: 'POST', body: chapter });
+  const res = await apiFetch('/chapters', { method: 'POST', body: chapter });
+  return res?.id || res?._id || res;
 }
 export async function updateChapter(id, updates) {
   return await apiFetch(`/chapters/${id}`, { method: 'PUT', body: updates });
@@ -91,7 +93,8 @@ export async function getResourcesByTopic(topicId) {
   return await apiFetch(`/resources?topicId=${topicId}`);
 }
 export async function addStudyResource(resource) {
-  return await apiFetch('/resources', { method: 'POST', body: resource });
+  const res = await apiFetch('/resources', { method: 'POST', body: resource });
+  return res?.id || res?._id || res;
 }
 export async function updateStudyResource(id, updates) {
   return await apiFetch(`/resources/${id}`, { method: 'PUT', body: updates });
@@ -114,7 +117,8 @@ export async function getAllSubjects() {
   return await apiFetch('/subjects');
 }
 export async function addSubject(subject) {
-  return await apiFetch('/subjects', { method: 'POST', body: subject });
+  const res = await apiFetch('/subjects', { method: 'POST', body: subject });
+  return res?.id || res?._id || res;
 }
 export async function updateSubject(id, updates) {
   return await apiFetch(`/subjects/${id}`, { method: 'PUT', body: updates });
@@ -143,7 +147,8 @@ export async function getAllTopics() {
   return await apiFetch('/topics');
 }
 export async function addTopic(topic) {
-  return await apiFetch('/topics', { method: 'POST', body: topic });
+  const res = await apiFetch('/topics', { method: 'POST', body: topic });
+  return res?.id || res?._id || res;
 }
 export async function updateTopic(id, updates) {
   return await apiFetch(`/topics/${id}`, { method: 'PUT', body: updates });
@@ -166,7 +171,8 @@ export async function getTasksByDateRange(startDate, endDate) {
   return await apiFetch(`/tasks?startDate=${startDate}&endDate=${endDate}`);
 }
 export async function addTask(task) {
-  return await apiFetch('/tasks', { method: 'POST', body: task });
+  const res = await apiFetch('/tasks', { method: 'POST', body: task });
+  return res?.id || res?._id || res;
 }
 export async function updateTask(id, updates) {
   return await apiFetch(`/tasks/${id}`, { method: 'PUT', body: updates });
@@ -186,7 +192,8 @@ export async function getSessionsByDate(date) {
   return await apiFetch(`/sessions?date=${date}`);
 }
 export async function addSession(session) {
-  return await apiFetch('/sessions', { method: 'POST', body: session });
+  const res = await apiFetch('/sessions', { method: 'POST', body: session });
+  return res?.id || res?._id || res;
 }
 export async function updateSession(id, updates) {
   return await apiFetch(`/sessions/${id}`, { method: 'PUT', body: updates });
@@ -202,11 +209,18 @@ export async function getOverdueRevisions(today) {
 export async function getPendingRevisions() {
   return await apiFetch('/revisions?status=Pending');
 }
-export async function addRevisionTask(revision) {
-  return await apiFetch('/revisions', { method: 'POST', body: revision });
+export async function getAllRevisions() {
+  return await apiFetch('/revisions');
+}
+export async function addRevisionTask(task) {
+  const res = await apiFetch('/revisions', { method: 'POST', body: task });
+  return res?.id || res?._id || res;
 }
 export async function updateRevisionTask(id, updates) {
   return await apiFetch(`/revisions/${id}`, { method: 'PUT', body: updates });
+}
+export async function deleteRevisionTask(id) {
+  return await apiFetch(`/revisions/${id}`, { method: 'DELETE' });
 }
 export async function bulkAddRevisions(revisions) {
   return await apiFetch('/revisions/bulk', { method: 'POST', body: revisions });
@@ -220,19 +234,26 @@ export async function getMocksByArea(preparationAreaId) {
   return await apiFetch(`/mocks?preparationAreaId=${preparationAreaId}`);
 }
 export async function addMock(mock) {
-  return await apiFetch('/mocks', { method: 'POST', body: mock });
+  const res = await apiFetch('/mocks', { method: 'POST', body: mock });
+  return res?.id || res?._id || res;
 }
 export async function updateMock(id, updates) {
   return await apiFetch(`/mocks/${id}`, { method: 'PUT', body: updates });
 }
-export async function getMockSubjectResults(mockTestId) {
-  return await apiFetch(`/mocks/subject-results?mockTestId=${mockTestId}`);
+export async function deleteMock(id) {
+  return await apiFetch(`/mocks/${id}`, { method: 'DELETE' });
 }
-export async function addMockSubjectResults(results) {
-  return await apiFetch('/mocks/subject-results/bulk', { method: 'POST', body: results });
+
+// ─── Mock Subject Results ─────────────────────────────────────────────────────
+export async function getMockSubjectResults(mockId) {
+  return await apiFetch(`/mocks/${mockId}/results`);
 }
-export async function getAllMockSubjectResults() {
-  return await apiFetch('/mocks/subject-results');
+export async function addMockSubjectResult(result) {
+  const res = await apiFetch('/mocks/results', { method: 'POST', body: result });
+  return res?.id || res?._id || res;
+}
+export async function bulkAddMockSubjectResults(results) {
+  return await apiFetch('/mocks/results/bulk', { method: 'POST', body: results });
 }
 
 // ─── Vocabulary ───────────────────────────────────────────────────────────────
@@ -240,50 +261,50 @@ export async function getAllVocab() {
   return await apiFetch('/vocabulary');
 }
 export async function getVocabByDate(date) {
-  return await apiFetch(`/vocabulary?date=${date}`);
+  return await apiFetch(`/vocabulary?learnedDate=${date}`);
 }
-export async function addVocabWord(word) {
-  return await apiFetch('/vocabulary', { method: 'POST', body: word });
+export async function getReviewVocab() {
+  return await apiFetch('/vocabulary?status=Review');
 }
 export async function addVocab(word) {
-  return await addVocabWord(word);
+  const res = await apiFetch('/vocabulary', { method: 'POST', body: word });
+  return res?.id || res?._id || res;
 }
-export async function updateVocabWord(id, updates) {
+export async function updateVocab(id, updates) {
   return await apiFetch(`/vocabulary/${id}`, { method: 'PUT', body: updates });
 }
-export async function deleteVocabWord(id) {
+export async function deleteVocab(id) {
   return await apiFetch(`/vocabulary/${id}`, { method: 'DELETE' });
 }
-export async function addVocabReview(review) {
-  return await apiFetch('/vocabulary/reviews', { method: 'POST', body: review });
-}
-export async function getVocabReviews(vocabularyId) {
-  return await apiFetch(`/vocabulary/${vocabularyId}/reviews`);
+export async function bulkAddVocab(words) {
+  return await apiFetch('/vocabulary/bulk', { method: 'POST', body: words });
 }
 
-// ─── Teaching Schedule ────────────────────────────────────────────────────────
+// ─── Teaching Schedule ───────────────────────────────────────────────────────
 export async function getTeachingSchedule() {
   return await apiFetch('/schedule');
 }
-export async function addTeachingSlot(slot) {
-  return await apiFetch('/schedule', { method: 'POST', body: slot });
+export async function addScheduleSlot(slot) {
+  const res = await apiFetch('/schedule', { method: 'POST', body: slot });
+  return res?.id || res?._id || res;
 }
-export async function updateTeachingSlot(id, updates) {
+export async function updateScheduleSlot(id, updates) {
   return await apiFetch(`/schedule/${id}`, { method: 'PUT', body: updates });
 }
-export async function deleteTeachingSlot(id) {
+export async function deleteScheduleSlot(id) {
   return await apiFetch(`/schedule/${id}`, { method: 'DELETE' });
 }
 
-// ─── Notifications ────────────────────────────────────────────────────────────
+// ─── Notifications ───────────────────────────────────────────────────────────
 export async function getAllNotifications() {
   return await apiFetch('/notifications');
 }
 export async function getUnreadNotifications() {
-  return await apiFetch('/notifications/unread');
+  return await apiFetch('/notifications?unread=true');
 }
 export async function addNotification(notif) {
-  return await apiFetch('/notifications', { method: 'POST', body: notif });
+  const res = await apiFetch('/notifications', { method: 'POST', body: notif });
+  return res?.id || res?._id || res;
 }
 export async function markNotificationRead(id) {
   return await apiFetch(`/notifications/${id}/read`, { method: 'PUT' });
@@ -291,51 +312,47 @@ export async function markNotificationRead(id) {
 export async function markAllNotificationsRead() {
   return await apiFetch('/notifications/read-all', { method: 'PUT' });
 }
+export async function clearAllNotifications() {
+  return await apiFetch('/notifications', { method: 'DELETE' });
+}
 
 // ─── Daily Progress ───────────────────────────────────────────────────────────
 export async function getDailyProgress(date) {
-  const results = await apiFetch(`/progress?date=${date}`);
-  return Array.isArray(results) ? results[0] || null : results;
+  return await apiFetch(`/progress?date=${date}`);
 }
-export async function upsertDailyProgress(date, updates) {
-  return await apiFetch('/progress/upsert', { method: 'POST', body: { date, ...updates } });
-}
-export async function getDailyProgressRange(startDate, endDate) {
+export async function getProgressRange(startDate, endDate) {
   return await apiFetch(`/progress?startDate=${startDate}&endDate=${endDate}`);
 }
+export async function saveDailyProgress(progress) {
+  return await apiFetch('/progress', { method: 'POST', body: progress });
+}
 
-// ─── Error Log ────────────────────────────────────────────────────────────────
-export async function getErrorLogs() {
-  return await apiFetch('/error-log');
+// ─── Error Logs ───────────────────────────────────────────────────────────────
+export async function getErrorLogs(mockId) {
+  const url = mockId ? `/mocks/${mockId}/errors` : '/mocks/errors/all';
+  return await apiFetch(url);
 }
-export async function getErrorLogsByMock(mockTestId) {
-  return await apiFetch(`/error-log?mockTestId=${mockTestId}`);
-}
-export async function getErrorLogsByTopic(topicId) {
-  return await apiFetch(`/error-log?topicId=${topicId}`);
-}
-export async function addErrorLog(errorData) {
-  return await apiFetch('/error-log', { method: 'POST', body: errorData });
+export async function addErrorLog(error) {
+  const res = await apiFetch('/mocks/errors', { method: 'POST', body: error });
+  return res?.id || res?._id || res;
 }
 export async function updateErrorLog(id, updates) {
-  return await apiFetch(`/error-log/${id}`, { method: 'PUT', body: updates });
+  return await apiFetch(`/mocks/errors/${id}`, { method: 'PUT', body: updates });
 }
 export async function deleteErrorLog(id) {
-  return await apiFetch(`/error-log/${id}`, { method: 'DELETE' });
+  return await apiFetch(`/mocks/errors/${id}`, { method: 'DELETE' });
 }
 
-// ─── Gita Shlokas ────────────────────────────────────────────────────────────
+// ─── Gita Shlokas ─────────────────────────────────────────────────────────────
 export async function getAllGitaShlokas() {
   return await apiFetch('/gita-shlokas');
 }
 export async function getTodayGitaShloka() {
   return await apiFetch('/gita-shlokas/today');
 }
-export async function getGitaShlokaById(id) {
-  return await apiFetch(`/gita-shlokas/${id}`);
-}
-export async function addGitaShloka(data) {
-  return await apiFetch('/gita-shlokas', { method: 'POST', body: data });
+export async function addGitaShloka(shloka) {
+  const res = await apiFetch('/gita-shlokas', { method: 'POST', body: shloka });
+  return res?.id || res?._id || res;
 }
 export async function updateGitaShloka(id, updates) {
   return await apiFetch(`/gita-shlokas/${id}`, { method: 'PUT', body: updates });
@@ -343,6 +360,30 @@ export async function updateGitaShloka(id, updates) {
 export async function deleteGitaShloka(id) {
   return await apiFetch(`/gita-shlokas/${id}`, { method: 'DELETE' });
 }
-export async function toggleGitaFavorite(id) {
-  return await apiFetch(`/gita-shlokas/${id}/favorite`, { method: 'PATCH' });
+export async function getGitaShlokaById(id) {
+  return await apiFetch(`/gita-shlokas/${id}`);
 }
+
+export async function toggleGitaFavorite(id, currentStatus) {
+  return await updateGitaShloka(id, { favorite: !currentStatus });
+}
+
+export async function getAllMockSubjectResults() {
+  return await apiFetch('/mocks/results');
+}
+
+// ─── Legacy & Compatibility Aliases ──────────────────────────────────────────
+export const getErrorLogsByMock = getErrorLogs;
+export const addMockSubjectResults = bulkAddMockSubjectResults;
+export const addVocabWord = addVocab;
+export const updateVocabWord = updateVocab;
+export const deleteVocabWord = deleteVocab;
+export const addRevision = addRevisionTask;
+export const updateRevision = updateRevisionTask;
+export const deleteRevision = deleteRevisionTask;
+export const getRevisionsByDate = getRevisionByDate;
+export const addTeachingSlot = addScheduleSlot;
+export const updateTeachingSlot = updateScheduleSlot;
+export const deleteTeachingSlot = deleteScheduleSlot;
+
+

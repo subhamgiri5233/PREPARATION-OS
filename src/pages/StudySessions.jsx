@@ -153,15 +153,15 @@ export default function StudySessions() {
     loadData();
   };
 
-  const getTopicName = (topicId) => topics.find((t) => t.id === topicId)?.name || '—';
-  const getSubjectName = (subjectId) => subjects.find((s) => s.id === subjectId)?.name || '—';
-  const getAreaName = (areaId) => areas.find((a) => a.id === areaId)?.name || '—';
+  const getTopicName = (topicId) => topics.find((t) => String(t.id || t._id) === String(topicId))?.name || '—';
+  const getSubjectName = (subjectId) => subjects.find((s) => String(s.id || s._id) === String(subjectId))?.name || '—';
+  const getAreaName = (areaId) => areas.find((a) => String(a.id || a._id) === String(areaId))?.name || '—';
 
   const filteredTopics = topics.filter((t) =>
-    !newSession.subjectId || t.subjectId === parseInt(newSession.subjectId)
+    !newSession.subjectId || String(t.subjectId) === String(newSession.subjectId)
   );
   const filteredSubjects = subjects.filter((s) =>
-    !newSession.preparationAreaId || s.preparationAreaId === parseInt(newSession.preparationAreaId)
+    !newSession.preparationAreaId || String(s.preparationAreaId) === String(newSession.preparationAreaId)
   );
 
   const today = format(new Date(), 'yyyy-MM-dd');
