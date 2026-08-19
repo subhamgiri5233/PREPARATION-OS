@@ -311,6 +311,61 @@ export default function Preparation() {
     }
   };
 
+  const handleDeleteChapter = async (chapterId, chapterName, e) => {
+    if (e) e.stopPropagation();
+    if (!window.confirm(`Are you sure you want to delete chapter "${chapterName}"?`)) return;
+    try {
+      await deleteChapter(chapterId);
+      setChapters((prev) => prev.filter((c) => String(c.id || c._id) !== String(chapterId)));
+      setTopics((prev) => prev.map((t) => String(t.chapterId) === String(chapterId) ? { ...t, chapterId: null } : t));
+    } catch (err) {
+      console.error('Failed to delete chapter:', err);
+      alert('Failed to delete chapter: ' + err.message);
+    }
+  };
+
+  const handleDeleteSubject = async (subjectId, subjectName, e) => {
+    if (e) e.stopPropagation();
+    if (!window.confirm(`Are you sure you want to delete subject "${subjectName}" and all its chapters & topics?`)) return;
+    try {
+      await deleteSubject(subjectId);
+      setSubjects((prev) => prev.filter((s) => String(s.id || s._id) !== String(subjectId)));
+      setChapters((prev) => prev.filter((c) => String(c.subjectId) !== String(subjectId)));
+      setTopics((prev) => prev.filter((t) => String(t.subjectId) !== String(subjectId)));
+    } catch (err) {
+      console.error('Failed to delete subject:', err);
+      alert('Failed to delete subject: ' + err.message);
+    }
+  };
+
+  const handleDeleteTopic = async (topicId, topicName, e) => {
+    if (e) e.stopPropagation();
+    if (!window.confirm(`Are you sure you want to delete topic "${topicName}"?`)) return;
+    try {
+      await deleteTopic(topicId);
+      setTopics((prev) => prev.filter((t) => String(t.id || t._id) !== String(topicId)));
+      if (selectedTopicDetail && String(selectedTopicDetail.id || selectedTopicDetail._id) === String(topicId)) {
+        setSelectedTopicDetail(null);
+      }
+    } catch (err) {
+      console.error('Failed to delete topic:', err);
+      alert('Failed to delete topic: ' + err.message);
+    }
+  };
+
+  const handleDeleteCourse = async (courseId, courseName, e) => {
+    if (e) e.stopPropagation();
+    if (!window.confirm(`Are you sure you want to delete course "${courseName}"?`)) return;
+    try {
+      await deleteCourse(courseId);
+      setCourses((prev) => prev.filter((c) => String(c.id || c._id) !== String(courseId)));
+      if (selectedCourseId === courseId) setSelectedCourseId('all');
+    } catch (err) {
+      console.error('Failed to delete course:', err);
+      alert('Failed to delete course: ' + err.message);
+    }
+  };
+
   if (loading) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 400 }}>
@@ -406,20 +461,30 @@ export default function Preparation() {
                 All Courses
               </button>
               {currentCourses.map((c) => {
-                const cStats = calculateCourseProgress(c.id, currentTopics);
-                const isSelected = selectedCourseId === c.id;
+                const courseId = String(c.id || c._id);
+                const cStats = calculateCourseProgress(courseId, currentTopics);
+                const isSelected = String(selectedCourseId) === courseId;
                 return (
-                  <button
-                    key={c.id}
+                  <div
+                    key={courseId}
                     className={`btn btn-sm ${isSelected ? 'btn-primary' : 'btn-ghost'}`}
-                    onClick={() => setSelectedCourseId(c.id)}
-                    style={{ position: 'relative' }}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}
+                    onClick={() => setSelectedCourseId(courseId)}
                   >
-                    {c.name}
+                    <span>{c.name}</span>
                     {cStats.isMapped && (
-                      <span style={{ marginLeft: 6, fontSize: 10, opacity: 0.85 }}>({cStats.percentage}%)</span>
+                      <span style={{ fontSize: 10, opacity: 0.85 }}>({cStats.percentage}%)</span>
                     )}
-                  </button>
+                    {isSelected && selectedCourseId !== 'all' && (
+                      <span
+                        onClick={(e) => handleDeleteCourse(courseId, c.name, e)}
+                        style={{ color: 'var(--danger-light)', marginLeft: 4, cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                        title={`Delete course "${c.name}"`}
+                      >
+                        <Trash2 size={11} />
+                      </span>
+                    )}
+                  </div>
                 );
               })}
               <button className="btn btn-sm btn-ghost" onClick={() => setShowAddCourse(true)} title="Add Course Resource">
@@ -643,7 +708,7 @@ export default function Preparation() {
                         className="btn btn-sm btn-ghost"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setShowAddChapter(subject.id);
+                          setShowAddChapter(subject.id || subject._id);
                         }}
                         title="Add chapter/module to subject"
                       >
@@ -655,12 +720,21 @@ export default function Preparation() {
                         onClick={(e) => {
                           e.stopPropagation();
                           setEditingTopic(null);
-                          setTopicContextForNewTopic({ subjectId: subject.id });
+                          setTopicContextForNewTopic({ subjectId: subject.id || subject._id });
                           setShowAddTopic(true);
                         }}
                         title="Add topic to subject"
                       >
                         <Plus size={13} /> +Topic
+                      </button>
+
+                      <button
+                        className="btn btn-sm btn-ghost"
+                        style={{ color: 'var(--danger)', padding: '4px 8px' }}
+                        onClick={(e) => handleDeleteSubject(subject.id || subject._id, subject.name, e)}
+                        title={`Delete subject "${subject.name}"`}
+                      >
+                        <Trash2 size={13} />
                       </button>
                     </div>
                   </div>
@@ -710,6 +784,14 @@ export default function Preparation() {
                                   title="Add topic to chapter"
                                 >
                                   <Plus size={11} /> Topic
+                                </button>
+                                <button
+                                  className="btn btn-xs btn-ghost"
+                                  style={{ color: 'var(--danger)', padding: '2px 6px' }}
+                                  onClick={(e) => handleDeleteChapter(chapId, chapter.name, e)}
+                                  title={`Delete chapter "${chapter.name}"`}
+                                >
+                                  <Trash2 size={12} />
                                 </button>
                               </div>
                             </div>
@@ -1004,6 +1086,16 @@ export default function Preparation() {
             style={{ padding: '4px 8px', fontSize: 11 }}
           >
             Details
+          </button>
+
+          {/* Direct Delete Topic Button */}
+          <button
+            className="btn btn-sm btn-ghost"
+            style={{ color: 'var(--danger)', padding: '4px 6px' }}
+            onClick={(e) => handleDeleteTopic(topic.id || topic._id, topic.name, e)}
+            title={`Delete topic "${topic.name}"`}
+          >
+            <Trash2 size={13} />
           </button>
         </div>
       </div>
