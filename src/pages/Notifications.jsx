@@ -1,14 +1,18 @@
 // src/pages/Notifications.jsx
-// Includes Delete Notification on each card, Clear All, and auto-seen / mark as read capabilities
+// Automatically marks notifications as read/seen on visit, supports single/all delete, and real push notification permission
 
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, CheckCheck, Trash2, Play, Calendar, Clock, X, RotateCcw } from 'lucide-react';
+import { Bell, CheckCheck, Trash2, Play, Calendar, Clock, X, RotateCcw, ShieldCheck } from 'lucide-react';
 import { format } from 'date-fns';
 import {
   getAllNotifications, markNotificationRead, markAllNotificationsRead,
   deleteNotification, clearAllNotifications, addNotification
 } from '../services/db';
+import {
+  isNotificationSupported, getNotificationPermission,
+  requestNotificationPermission, sendNativeNotification
+} from '../services/nativeNotificationService';
 import { snoozeReminder, dismissReminder } from '../services/reminderScheduler';
 import { useAppStore } from '../store/useAppStore';
 
@@ -28,10 +32,32 @@ export default function Notifications() {
   const navigate = useNavigate();
   const { setUnreadCount } = useAppStore();
   const [notifications, setNotifications] = useState([]);
+  const [permissionState, setPermissionState] = useState(getNotificationPermission());
 
   useEffect(() => {
-    loadNotifications();
-  }, []);
+    // When the user opens the notifications page (SEEN), automatically mark all unread as read/seen!
+    const initAndMarkSeen = async () => {
+      try {
+        const notifs = await getAllNotifications();
+        const hasUnread = (notifs || []).some((n) => !n.read && !n.dismissed);
+
+        if (hasUnread) {
+          await markAllNotificationsRead().catch(() => {});
+          // Mark all in-memory as read
+          const updated = (notifs || []).map((n) => ({ ...n, read: true }));
+          setNotifications(updated);
+        } else {
+          setNotifications(notifs || []);
+        }
+        setUnreadCount(0);
+      } catch (err) {
+        console.error('[Notifications] Error initializing seen status:', err);
+      }
+    };
+
+    initAndMarkSeen();
+    setPermissionState(getNotificationPermission());
+  }, [setUnreadCount]);
 
   const loadNotifications = async () => {
     try {
@@ -45,19 +71,32 @@ export default function Notifications() {
   };
 
   const handleMarkRead = async (id) => {
-    await markNotificationRead(id);
-    await loadNotifications();
+    try {
+      await markNotificationRead(id);
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id || n._id === id ? { ...n, read: true } : n))
+      );
+      setUnreadCount(0);
+    } catch (err) {
+      console.error('Error marking read:', err);
+    }
   };
 
   const handleMarkAllRead = async () => {
-    await markAllNotificationsRead();
-    await loadNotifications();
+    try {
+      await markAllNotificationsRead();
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+      setUnreadCount(0);
+    } catch (err) {
+      console.error('Error marking all read:', err);
+    }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Delete this notification?')) return;
+    if (!window.confirm('Are you sure you want to delete this notification?')) return;
     try {
       await deleteNotification(id);
+      setNotifications((prev) => prev.filter((n) => n.id !== id && n._id !== id));
       await loadNotifications();
     } catch (err) {
       alert('Failed to delete notification: ' + err.message);
@@ -68,7 +107,8 @@ export default function Notifications() {
     if (!window.confirm('Are you sure you want to delete ALL notifications?')) return;
     try {
       await clearAllNotifications();
-      await loadNotifications();
+      setNotifications([]);
+      setUnreadCount(0);
     } catch (err) {
       alert('Failed to clear notifications: ' + err.message);
     }
@@ -96,36 +136,58 @@ export default function Notifications() {
     navigate(`/sessions?${params.toString()}`);
   };
 
-  // Request browser notification permission
-  const requestPermission = async () => {
-    const { requestNotificationPermission, sendNativeNotification } = await import('../services/nativeNotificationService');
-    const result = await requestNotificationPermission();
-    if (result === 'granted') {
-      await sendNativeNotification({
-        title: '🎯 PrepOS Alerts Enabled!',
-        body: 'Real device notifications are now active for study sessions, revisions, and targets.',
-        url: '/notifications',
-      });
-      await addNotification({
-        type: 'system',
-        title: 'Real Device Notifications Enabled',
-        message: 'You will now receive native alerts on this device.',
-        scheduledAt: new Date().toISOString(),
-        idempotencyKey: 'notifications-enabled',
-      });
-      await loadNotifications();
+  // Request browser notification permission with instant user feedback
+  const handleEnablePush = async () => {
+    if (!isNotificationSupported()) {
+      alert('Device notifications are not supported in this browser.');
+      return;
+    }
+
+    try {
+      const result = await requestNotificationPermission();
+      setPermissionState(result);
+
+      if (result === 'granted') {
+        await sendNativeNotification({
+          title: '🎯 PrepOS Notifications Active!',
+          body: 'You will receive real-time study reminders, revision alerts, and session notices.',
+          url: '/notifications',
+        });
+        await addNotification({
+          type: 'system',
+          title: 'Real Device Notifications Enabled',
+          message: 'Real push alerts are active on this device.',
+          scheduledAt: new Date().toISOString(),
+          idempotencyKey: 'notifications-enabled-' + Date.now(),
+        });
+        await loadNotifications();
+        alert('✅ Device push notifications have been successfully enabled!');
+      } else if (result === 'denied') {
+        alert(
+          '⚠️ Notification permission was blocked.\n\nPlease click the lock or site settings icon in your browser address bar and set Notifications to "Allow", then try again.'
+        );
+      }
+    } catch (err) {
+      console.error('[Notifications] Permission error:', err);
+      alert('Error enabling notifications: ' + err.message);
     }
   };
 
   const handleTestNotification = async () => {
-    const { sendNativeNotification } = await import('../services/nativeNotificationService');
+    const perm = getNotificationPermission();
+    if (perm !== 'granted') {
+      await handleEnablePush();
+      return;
+    }
+
     const sent = await sendNativeNotification({
-      title: '⚡ PrepOS Study Reminder',
+      title: '⚡ PrepOS Study Alert',
       body: 'Great job staying consistent! Spaced repetition revision is ready.',
       url: '/revision',
     });
-    if (!sent) {
-      requestPermission();
+
+    if (sent) {
+      alert('🔔 Test notification sent to your device!');
     }
   };
 
@@ -136,22 +198,29 @@ export default function Notifications() {
       <div className="page-header" style={{ marginBottom: 16 }}>
         <div className="page-header-left">
           <h1 className="page-title">Notifications & Device Alerts</h1>
-          <p className="page-subtitle">{unreadCount > 0 ? `${unreadCount} unread notifications` : 'All caught up!'}</p>
+          <p className="page-subtitle">
+            {unreadCount > 0 ? `${unreadCount} unread notifications` : 'All notifications marked as seen ✓'}
+          </p>
         </div>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
           <button className="btn btn-primary" onClick={handleTestNotification}>
             <Bell size={14} /> Test Device Alert
           </button>
-          {typeof Notification !== 'undefined' && Notification.permission !== 'granted' && (
-            <button className="btn btn-ghost" onClick={requestPermission}>
-              Enable Real Push Alerts
+
+          {permissionState !== 'granted' ? (
+            <button className="btn btn-ghost" onClick={handleEnablePush}>
+              <ShieldCheck size={14} /> Enable Real Push Alerts
             </button>
+          ) : (
+            <span className="badge badge-success" style={{ fontSize: 11, padding: '6px 10px' }}>
+              ✓ Alerts Enabled
+            </span>
           )}
-          {unreadCount > 0 && (
-            <button className="btn btn-ghost" onClick={handleMarkAllRead}>
-              <CheckCheck size={14} /> Mark All Read (Seen)
-            </button>
-          )}
+
+          <button className="btn btn-ghost" onClick={handleMarkAllRead}>
+            <CheckCheck size={14} /> Mark All Read (Seen)
+          </button>
+
           {notifications.length > 0 && (
             <button className="btn btn-ghost" onClick={handleClearAll} style={{ color: 'var(--danger)' }}>
               <Trash2 size={14} /> Delete All
@@ -166,7 +235,7 @@ export default function Notifications() {
             <div className="empty-icon">🔔</div>
             <div className="empty-title">No notifications</div>
             <div className="empty-desc">
-              Notifications are generated for pre-study reminders, missed sessions, revision due, vocabulary targets, and more.
+              Notifications are generated for pre-study reminders, missed sessions, revision due, and vocabulary targets.
             </div>
           </div>
         </div>
@@ -195,8 +264,11 @@ export default function Notifications() {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
                     <span style={{ fontSize: 14, fontWeight: 700 }}>{notif.title}</span>
-                    {!notif.read && !notif.dismissed && <span className="badge badge-primary" style={{ fontSize: 9 }}>NEW (UNSEEN)</span>}
-                    {notif.read && <span className="badge badge-muted" style={{ fontSize: 9 }}>SEEN</span>}
+                    {notif.read ? (
+                      <span className="badge badge-muted" style={{ fontSize: 9 }}>SEEN</span>
+                    ) : (
+                      <span className="badge badge-primary" style={{ fontSize: 9 }}>NEW</span>
+                    )}
                     {notif.status === 'snoozed' && <span className="badge badge-warning" style={{ fontSize: 9 }}>Snoozed</span>}
                     {notif.dismissed && <span className="badge badge-muted" style={{ fontSize: 9 }}>Dismissed</span>}
                   </div>
@@ -255,7 +327,7 @@ export default function Notifications() {
                     <button
                       className="btn btn-xs btn-ghost"
                       onClick={() => handleMarkRead(notif.id || notif._id)}
-                      title="Mark as read (seen)"
+                      title="Mark as read"
                     >
                       Mark Seen
                     </button>

@@ -43,10 +43,10 @@ router.post('/', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/:id', async (req, res) => {
+router.put('/read-all', async (req, res) => {
   try {
-    const updated = await Notification.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    res.json(updated);
+    await Notification.updateMany({ read: false }, { read: true });
+    res.json({ success: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -57,10 +57,10 @@ router.put('/:id/read', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/read-all', async (req, res) => {
+router.put('/:id', async (req, res) => {
   try {
-    await Notification.updateMany({ read: false }, { read: true });
-    res.json({ success: true });
+    const updated = await Notification.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json(updated);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
