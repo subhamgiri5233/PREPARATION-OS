@@ -39,7 +39,24 @@ const PORT = process.env.PORT || 3001;
 app.use(cors({ origin: '*' })); // Allow all origins (frontend on 5173, mobile on LAN)
 app.use(express.json({ limit: '10mb' }));
 
-// ─── Health Check ─────────────────────────────────────────────────────────────
+// ─── Health Check & Root Handlers ──────────────────────────────────────────
+app.get('/', (req, res) => {
+  res.json({
+    status: 'online',
+    service: 'Preparation OS API',
+    mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.get('/api', (req, res) => {
+  res.json({
+    status: 'ok',
+    message: 'Preparation OS REST API is running',
+    version: '1.0.0'
+  });
+});
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
