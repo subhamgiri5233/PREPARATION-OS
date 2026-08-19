@@ -144,31 +144,40 @@ export default function Preparation() {
   }, []);
 
   const currentArea = useMemo(() => {
+    if (!Array.isArray(preparationAreas) || preparationAreas.length === 0) return null;
     return preparationAreas.find((a) => String(a.id || a._id) === String(selectedAreaId)) || preparationAreas[0] || null;
   }, [preparationAreas, selectedAreaId]);
 
   const currentCourses = useMemo(() => {
-    if (!currentArea) return [];
+    if (!currentArea || !Array.isArray(courses)) return [];
     const areaId = String(currentArea.id || currentArea._id);
-    return courses.filter((c) => String(c.preparationAreaId) === areaId);
+    return courses.filter((c) => c && c.preparationAreaId && String(c.preparationAreaId) === areaId);
   }, [courses, currentArea]);
 
   const currentSubjects = useMemo(() => {
-    if (!currentArea) return [];
+    if (!currentArea || !Array.isArray(subjects)) return [];
     const areaId = String(currentArea.id || currentArea._id);
-    return subjects.filter((s) => String(s.preparationAreaId) === areaId);
+    return subjects.filter((s) => s && s.preparationAreaId && String(s.preparationAreaId) === areaId);
   }, [subjects, currentArea]);
 
   const currentChapters = useMemo(() => {
-    if (!currentArea) return [];
+    if (!currentArea || !Array.isArray(chapters)) return [];
     const areaId = String(currentArea.id || currentArea._id);
-    return chapters.filter((c) => String(c.preparationAreaId) === areaId);
-  }, [chapters, currentArea]);
+    const subjectIdSet = new Set((Array.isArray(subjects) ? subjects : [])
+      .filter((s) => s && s.preparationAreaId && String(s.preparationAreaId) === areaId)
+      .map((s) => String(s.id || s._id)));
+    return chapters.filter((c) => {
+      if (!c) return false;
+      if (c.preparationAreaId && String(c.preparationAreaId) === areaId) return true;
+      if (c.subjectId && subjectIdSet.has(String(c.subjectId))) return true;
+      return false;
+    });
+  }, [chapters, subjects, currentArea]);
 
   const currentTopics = useMemo(() => {
-    if (!currentArea) return [];
+    if (!currentArea || !Array.isArray(topics)) return [];
     const areaId = String(currentArea.id || currentArea._id);
-    return topics.filter((t) => String(t.preparationAreaId) === areaId);
+    return topics.filter((t) => t && t.preparationAreaId && String(t.preparationAreaId) === areaId);
   }, [topics, currentArea]);
 
   // Filtered topics based on search and filters
