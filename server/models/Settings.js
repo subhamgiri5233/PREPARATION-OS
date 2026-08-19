@@ -10,6 +10,8 @@ const settingsSchema = new mongoose.Schema({
   dailySummaryTime: { type: String, default: '21:00' },
   revisionReminderTime: { type: String, default: '08:00' },
   sessionReminderMinutes: { type: Number, default: 15 },
+  studyRemindersEnabled: { type: Boolean, default: true },
+  studyReminderMinutes: { type: Number, default: 5 },
   theme: { type: String, default: 'dark' },
   vocabDailyTarget: { type: Number, default: 10 },
   gitaReminderEnabled: { type: Boolean, default: true },

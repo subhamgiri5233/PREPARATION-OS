@@ -22,6 +22,7 @@ import { generateLossSummary } from '../services/errorAnalysisEngine';
 import { classifyTopicPerformance } from '../services/performanceEngine';
 import { compareMocks } from '../services/mockAnalysisEngine';
 import { calculateSyllabusProgress, calculateAreaProgress, calculateCourseProgress } from '../services/syllabusService';
+import { getNextUpcomingStudySession } from '../services/reminderScheduler';
 
 const TODAY = format(new Date(), 'yyyy-MM-dd');
 
@@ -63,6 +64,7 @@ export default function Dashboard() {
   const [todayGita, setTodayGita] = useState(null);
   const [allMocks, setAllMocks] = useState([]);
   const [allErrors, setAllErrors] = useState([]);
+  const [teachingSlots, setTeachingSlots] = useState([]);
   const [recommendation, setRecommendation] = useState(null);
   const [streak, setStreak] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -104,6 +106,7 @@ export default function Dashboard() {
       setTodayVocab(vocab);
       setAllMocks(mocks);
       setAllErrors(errs);
+      setTeachingSlots(teachSlots || []);
       setTodayGita(gita || null);
 
       // Calculate streak
@@ -138,13 +141,11 @@ export default function Dashboard() {
         const previous = mocks.slice(1);
         const comp = compareMocks(latest, previous);
         setLatestMockComparison(comp);
-
-        const logs = await getErrorLogsByMock(latest.id);
-        const loss = generateLossSummary(latest.id, logs, latest.negativeMarks, latest.positiveMarks);
-        setLatestMockLosses(loss || []);
+        const losses = generateLossSummary(errs.filter((e) => e.mockId === latest.id));
+        setLatestMockLosses(losses);
       }
     } catch (err) {
-      console.error('[Dashboard] Error loading data:', err);
+      console.error('Error loading dashboard data:', err);
     } finally {
       setLoading(false);
     }
@@ -153,6 +154,11 @@ export default function Dashboard() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Compute Next Upcoming Study Session for Dashboard Card
+  const nextStudySession = useMemo(() => {
+    return getNextUpcomingStudySession(tasks, subjects, topics, areas, settings, teachingSlots);
+  }, [tasks, subjects, topics, areas, settings, teachingSlots]);
 
   // Filtered views based on selected Area
   const currentArea = useMemo(() => {
@@ -307,6 +313,60 @@ export default function Dashboard() {
       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: 20 }}>
         {/* LEFT COLUMN: Study Focus, Sessions, Revisions */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          
+          {/* MODULE 0: NEXT STUDY SESSION CARD */}
+          <div className="card" style={{ border: '1px solid rgba(99, 102, 241, 0.4)', background: 'linear-gradient(135deg, var(--surface), rgba(99, 102, 241, 0.05))', padding: '18px 20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--primary-light)', fontWeight: 800, fontSize: 13, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                <Clock size={16} /> NEXT STUDY SESSION
+              </div>
+              {nextStudySession && (
+                <span className="badge badge-primary" style={{ fontSize: 11 }}>
+                  ⏰ Reminder: {nextStudySession.reminderTime}
+                </span>
+              )}
+            </div>
+
+            {!nextStudySession ? (
+              <div style={{ padding: '12px 0', textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}>
+                No study sessions scheduled.
+              </div>
+            ) : (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14 }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                    <span className="badge" style={{ background: `${nextStudySession.areaColor}20`, color: nextStudySession.areaColor, borderColor: nextStudySession.areaColor, fontSize: 10 }}>
+                      {nextStudySession.areaName}
+                    </span>
+                    <span style={{ fontSize: 12, color: 'var(--text-3)' }}>{nextStudySession.subjectName}</span>
+                  </div>
+                  <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--text)', marginBottom: 4 }}>
+                    {nextStudySession.subjectName} → {nextStudySession.topicName}
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--text-2)', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+                    <span>🕒 Starts at: <strong>{nextStudySession.startTime}</strong></span>
+                    <span>⏱️ Duration: <strong>{nextStudySession.durationMinutes} min</strong></span>
+                    {nextStudySession.isConflict && (
+                      <span className="badge badge-danger" style={{ fontSize: 10 }}>⚠️ Overlaps Teaching Period</span>
+                    )}
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    className="btn btn-primary"
+                    onClick={() => {
+                      window.location.href = `/sessions?topicId=${nextStudySession.topicId || ''}&subjectId=${nextStudySession.subjectId || ''}&areaId=${nextStudySession.preparationAreaId || ''}`;
+                    }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                  >
+                    <Play size={14} /> Start Session
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* MODULE 1: WHAT SHOULD I STUDY NOW? */}
           <div className="card" style={{ border: '1px solid var(--primary)', background: 'var(--primary-glass)', padding: 20 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>

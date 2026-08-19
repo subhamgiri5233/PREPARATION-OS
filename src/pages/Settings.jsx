@@ -237,10 +237,34 @@ export default function Settings() {
               <input type="time" className="form-input" value={form.revisionReminderTime || '08:00'}
                 onChange={(e) => setF('revisionReminderTime', e.target.value)} />
             </div>
+          </div>
+        </div>
+
+        {/* Smart Pre-Study Reminders */}
+        <div className="card">
+          <div className="card-header"><div className="card-title">⏰ Study Session Reminders</div></div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <p style={{ fontSize: 12, color: 'var(--text-2)' }}>
+              Automatically receive pre-study alerts and missed session notifications for your scheduled tasks.
+            </p>
+            <ToggleSetting
+              label="Enable Study Reminders"
+              value={form.studyRemindersEnabled !== false}
+              onChange={(v) => setF('studyRemindersEnabled', v)}
+            />
             <div className="form-group">
-              <label className="form-label">Session Start Reminder (minutes before)</label>
-              <input type="number" className="form-input" value={form.sessionReminderMinutes || 15} min={5} max={60}
-                onChange={(e) => setF('sessionReminderMinutes', parseInt(e.target.value))} />
+              <label className="form-label">Reminder Before Session</label>
+              <select
+                className="form-input"
+                value={form.studyReminderMinutes !== undefined ? form.studyReminderMinutes : 5}
+                onChange={(e) => setF('studyReminderMinutes', parseInt(e.target.value, 10))}
+              >
+                <option value={5}>5 minutes before (Default)</option>
+                <option value={10}>10 minutes before</option>
+                <option value={15}>15 minutes before</option>
+                <option value={30}>30 minutes before</option>
+                <option value={0}>Off</option>
+              </select>
             </div>
           </div>
         </div>

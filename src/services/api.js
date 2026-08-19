@@ -1,7 +1,7 @@
 // src/services/api.js
 // Central API configuration and fetch helper for MongoDB backend
 
-let envApiUrl = import.meta.env.VITE_API_URL;
+let envApiUrl = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || (typeof process !== 'undefined' && process.env?.VITE_API_URL);
 
 if (!envApiUrl || envApiUrl.trim() === '') {
   // If running in development on localhost, use Vite's proxy '/api'

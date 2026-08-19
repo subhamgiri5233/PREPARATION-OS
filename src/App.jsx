@@ -176,9 +176,11 @@ export default function App() {
         setUnreadCount(unread.length);
         setDbReady(true);
 
-        // Generate daily notifications after data is loaded
+        // Generate daily notifications and start Smart Pre-Study Reminder scheduler
         try {
           await generateDailyNotifications();
+          const { startReminderScheduler } = await import('./services/reminderScheduler');
+          startReminderScheduler();
           const freshUnread = await getUnreadNotifications();
           setUnreadCount(freshUnread.length);
         } catch (e) {

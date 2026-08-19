@@ -306,6 +306,12 @@ export async function addNotification(notif) {
   const res = await apiFetch('/notifications', { method: 'POST', body: notif });
   return res?.id || res?._id || res;
 }
+export async function updateNotification(id, updates) {
+  return await apiFetch(`/notifications/${id}`, { method: 'PUT', body: updates });
+}
+export async function deleteNotification(id) {
+  return await apiFetch(`/notifications/${id}`, { method: 'DELETE' });
+}
 export async function markNotificationRead(id) {
   return await apiFetch(`/notifications/${id}/read`, { method: 'PUT' });
 }
