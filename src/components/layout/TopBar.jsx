@@ -187,6 +187,17 @@ export default function TopBar({ onMobileMenuOpen }) {
             <Bell size={16} />
             {unreadCount > 0 && <span className="notification-dot" />}
           </a>
+
+          {/* Logout */}
+          <button
+            className="topbar-btn"
+            onClick={logout}
+            title="Logout — return to login screen"
+            aria-label="Logout"
+            style={{ color: 'var(--danger)' }}
+          >
+            <LogOut size={16} />
+          </button>
         </div>
       </header>
 

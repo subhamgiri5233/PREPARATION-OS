@@ -38,7 +38,7 @@ const NAV_ITEMS = [
 
 export default function Sidebar({ mobileOpen, onMobileClose }) {
   const { sidebarOpen, toggleSidebar, unreadCount } = useAppStore();
-  const { isEditMode, isAuthenticated, toggleEditMode, lock, openLoginModal, ownerName } = useAuthStore();
+  const { isEditMode, isAuthenticated, toggleEditMode, lock, openLoginModal, ownerName, logout } = useAuthStore();
   const location = useLocation();
 
   const handleAuthAction = () => {
@@ -181,6 +181,22 @@ export default function Sidebar({ mobileOpen, onMobileClose }) {
               ? <ChevronLeft size={16} className="nav-icon" />
               : <ChevronRight size={16} className="nav-icon" />}
             {sidebarOpen && <span>Collapse</span>}
+          </button>
+
+          {/* Logout Button */}
+          <button
+            className="nav-item w-full"
+            onClick={() => { logout(); if (mobileOpen) onMobileClose(); }}
+            style={{
+              justifyContent: sidebarOpen ? 'flex-start' : 'center',
+              color: 'var(--danger)',
+              marginTop: 2
+            }}
+            title="Logout — return to login screen"
+            aria-label="Logout"
+          >
+            <LogOut size={16} className="nav-icon" style={{ color: 'var(--danger)' }} />
+            {sidebarOpen && <span>Logout</span>}
           </button>
         </div>
       </aside>
