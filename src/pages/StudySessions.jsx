@@ -921,6 +921,34 @@ export default function StudySessions() {
               </button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {/* Session Type */}
+              <div className="form-group">
+                <label className="form-label">Session Type</label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                  <button
+                    type="button"
+                    className={`btn btn-sm ${newSession.type !== 'Revision' ? 'btn-primary' : 'btn-ghost'}`}
+                    style={{ fontSize: 12, justifyContent: 'center' }}
+                    onClick={() => setNewSession({ ...newSession, type: 'Concept Study', topicId: '' })}
+                  >
+                    📚 Concept Study
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn btn-sm ${newSession.type === 'Revision' ? 'btn-primary' : 'btn-ghost'}`}
+                    style={{ fontSize: 12, justifyContent: 'center' }}
+                    onClick={() => setNewSession({ ...newSession, type: 'Revision', topicId: '' })}
+                  >
+                    🔄 Revision (Completed)
+                  </button>
+                </div>
+                {newSession.type === 'Revision' && (
+                  <div style={{ fontSize: 11, color: 'var(--primary-light)', marginTop: 4 }}>
+                    ✨ Showing completed topics for revision.
+                  </div>
+                )}
+              </div>
+
               <div className="form-group">
                 <label className="form-label">Preparation Area</label>
                 <select
@@ -967,7 +995,9 @@ export default function StudySessions() {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Topic *</label>
+                <label className="form-label">
+                  {newSession.type === 'Revision' ? 'Completed Topic for Revision *' : 'Topic *'}
+                </label>
                 <select
                   className="form-select"
                   value={newSession.topicId}
@@ -975,12 +1005,36 @@ export default function StudySessions() {
                     setNewSession({ ...newSession, topicId: e.target.value })
                   }
                 >
-                  <option value="">Select topic…</option>
-                  {filteredTopics.map((t) => (
-                    <option key={t.id || t._id} value={t.id || t._id}>
-                      {t.name}
-                    </option>
-                  ))}
+                  <option value="">
+                    {newSession.type === 'Revision' ? 'Select completed topic to revise…' : 'Select topic…'}
+                  </option>
+                  {(() => {
+                    const list =
+                      newSession.type === 'Revision'
+                        ? filteredTopics.filter(
+                            (t) => (t.status || '').toLowerCase() === 'completed' || (Number(t.studyHours) || 0) > 0
+                          )
+                        : filteredTopics;
+
+                    if (newSession.type === 'Revision' && list.length === 0) {
+                      return (
+                        <>
+                          <option disabled value="">(No completed topics in this subject — showing all)</option>
+                          {filteredTopics.map((t) => (
+                            <option key={t.id || t._id} value={t.id || t._id}>
+                              {t.name} ({t.status || 'Not Started'})
+                            </option>
+                          ))}
+                        </>
+                      );
+                    }
+
+                    return list.map((t) => (
+                      <option key={t.id || t._id} value={t.id || t._id}>
+                        {t.name} {((t.status || '').toLowerCase() === 'completed') ? '✅ (Completed)' : ''}
+                      </option>
+                    ));
+                  })()}
                 </select>
               </div>
 

@@ -124,6 +124,7 @@ export default function StudyPlanner() {
   const handleOpenAdd = (dateStr) => {
     setEditTask(null);
     setForm({
+      type: 'Concept Study',
       topicId: '', subjectId: '', preparationAreaId: '', title: '',
       startTime: '09:00', endTime: '10:00', durationMinutes: 60,
       priority: 'Medium', notes: '', isLocked: false, source: 'manual', isUserEdited: false
@@ -135,6 +136,7 @@ export default function StudyPlanner() {
     setEditTask(task);
     setForm({
       ...task,
+      type: task.type || (task.title?.startsWith('🔄') ? 'Revision' : 'Concept Study'),
       topicId: task.topicId || '',
       subjectId: task.subjectId || '',
       preparationAreaId: task.preparationAreaId || '',
@@ -173,11 +175,19 @@ export default function StudyPlanner() {
       duration = Math.max(15, (eh * 60 + em) - (sh * 60 + sm));
     }
 
+    const isRevision = form.type === 'Revision';
+    const rawTitle = topic?.name || form.title || 'Study Session';
+    const taskTitle = isRevision && !rawTitle.startsWith('🔄')
+      ? `🔄 Revision: ${rawTitle}`
+      : rawTitle;
+
     const taskData = {
       ...form,
       date: targetDate,
       durationMinutes: duration,
-      topicName: topic?.name || form.title || 'Study Session',
+      type: form.type || 'Concept Study',
+      topicName: taskTitle,
+      title: taskTitle,
       topicId: topic?.id || topic?._id || form.topicId || null,
       subjectName: subject?.name || 'Study Subject',
       subjectId: subject?.id || subject?._id || form.subjectId || null,
@@ -602,12 +612,76 @@ export default function StudyPlanner() {
                 </select>
               </div>
 
+              {/* Session Type: Concept Study vs Revision */}
               <div className="form-group">
-                <label className="form-label">Topic</label>
-                <select className="form-select" value={form.topicId} onChange={(e) => setForm({ ...form, topicId: e.target.value })}>
-                  <option value="">Select topic...</option>
-                  {topics.filter((t) => !form.preparationAreaId || String(t.preparationAreaId) === String(form.preparationAreaId))
-                    .map((t) => <option key={t.id || t._id} value={t.id || t._id}>{t.name}</option>)}
+                <label className="form-label">Session Type</label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                  <button
+                    type="button"
+                    className={`btn btn-sm ${form.type !== 'Revision' ? 'btn-primary' : 'btn-ghost'}`}
+                    style={{ fontSize: 12, justifyContent: 'center' }}
+                    onClick={() => setForm({ ...form, type: 'Concept Study', topicId: '' })}
+                  >
+                    📚 Concept Study
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn btn-sm ${form.type === 'Revision' ? 'btn-primary' : 'btn-ghost'}`}
+                    style={{ fontSize: 12, justifyContent: 'center' }}
+                    onClick={() => setForm({ ...form, type: 'Revision', topicId: '' })}
+                  >
+                    🔄 Revision (Completed)
+                  </button>
+                </div>
+                {form.type === 'Revision' && (
+                  <div style={{ fontSize: 11, color: 'var(--primary-light)', marginTop: 4 }}>
+                    ✨ Showing completed topics for spaced repetition revision.
+                  </div>
+                )}
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">
+                  {form.type === 'Revision' ? 'Completed Topic for Revision *' : 'Topic *'}
+                </label>
+                <select
+                  className="form-select"
+                  value={form.topicId}
+                  onChange={(e) => setForm({ ...form, topicId: e.target.value })}
+                >
+                  <option value="">
+                    {form.type === 'Revision' ? 'Select completed topic to revise…' : 'Select topic…'}
+                  </option>
+                  {(() => {
+                    const areaFiltered = topics.filter(
+                      (t) => !form.preparationAreaId || String(t.preparationAreaId) === String(form.preparationAreaId)
+                    );
+                    const list =
+                      form.type === 'Revision'
+                        ? areaFiltered.filter(
+                            (t) => (t.status || '').toLowerCase() === 'completed' || (Number(t.studyHours) || 0) > 0
+                          )
+                        : areaFiltered;
+
+                    if (form.type === 'Revision' && list.length === 0) {
+                      return (
+                        <>
+                          <option disabled value="">(No completed topics yet — showing all)</option>
+                          {areaFiltered.map((t) => (
+                            <option key={t.id || t._id} value={t.id || t._id}>
+                              {t.name} ({t.status || 'Not Started'})
+                            </option>
+                          ))}
+                        </>
+                      );
+                    }
+
+                    return list.map((t) => (
+                      <option key={t.id || t._id} value={t.id || t._id}>
+                        {t.name} {((t.status || '').toLowerCase() === 'completed') ? '✅ (Completed)' : ''}
+                      </option>
+                    ));
+                  })()}
                 </select>
               </div>
 
