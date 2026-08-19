@@ -1,11 +1,12 @@
-// src/components/layout/Sidebar.jsx
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, BookOpen, Calendar, Timer, FileText,
   RotateCcw, BookMarked, TrendingUp, BarChart3, Bell,
-  Clock, Settings, ChevronLeft, ChevronRight, GraduationCap
+  Clock, Settings, ChevronLeft, ChevronRight, GraduationCap,
+  LogIn, LogOut, User, ShieldCheck
 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
+import { useAuthStore } from '../../store/useAuthStore';
 
 const NAV_ITEMS = [
   { group: 'Main', items: [
@@ -37,7 +38,17 @@ const NAV_ITEMS = [
 
 export default function Sidebar({ mobileOpen, onMobileClose }) {
   const { sidebarOpen, toggleSidebar, unreadCount } = useAppStore();
+  const { isAuthenticated, lock, openLoginModal, ownerName } = useAuthStore();
   const location = useLocation();
+
+  const handleAuthAction = () => {
+    if (isAuthenticated) {
+      lock();
+    } else {
+      openLoginModal();
+    }
+    if (mobileOpen) onMobileClose();
+  };
 
   return (
     <>
@@ -88,8 +99,73 @@ export default function Sidebar({ mobileOpen, onMobileClose }) {
           ))}
         </nav>
 
-        {/* Collapse Toggle (desktop only) */}
-        <div style={{ padding: '12px 8px', borderTop: '1px solid var(--border)' }}>
+        {/* User Account & Login / Logout Action */}
+        <div style={{ padding: '8px', borderTop: '1px solid var(--border)' }}>
+          {isAuthenticated ? (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: sidebarOpen ? 'space-between' : 'center',
+              padding: sidebarOpen ? '8px 10px' : '8px 0',
+              borderRadius: 'var(--radius)',
+              background: 'rgba(34, 197, 94, 0.08)',
+              border: '1px solid rgba(34, 197, 94, 0.25)',
+              marginBottom: 6
+            }}>
+              {sidebarOpen && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' }}>
+                  <div style={{
+                    width: 28, height: 28, borderRadius: '50%',
+                    background: 'var(--primary)', color: 'white',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 12, fontWeight: 700, flexShrink: 0
+                  }}>
+                    {ownerName ? ownerName.charAt(0).toUpperCase() : 'S'}
+                  </div>
+                  <div style={{ overflow: 'hidden' }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
+                      {ownerName || 'Admin'}
+                    </div>
+                    <div style={{ fontSize: 10, color: 'var(--success)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--success)', display: 'inline-block' }}></span>
+                      Logged In
+                    </div>
+                  </div>
+                </div>
+              )}
+              <button
+                className="btn btn-xs btn-ghost"
+                onClick={handleAuthAction}
+                title="Log Out of Preparation OS"
+                style={{
+                  color: 'var(--danger)',
+                  padding: sidebarOpen ? '4px 8px' : '6px',
+                  display: 'flex', alignItems: 'center', gap: 4
+                }}
+              >
+                <LogOut size={14} />
+                {sidebarOpen && <span style={{ fontSize: 11, fontWeight: 600 }}>Logout</span>}
+              </button>
+            </div>
+          ) : (
+            <button
+              className="btn btn-primary w-full"
+              onClick={handleAuthAction}
+              title="Log In with Master PIN"
+              style={{
+                justifyContent: sidebarOpen ? 'flex-start' : 'center',
+                padding: sidebarOpen ? '8px 12px' : '8px',
+                fontSize: 12,
+                fontWeight: 700,
+                marginBottom: 6
+              }}
+            >
+              <LogIn size={15} />
+              {sidebarOpen && <span>Login</span>}
+            </button>
+          )}
+
+          {/* Collapse Toggle (desktop only) */}
           <button
             className="nav-item w-full"
             onClick={toggleSidebar}

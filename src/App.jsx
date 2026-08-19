@@ -15,6 +15,7 @@ import GitaShloka from './pages/GitaShloka';
 import Notifications from './pages/Notifications';
 import TeachingSchedule from './pages/TeachingSchedule';
 import Settings from './pages/Settings';
+import LoginPage from './pages/LoginPage';
 import TestRunner from './pages/TestRunner';
 import {
   initializeDatabase, getAllAreas, getAllCourses, getAllSubjects, getAllChapters, getAllTopics, getAllStudyResources,
@@ -256,6 +257,7 @@ export default function App() {
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/teaching" element={<TeachingSchedule />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/login" element={<LoginPage />} />
             <Route path="/test-runner" element={<TestRunner />} />
           </Route>
         </Routes>

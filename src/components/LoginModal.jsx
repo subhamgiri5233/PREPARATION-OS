@@ -1,6 +1,5 @@
-// src/components/LoginModal.jsx
 import React, { useState, useEffect } from 'react';
-import { Lock, Unlock, KeyRound, X, ShieldAlert, Check } from 'lucide-react';
+import { Lock, Unlock, LogIn, KeyRound, X, ShieldAlert, Check } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
 
 export default function LoginModal() {
@@ -68,14 +67,14 @@ export default function LoginModal() {
           margin: '0 auto 16px auto',
           color: 'var(--primary-light)'
         }}>
-          <Lock size={26} />
+          <LogIn size={26} />
         </div>
 
         <h2 style={{ fontSize: 20, fontWeight: 800, margin: '0 0 6px 0', color: 'var(--text)' }}>
-          Unlock Workspace
+          Account Login
         </h2>
         <p style={{ fontSize: 12, color: 'var(--text-2)', margin: '0 0 20px 0' }}>
-          Enter Master PIN to reveal private study tasks, reflections, and notes.
+          Enter Master PIN to log in and manage your private study tasks and notes.
         </p>
 
         {error && (
@@ -181,7 +180,7 @@ export default function LoginModal() {
                 borderRadius: 'var(--radius)'
               }}
             >
-              {loading ? '...' : <Unlock size={16} />}
+              {loading ? '...' : <LogIn size={16} />}
             </button>
           </div>
 
@@ -189,9 +188,9 @@ export default function LoginModal() {
             type="submit"
             className="btn btn-primary"
             disabled={loading}
-            style={{ width: '100%', justifyContent: 'center', height: 42, fontSize: 14, fontWeight: 700 }}
+            style={{ width: '100%', justifyContent: 'center', height: 42, fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}
           >
-            {loading ? 'Verifying...' : 'Unlock Preparation OS'}
+            <LogIn size={16} /> {loading ? 'Logging in...' : 'Log In'}
           </button>
         </form>
 

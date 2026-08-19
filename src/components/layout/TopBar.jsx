@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Menu, Bell, Zap, Search, X, BookOpen, GraduationCap, FileText, BookMarked, Lock, Unlock } from 'lucide-react';
+import { Menu, Bell, Zap, Search, X, BookOpen, GraduationCap, FileText, BookMarked, Lock, Unlock, LogIn, LogOut } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -93,41 +93,65 @@ export default function TopBar({ onMobileMenuOpen }) {
           {/* Active session indicator */}
           <ActiveSessionIndicator />
 
-          {/* Auth Lock/Unlock Toggle */}
+          {/* Auth Login/Logout Toggle */}
           {isAuthenticated ? (
-            <button
-              className="btn btn-xs btn-ghost"
-              onClick={lock}
-              title={`Unlocked as ${ownerName}. Click to Lock Workspace.`}
-              style={{
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 5,
+                gap: 6,
                 fontSize: 12,
-                color: 'var(--success)',
-                border: '1px solid rgba(34, 197, 94, 0.3)',
-                background: 'rgba(34, 197, 94, 0.1)',
-                padding: '4px 10px',
+                color: 'var(--text)',
+                background: 'var(--surface-2)',
+                border: '1px solid var(--border)',
+                padding: '3px 8px',
                 borderRadius: 'var(--radius-full)'
-              }}
-            >
-              <Unlock size={12} /> {ownerName || 'Admin'}
-            </button>
+              }}>
+                <div style={{
+                  width: 18, height: 18, borderRadius: '50%',
+                  background: 'var(--success)', color: 'white',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 10, fontWeight: 700
+                }}>
+                  {ownerName ? ownerName.charAt(0).toUpperCase() : 'S'}
+                </div>
+                <span style={{ fontWeight: 600 }}>{ownerName || 'Subham'}</span>
+              </div>
+              <button
+                className="btn btn-xs btn-ghost"
+                onClick={lock}
+                title="Log Out of Preparation OS"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  fontSize: 12,
+                  color: 'var(--danger)',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  padding: '4px 10px',
+                  borderRadius: 'var(--radius-full)'
+                }}
+              >
+                <LogOut size={12} /> Logout
+              </button>
+            </div>
           ) : (
             <button
               className="btn btn-xs btn-primary"
               onClick={openLoginModal}
-              title="Click to Unlock Workspace with Master PIN"
+              title="Log In with Master PIN"
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: 5,
                 fontSize: 12,
-                padding: '4px 10px',
+                fontWeight: 700,
+                padding: '4px 12px',
                 borderRadius: 'var(--radius-full)'
               }}
             >
-              <Lock size={12} /> Unlock
+              <LogIn size={13} /> Login
             </button>
           )}
 
