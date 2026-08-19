@@ -522,136 +522,184 @@ export default function StudyPlanner() {
 
       {/* Week View */}
       {view === 'week' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 8 }}>
-          {weekDays.map((day) => {
-            const dateStr = format(day, 'yyyy-MM-dd');
-            const dayOfWeek = day.getDay();
-            const dayTasks = getTasksForDate(dateStr);
-            const teachingBlocks = getTeachingBlocksForDay(dayOfWeek);
-            const isToday = isSameDay(day, new Date());
+        <>
+          {/* Desktop 7-day Multi-Column Grid */}
+          <div className="desktop-only" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 8 }}>
+            {weekDays.map((day) => {
+              const dateStr = format(day, 'yyyy-MM-dd');
+              const dayOfWeek = day.getDay();
+              const dayTasks = getTasksForDate(dateStr);
+              const teachingBlocks = getTeachingBlocksForDay(dayOfWeek);
+              const isToday = isSameDay(day, new Date());
 
-            return (
-              <div
-                key={dateStr}
-                style={{
-                  background: isToday ? 'var(--primary-glass)' : 'var(--card)',
-                  border: `1px solid ${isToday ? 'var(--border-accent)' : 'var(--border)'}`,
-                  borderRadius: 'var(--radius-lg)',
-                  padding: 10,
-                  minHeight: 220,
-                  display: 'flex',
-                  flexDirection: 'column',
-                }}
-              >
-                <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <div style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 700 }}>{DAY_NAMES[dayOfWeek]}</div>
-                    <div style={{ fontSize: 18, fontWeight: 800, color: isToday ? 'var(--primary-light)' : 'var(--text)' }}>
-                      {format(day, 'd')}
+              return (
+                <div
+                  key={dateStr}
+                  style={{
+                    background: isToday ? 'var(--primary-glass)' : 'var(--card)',
+                    border: `1px solid ${isToday ? 'var(--border-accent)' : 'var(--border)'}`,
+                    borderRadius: 'var(--radius-lg)',
+                    padding: 10,
+                    minHeight: 220,
+                    display: 'flex',
+                    flexDirection: 'column',
+                  }}
+                >
+                  <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 700 }}>{DAY_NAMES[dayOfWeek]}</div>
+                      <div style={{ fontSize: 18, fontWeight: 800, color: isToday ? 'var(--primary-light)' : 'var(--text)' }}>
+                        {format(day, 'd')}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Teaching blocks */}
-                {teachingBlocks.map((block, i) => (
-                  <div key={i} style={{
-                    background: 'var(--warning-glass)', border: '1px solid var(--warning)',
-                    borderRadius: 'var(--radius-sm)', padding: '4px 6px', marginBottom: 4,
-                    fontSize: 10, color: 'var(--warning)', fontWeight: 600,
-                  }}>
-                    🏫 {block.startTime}–{block.endTime}
+                  {/* Teaching blocks */}
+                  {teachingBlocks.map((block, i) => (
+                    <div key={i} style={{
+                      background: 'var(--warning-glass)', border: '1px solid var(--warning)',
+                      borderRadius: 'var(--radius-sm)', padding: '4px 6px', marginBottom: 4,
+                      fontSize: 10, color: 'var(--warning)', fontWeight: 600,
+                    }}>
+                      🏫 {block.startTime}–{block.endTime}
+                    </div>
+                  ))}
+
+                  {/* Study Tasks */}
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {dayTasks.map((task) => {
+                      const isAi = task.source === 'auto' && !task.isUserEdited;
+                      const isEdited = !!task.isUserEdited;
+                      const isLocked = !!task.isLocked;
+                      const displayTitle = task.topicName || task.title;
+
+                      return (
+                        <div
+                          key={task.id || task._id}
+                          style={{
+                            background: task.status === 'Completed' ? 'var(--success-glass)' : 'var(--surface-2)',
+                            border: `1px solid ${task.status === 'Completed' ? 'var(--success)' : isLocked ? '#ef4444' : 'var(--border)'}`,
+                            borderRadius: 'var(--radius-sm)', padding: '6px 8px',
+                            fontSize: 11, cursor: 'pointer', position: 'relative',
+                          }}
+                          onClick={() => handleOpenEdit(task)}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+                            <span style={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '80%' }}>
+                              {displayTitle}
+                            </span>
+                            <button
+                              onClick={(e) => handleToggleLock(task, e)}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: isLocked ? '#ef4444' : 'var(--text-3)' }}
+                              title={isLocked ? 'Locked (will not be moved)' : 'Unlocked'}
+                            >
+                              {isLocked ? <Lock size={11} /> : <Unlock size={11} />}
+                            </button>
+                          </div>
+
+                          <div style={{ color: 'var(--text-2)', fontSize: 10, marginBottom: 3 }}>
+                            {task.startTime}–{task.endTime} ({task.durationMinutes || 60}m)
+                          </div>
+
+                          {/* Provenance Badge & Quick Actions */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
+                            <div>
+                              {isLocked ? (
+                                <span className="badge" style={{ fontSize: 8, padding: '1px 4px', background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444' }}>🔒 Locked</span>
+                              ) : isEdited ? (
+                                <span className="badge badge-warning" style={{ fontSize: 8, padding: '1px 4px' }}>✏️ Edited</span>
+                              ) : isAi ? (
+                                <span className="badge badge-primary" style={{ fontSize: 8, padding: '1px 4px' }}>✨ AI</span>
+                              ) : (
+                                <span className="badge badge-muted" style={{ fontSize: 8, padding: '1px 4px' }}>👤 Manual</span>
+                              )}
+                            </div>
+                            <div style={{ display: 'flex', gap: 2 }}>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleOpenEdit(task); }}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', color: 'var(--text-3)' }}
+                                title="Edit Task"
+                              >
+                                <Edit3 size={11} />
+                              </button>
+                              <button
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  if (!canEdit()) {
+                                    requireEditPermission('delete task');
+                                    return;
+                                  }
+                                  await deleteTask(task.id || task._id);
+                                  loadTasks();
+                                }}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', color: 'var(--danger)' }}
+                                title="Delete Task"
+                              >
+                                <Trash2 size={11} />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                ))}
 
-                {/* Study Tasks */}
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  {dayTasks.map((task) => {
-                    const isAi = task.source === 'auto' && !task.isUserEdited;
-                    const isEdited = !!task.isUserEdited;
-                    const isLocked = !!task.isLocked;
-                    const displayTitle = task.topicName || task.title;
-
-                    return (
-                      <div
-                        key={task.id || task._id}
-                        style={{
-                          background: task.status === 'Completed' ? 'var(--success-glass)' : 'var(--surface-2)',
-                          border: `1px solid ${task.status === 'Completed' ? 'var(--success)' : isLocked ? '#ef4444' : 'var(--border)'}`,
-                          borderRadius: 'var(--radius-sm)', padding: '6px 8px',
-                          fontSize: 11, cursor: 'pointer', position: 'relative',
-                        }}
-                        onClick={() => handleOpenEdit(task)}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
-                          <span style={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '80%' }}>
-                            {displayTitle}
-                          </span>
-                          <button
-                            onClick={(e) => handleToggleLock(task, e)}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: isLocked ? '#ef4444' : 'var(--text-3)' }}
-                            title={isLocked ? 'Locked (will not be moved)' : 'Unlocked'}
-                          >
-                            {isLocked ? <Lock size={11} /> : <Unlock size={11} />}
-                          </button>
-                        </div>
-
-                        <div style={{ color: 'var(--text-2)', fontSize: 10, marginBottom: 3 }}>
-                          {task.startTime}–{task.endTime} ({task.durationMinutes || 60}m)
-                        </div>
-
-                        {/* Provenance Badge & Quick Actions */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
-                          <div>
-                            {isLocked ? (
-                              <span className="badge" style={{ fontSize: 8, padding: '1px 4px', background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444' }}>🔒 Locked</span>
-                            ) : isEdited ? (
-                              <span className="badge badge-warning" style={{ fontSize: 8, padding: '1px 4px' }}>✏️ Edited</span>
-                            ) : isAi ? (
-                              <span className="badge badge-primary" style={{ fontSize: 8, padding: '1px 4px' }}>✨ AI</span>
-                            ) : (
-                              <span className="badge badge-muted" style={{ fontSize: 8, padding: '1px 4px' }}>👤 Manual</span>
-                            )}
-                          </div>
-                          <div style={{ display: 'flex', gap: 2 }}>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleOpenEdit(task); }}
-                              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', color: 'var(--text-3)' }}
-                              title="Edit Task"
-                            >
-                              <Edit3 size={11} />
-                            </button>
-                            <button
-                              onClick={async (e) => {
-                                e.stopPropagation();
-                                if (!canEdit()) {
-                                  requireEditPermission('delete task');
-                                  return;
-                                }
-                                await deleteTask(task.id || task._id);
-                                loadTasks();
-                              }}
-                              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', color: 'var(--danger)' }}
-                              title="Delete Task"
-                            >
-                              <Trash2 size={11} />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                  <button
+                    style={{ width: '100%', padding: '4px', borderRadius: 'var(--radius-sm)', border: '1px dashed var(--border)', background: 'transparent', color: 'var(--text-3)', fontSize: 11, cursor: 'pointer', marginTop: 6 }}
+                    onClick={() => handleOpenAdd(dateStr)}
+                  >
+                    + Add Task
+                  </button>
                 </div>
+              );
+            })}
+          </div>
 
-                <button
-                  style={{ width: '100%', padding: '4px', borderRadius: 'var(--radius-sm)', border: '1px dashed var(--border)', background: 'transparent', color: 'var(--text-3)', fontSize: 11, cursor: 'pointer', marginTop: 6 }}
-                  onClick={() => handleOpenAdd(dateStr)}
-                >
-                  + Add Task
-                </button>
-              </div>
-            );
-          })}
-        </div>
+          {/* Mobile Single-Day View with Day Selector */}
+          <div className="mobile-only" style={{ display: 'flex', flexDirection: 'column', gap: 14, width: '100%' }}>
+            <div className="area-tabs-container" style={{ background: 'var(--surface-2)', padding: 4, borderRadius: 'var(--radius)', width: '100%' }}>
+              {weekDays.map((day) => {
+                const isSelected = isSameDay(day, currentDate);
+                return (
+                  <button
+                    key={day.toISOString()}
+                    className={`btn btn-xs ${isSelected ? 'btn-primary' : 'btn-ghost'}`}
+                    onClick={() => setCurrentDate(day)}
+                    style={{ minWidth: 60, padding: '6px 8px', textAlign: 'center', flexShrink: 0 }}
+                  >
+                    <div style={{ fontSize: 9, opacity: 0.8 }}>{DAY_NAMES[day.getDay()].slice(0, 3)}</div>
+                    <div style={{ fontSize: 12, fontWeight: 700 }}>{format(day, 'd')}</div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <DayView
+              date={currentDate}
+              tasks={getTasksForDate(format(currentDate, 'yyyy-MM-dd'))}
+              teachingBlocks={getTeachingBlocksForDay(currentDate.getDay())}
+              onAddTask={() => handleOpenAdd(format(currentDate, 'yyyy-MM-dd'))}
+              onEditTask={handleOpenEdit}
+              onToggleLock={handleToggleLock}
+              onCompleteTask={async (taskId) => {
+                if (!canEdit()) {
+                  requireEditPermission('complete task');
+                  return;
+                }
+                await updateTask(taskId, { status: 'Completed', completedAt: new Date().toISOString() });
+                loadTasks();
+              }}
+              onDeleteTask={async (taskId) => {
+                if (!canEdit()) {
+                  requireEditPermission('delete task');
+                  return;
+                }
+                await deleteTask(taskId);
+                loadTasks();
+              }}
+            />
+          </div>
+        </>
       )}
 
       {/* Day View */}

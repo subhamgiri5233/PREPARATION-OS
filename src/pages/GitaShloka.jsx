@@ -422,8 +422,8 @@ export default function GitaShloka() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
           <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>পূর্ববর্তী শ্লোক সংগ্রহ (Shloka History)</h2>
           
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-            <div style={{ position: 'relative' }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', width: '100%' }}>
+            <div style={{ position: 'relative', flex: '1 1 180px' }}>
               <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-3)' }} />
               <input
                 type="text"
@@ -431,7 +431,7 @@ export default function GitaShloka() {
                 placeholder="বাংলা শব্দ বা শ্লোক খুঁজুন..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ paddingLeft: 30, width: 220 }}
+                style={{ paddingLeft: 30, width: '100%' }}
               />
             </div>
 
@@ -439,7 +439,7 @@ export default function GitaShloka() {
               className="form-select form-select-sm"
               value={chapterFilter}
               onChange={(e) => setChapterFilter(e.target.value)}
-              style={{ width: 140 }}
+              style={{ flex: '1 1 130px', minWidth: 120 }}
             >
               <option value="">সকল অধ্যায় (All)</option>
               {Array.from({ length: 18 }, (_, i) => i + 1).map((ch) => (
@@ -450,6 +450,7 @@ export default function GitaShloka() {
             <button
               className={`btn btn-sm ${favoritesOnly ? 'btn-warning' : 'btn-ghost'}`}
               onClick={() => setFavoritesOnly(!favoritesOnly)}
+              style={{ flexShrink: 0 }}
             >
               <Star size={14} fill={favoritesOnly ? '#fff' : 'none'} /> পছন্দের ({stats.favorites})
             </button>

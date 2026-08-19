@@ -47,11 +47,15 @@ export default function TeachingSchedule() {
     loadSchedule();
   };
 
+  const [mobileDayIndex, setMobileDayIndex] = useState(new Date().getDay());
+
   // Group by day
   const byDay = DAY_NAMES.map((name, index) => ({
     name, index,
     slots: schedule.filter((s) => s.dayOfWeek === index),
   }));
+
+  const activeMobileDay = byDay[mobileDayIndex] || byDay[0];
 
   return (
     <div>
@@ -74,14 +78,14 @@ export default function TeachingSchedule() {
       {/* Info Banner */}
       <div style={{
         background: 'var(--warning-glass)', border: '1px solid var(--warning)',
-        borderRadius: 'var(--radius-lg)', padding: '12px 16px', marginBottom: 24,
+        borderRadius: 'var(--radius-lg)', padding: '12px 16px', marginBottom: 20,
         fontSize: 13, color: 'var(--warning)',
       }}>
         🏫 Teaching periods are automatically blocked in the Study Planner. You cannot schedule study during these times.
       </div>
 
-      {/* Weekly Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 12 }}>
+      {/* Desktop Weekly Grid */}
+      <div className="desktop-only" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 12 }}>
         {byDay.map(({ name, index, slots }) => (
           <div key={index} style={{
             background: 'var(--card)', border: '1px solid var(--border)',
@@ -123,6 +127,104 @@ export default function TeachingSchedule() {
             </button>
           </div>
         ))}
+      </div>
+
+      {/* Mobile Single-Day View */}
+      <div className="mobile-only" style={{ display: 'flex', flexDirection: 'column', gap: 14, width: '100%' }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          background: 'var(--card)', padding: '10px 14px', borderRadius: 'var(--radius)',
+          border: '1px solid var(--border)'
+        }}>
+          <button
+            className="btn btn-ghost btn-icon"
+            onClick={() => setMobileDayIndex((idx) => (idx === 0 ? 6 : idx - 1))}
+          >
+            <ChevronLeft size={16} />
+          </button>
+          <span style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)' }}>
+            {activeMobileDay.name}
+          </span>
+          <button
+            className="btn btn-ghost btn-icon"
+            onClick={() => setMobileDayIndex((idx) => (idx === 6 ? 0 : idx + 1))}
+          >
+            <ChevronRight size={16} />
+          </button>
+        </div>
+
+        {/* Day selection tabs */}
+        <div className="area-tabs-container" style={{ background: 'var(--surface-2)', padding: 4, borderRadius: 'var(--radius)' }}>
+          {byDay.map(({ name, index, slots }) => (
+            <button
+              key={index}
+              className={`btn btn-xs ${mobileDayIndex === index ? 'btn-primary' : 'btn-ghost'}`}
+              onClick={() => setMobileDayIndex(index)}
+              style={{ minWidth: 50, padding: '4px 8px', textAlign: 'center', flexShrink: 0 }}
+            >
+              {name.slice(0, 3)} {slots.length > 0 && `(${slots.length})`}
+            </button>
+          ))}
+        </div>
+
+        {/* Selected Day Slots Card */}
+        <div className="card" style={{ padding: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--warning)' }}>
+              Teaching Periods for {activeMobileDay.name}
+            </div>
+            <button
+              className="btn btn-xs btn-ghost"
+              onClick={() => { setForm({ ...form, dayOfWeek: mobileDayIndex }); setShowAdd(true); }}
+            >
+              + Add Slot
+            </button>
+          </div>
+
+          {activeMobileDay.slots.length === 0 ? (
+            <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--text-3)', fontSize: 12 }}>
+              No teaching periods scheduled on {activeMobileDay.name}. This entire day is free for study.
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {activeMobileDay.slots.map((slot) => (
+                <div
+                  key={slot.id}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '12px 14px', background: 'var(--surface-2)',
+                    border: '1px solid var(--warning)', borderRadius: 'var(--radius)',
+                    flexWrap: 'wrap', gap: 8
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--warning)' }}>
+                      🏫 {slot.label}
+                    </div>
+                    <div style={{ fontSize: 12, color: 'var(--text-2)', marginTop: 2 }}>
+                      🕒 {slot.startTime} – {slot.endTime}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button
+                      className="btn btn-sm btn-ghost"
+                      onClick={() => { setEditSlot(slot); setForm({ dayOfWeek: slot.dayOfWeek, startTime: slot.startTime, endTime: slot.endTime, label: slot.label }); setShowAdd(true); }}
+                    >
+                      <Edit2 size={12} /> Edit
+                    </button>
+                    <button
+                      className="btn btn-sm btn-ghost"
+                      style={{ color: 'var(--danger)' }}
+                      onClick={() => handleDelete(slot.id)}
+                    >
+                      <Trash2 size={12} /> Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* List view */}

@@ -481,30 +481,30 @@ export default function StudySessions() {
       </div>
 
       {/* ── DUAL SCOPE METRICS (DAY STATS & ALL-TIME STATS) ────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
+      <div className="sessions-dual-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
         {/* Day Stats */}
         <div className="card" style={{ padding: '16px' }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--primary-light)', textTransform: 'uppercase', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
             <Calendar size={14} /> {format(selectedDate, 'MMM d')} Day Summary
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, textAlign: 'center' }}>
-            <div style={{ background: 'var(--surface-2)', padding: '10px', borderRadius: 8 }}>
-              <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--text)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(85px, 1fr))', gap: 8, textAlign: 'center' }}>
+            <div style={{ background: 'var(--surface-2)', padding: '10px 6px', borderRadius: 8 }}>
+              <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)' }}>
                 {dayCompletedTasks} / {plannedDayTasks.length}
               </div>
-              <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>Planned Tasks Done</div>
+              <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 2 }}>Planned Done</div>
             </div>
-            <div style={{ background: 'var(--surface-2)', padding: '10px', borderRadius: 8 }}>
-              <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--primary-light)' }}>
+            <div style={{ background: 'var(--surface-2)', padding: '10px 6px', borderRadius: 8 }}>
+              <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--primary-light)' }}>
                 {dayStudyHours.toFixed(1)}h
               </div>
-              <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>Hours Studied</div>
+              <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 2 }}>Hours Studied</div>
             </div>
-            <div style={{ background: 'var(--surface-2)', padding: '10px', borderRadius: 8 }}>
-              <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--success)' }}>
+            <div style={{ background: 'var(--surface-2)', padding: '10px 6px', borderRadius: 8 }}>
+              <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--success)' }}>
                 {dayAvgSessionMins}m
               </div>
-              <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>Avg Session</div>
+              <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 2 }}>Avg Session</div>
             </div>
           </div>
         </div>
@@ -514,31 +514,31 @@ export default function StudySessions() {
           <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-2)', textTransform: 'uppercase', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
             <BarChart2 size={14} /> All-Time Overall Performance
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, textAlign: 'center' }}>
-            <div style={{ background: 'var(--surface-2)', padding: '10px', borderRadius: 8 }}>
-              <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--text)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(85px, 1fr))', gap: 8, textAlign: 'center' }}>
+            <div style={{ background: 'var(--surface-2)', padding: '10px 6px', borderRadius: 8 }}>
+              <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)' }}>
                 {sessions.length}
               </div>
-              <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>Total Sessions</div>
+              <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 2 }}>Total Sessions</div>
             </div>
-            <div style={{ background: 'var(--surface-2)', padding: '10px', borderRadius: 8 }}>
-              <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--primary-light)' }}>
+            <div style={{ background: 'var(--surface-2)', padding: '10px 6px', borderRadius: 8 }}>
+              <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--primary-light)' }}>
                 {totalStudyHours.toFixed(1)}h
               </div>
-              <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>Total Study Hours</div>
+              <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 2 }}>Total Hours</div>
             </div>
-            <div style={{ background: 'var(--surface-2)', padding: '10px', borderRadius: 8 }}>
-              <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--warning)' }}>
+            <div style={{ background: 'var(--surface-2)', padding: '10px 6px', borderRadius: 8 }}>
+              <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--warning)' }}>
                 {allTimeAvgSessionMins}m
               </div>
-              <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>Overall Avg Session</div>
+              <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 2 }}>Avg Session</div>
             </div>
           </div>
         </div>
       </div>
 
       {/* ── 1. PLANNER SYNCHRONIZED STUDY QUEUE FOR SELECTED DATE ──── */}
-      <div className="card mb-24" style={{ padding: '20px' }}>
+      <div className="card mb-24" style={{ padding: '16px' }}>
         <div className="card-header" style={{ marginBottom: 14 }}>
           <div>
             <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -588,14 +588,14 @@ export default function StudySessions() {
                   key={task.id || task._id}
                   style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12,
-                    padding: '12px 16px', borderRadius: 'var(--radius)',
+                    padding: '12px 14px', borderRadius: 'var(--radius)',
                     background: isCurrentActive ? 'var(--primary-glass)' : isDone ? 'var(--success-glass)' : 'var(--surface-2)',
                     border: `2px solid ${isCurrentActive ? 'var(--primary-light)' : isDone ? 'var(--success)' : isInProgress ? 'var(--warning)' : isLocked ? '#ef4444' : 'var(--border)'}`,
                     boxShadow: isCurrentActive ? '0 0 16px rgba(99, 102, 241, 0.3)' : 'none',
                   }}
                 >
                   {/* Left: Status icon & Details */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 240, flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: 1 }}>
                     <div style={{ color: isCurrentActive ? 'var(--primary-light)' : isDone ? 'var(--success)' : isInProgress ? 'var(--warning)' : 'var(--text-3)' }}>
                       {isCurrentActive ? <Play size={20} style={{ animation: 'pulse 1.5s infinite' }} /> : isDone ? <CheckCircle2 size={20} /> : <Circle size={20} />}
                     </div>

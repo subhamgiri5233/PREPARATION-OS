@@ -185,18 +185,20 @@ export default function Analytics() {
                 </div>
               </div>
               {pieData.length > 0 ? (
-                <div style={{ display: 'flex', height: 240, alignItems: 'center' }}>
-                  <ResponsiveContainer width="50%" height="100%">
-                    <PieChart>
-                      <Pie data={pieData} cx="50%" cy="50%" innerRadius={48} outerRadius={76} paddingAngle={3} dataKey="value">
-                        {pieData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip contentStyle={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12, paddingRight: 16 }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', minHeight: 240, alignItems: 'center', gap: 14 }}>
+                  <div style={{ flex: '1 1 180px', minWidth: 160, height: 200 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={pieData} cx="50%" cy="50%" innerRadius={45} outerRadius={72} paddingAngle={3} dataKey="value">
+                          {pieData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip contentStyle={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div style={{ flex: '1 1 180px', display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12, paddingRight: 8 }}>
                     {errorDistribution.slice(0, 5).map((e, i) => (
                       <div key={e.type} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>

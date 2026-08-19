@@ -74,12 +74,12 @@ export default function TopBar({ onMobileMenuOpen }) {
           <Menu size={18} />
         </button>
 
-        <div className="flex items-center gap-8" style={{ flex: 1 }}>
-          <h1 className="topbar-title">{title}</h1>
-          <span className="text-sm text-muted">{today}</span>
+        <div className="topbar-title-wrap" style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+          <h1 className="topbar-title" style={{ margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</h1>
+          <span className="topbar-date text-xs text-muted" style={{ display: 'block', lineHeight: 1.2 }}>{today}</span>
         </div>
 
-        <div className="topbar-actions">
+        <div className="topbar-actions" style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
           {/* Global Search Button */}
           <button
             className="topbar-btn"
@@ -90,86 +90,88 @@ export default function TopBar({ onMobileMenuOpen }) {
             <Search size={16} />
           </button>
 
-          {/* Active session indicator */}
-          <ActiveSessionIndicator />
+          {/* Active session indicator - hidden on very small screens, visible on tablet/desktop */}
+          <div className="desktop-only">
+            <ActiveSessionIndicator />
+          </div>
 
           {/* Edit Mode vs View-Only Toggle Switch */}
           {isEditMode ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <button
-                className="btn btn-xs"
-                onClick={toggleEditMode}
-                title="Edit Mode is ON. Click to switch to View-Only Mode."
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  background: 'rgba(34, 197, 94, 0.15)',
-                  color: 'var(--success)',
-                  border: '1px solid var(--success)',
-                  borderRadius: 'var(--radius-full)',
-                  padding: '4px 10px',
-                  fontSize: 12,
-                  fontWeight: 700,
-                  cursor: 'pointer'
-                }}
-              >
-                <Edit3 size={13} />
-                <span>Edit Mode</span>
+            <button
+              className="btn btn-xs topbar-mode-btn"
+              onClick={toggleEditMode}
+              title="Edit Mode is ON. Click to switch to View-Only Mode."
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+                background: 'rgba(34, 197, 94, 0.15)',
+                color: 'var(--success)',
+                border: '1px solid var(--success)',
+                borderRadius: 'var(--radius-full)',
+                padding: '4px 8px',
+                fontSize: 11,
+                fontWeight: 700,
+                cursor: 'pointer',
+                flexShrink: 0
+              }}
+            >
+              <Edit3 size={12} />
+              <span className="mode-label">Edit Mode</span>
+              <div style={{
+                width: 22,
+                height: 12,
+                borderRadius: 6,
+                background: 'var(--success)',
+                position: 'relative',
+                marginLeft: 1
+              }}>
                 <div style={{
-                  width: 26,
-                  height: 14,
-                  borderRadius: 7,
-                  background: 'var(--success)',
-                  position: 'relative',
-                  marginLeft: 2
-                }}>
-                  <div style={{
-                    width: 10,
-                    height: 10,
-                    borderRadius: 5,
-                    background: '#fff',
-                    position: 'absolute',
-                    top: 2,
-                    right: 2,
-                    transition: 'all 0.2s ease'
-                  }} />
-                </div>
-              </button>
-            </div>
+                  width: 8,
+                  height: 8,
+                  borderRadius: 4,
+                  background: '#fff',
+                  position: 'absolute',
+                  top: 2,
+                  right: 2,
+                  transition: 'all 0.2s ease'
+                }} />
+              </div>
+            </button>
           ) : (
             <button
-              className="btn btn-xs btn-ghost"
+              className="btn btn-xs btn-ghost topbar-mode-btn"
               onClick={toggleEditMode}
               title="View-Only Mode. Click to enter Master PIN and turn ON Edit Mode."
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 6,
+                gap: 5,
                 background: 'var(--surface-2)',
                 color: 'var(--text-2)',
                 border: '1px solid var(--border)',
                 borderRadius: 'var(--radius-full)',
-                padding: '4px 10px',
-                fontSize: 12,
+                padding: '4px 8px',
+                fontSize: 11,
                 fontWeight: 600,
-                cursor: 'pointer'
+                cursor: 'pointer',
+                flexShrink: 0
               }}
             >
-              <Eye size={13} />
-              <span>View Only</span>
+              <Eye size={12} />
+              <span className="mode-label">View Only</span>
               <div style={{
-                width: 26,
-                height: 14,
-                borderRadius: 7,
+                width: 22,
+                height: 12,
+                borderRadius: 6,
                 background: 'var(--surface-3)',
                 position: 'relative',
-                marginLeft: 2
+                marginLeft: 1
               }}>
                 <div style={{
-                  width: 10,
-                  height: 10,
-                  borderRadius: 5,
+                  width: 8,
+                  height: 8,
+                  borderRadius: 4,
                   background: 'var(--text-3)',
                   position: 'absolute',
                   top: 2,
@@ -179,17 +181,6 @@ export default function TopBar({ onMobileMenuOpen }) {
               </div>
             </button>
           )}
-
-          {/* Logout button */}
-          <button
-            className="topbar-btn"
-            onClick={logout}
-            title="Logout of Preparation OS"
-            aria-label="Logout"
-            style={{ color: 'var(--text-3)' }}
-          >
-            <LogOut size={16} />
-          </button>
 
           {/* Notifications */}
           <a href="/notifications" className="topbar-btn" aria-label="Notifications">

@@ -249,7 +249,7 @@ export default function Dashboard() {
         </div>
 
         {/* Quick Area Switcher Tabs */}
-        <div style={{ display: 'flex', gap: 6, background: 'var(--surface-2)', padding: 4, borderRadius: 'var(--radius)' }}>
+        <div className="area-tabs-container" style={{ background: 'var(--surface-2)', padding: 4, borderRadius: 'var(--radius)' }}>
           <button
             className={`btn btn-sm ${selectedAreaId === 'all' ? 'btn-primary' : 'btn-ghost'}`}
             onClick={() => setSelectedAreaId('all')}
@@ -269,7 +269,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── TARGET STATS BAR ────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14, marginBottom: 20 }}>
+      <div className="stats-responsive-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14, marginBottom: 20 }}>
         <div className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px' }}>
           <div>
             <div style={{ fontSize: 11, color: 'var(--text-3)', textTransform: 'uppercase', fontWeight: 700 }}>Study Target</div>
@@ -309,8 +309,8 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ── 2-COLUMN COMMAND CENTER GRID ───────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: 20 }}>
+      {/* ── 2-COLUMN COMMAND CENTER GRID (RESPONSIVE SINGLE COLUMN ON MOBILE) ── */}
+      <div className="dashboard-main-grid">
         {/* LEFT COLUMN: Study Focus, Sessions, Revisions */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           

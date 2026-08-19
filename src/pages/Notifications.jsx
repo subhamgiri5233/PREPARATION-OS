@@ -274,8 +274,8 @@ export default function Notifications() {
               <div
                 key={notif.id || notif._id}
                 style={{
-                  display: 'flex', alignItems: 'flex-start', gap: 14,
-                  padding: '16px 18px', borderRadius: 'var(--radius-lg)',
+                  display: 'flex', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12,
+                  padding: '14px 16px', borderRadius: 'var(--radius-lg)',
                   background: notif.read ? 'var(--card)' : 'var(--primary-glass)',
                   border: `1px solid ${notif.read ? 'var(--border)' : isMissed ? 'var(--danger)' : 'var(--border-accent)'}`,
                   transition: 'var(--transition)',

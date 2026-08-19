@@ -1031,8 +1031,8 @@ export default function Preparation() {
       <div
         key={topic.id}
         style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '10px 18px', borderBottom: '1px solid var(--border-light, rgba(255,255,255,0.03))',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10,
+          padding: '10px 14px', borderBottom: '1px solid var(--border-light, rgba(255,255,255,0.03))',
           background: isDone ? 'rgba(34,197,94,0.02)' : 'transparent',
           transition: 'background 0.2s ease',
         }}
@@ -1040,7 +1040,7 @@ export default function Preparation() {
         onMouseLeave={(e) => (e.currentTarget.style.background = isDone ? 'rgba(34,197,94,0.02)' : 'transparent')}
       >
         {/* Left: Status icon + Name + Subtopic info */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 200 }}>
           <button
             onClick={() => handleStatusChange(topic, isDone ? 'In Progress' : 'Completed')}
             style={{
@@ -1057,7 +1057,7 @@ export default function Preparation() {
             onClick={() => setSelectedTopicDetail(topic)}
             style={{ cursor: 'pointer', flex: 1, minWidth: 0 }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
               <span
                 style={{
                   fontSize: 13,
@@ -1065,7 +1065,6 @@ export default function Preparation() {
                   color: isDone ? 'var(--text-2)' : 'var(--text)',
                   textDecoration: isDone ? 'line-through' : 'none'
                 }}
-                className="truncate"
               >
                 {topic.name}
               </span>
@@ -1073,7 +1072,7 @@ export default function Preparation() {
               {/* Importance Chip */}
               <span
                 style={{
-                  fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
+                  fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 4,
                   color: impConf.color, background: impConf.bg, border: `1px solid ${impConf.border}`
                 }}
               >
@@ -1090,7 +1089,7 @@ export default function Preparation() {
               {/* Attached resources indicator */}
               {topicRes.length > 0 && (
                 <span className="badge badge-info" style={{ fontSize: 9 }}>
-                  📁 {topicRes.length} resource{topicRes.length > 1 ? 's' : ''}
+                  📁 {topicRes.length}
                 </span>
               )}
             </div>
@@ -1105,10 +1104,10 @@ export default function Preparation() {
         </div>
 
         {/* Right: Metadata chips + Actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           {/* Estimated Hours */}
           <span style={{ fontSize: 11, color: 'var(--text-2)', display: 'flex', alignItems: 'center', gap: 3 }}>
-            <Clock size={12} /> {topic.estimatedHours || (topic.estimatedMinutes ? topic.estimatedMinutes / 60 : 2)}h
+            <Clock size={11} /> {topic.estimatedHours || (topic.estimatedMinutes ? topic.estimatedMinutes / 60 : 2)}h
           </span>
 
           {/* Difficulty */}
@@ -1126,7 +1125,7 @@ export default function Preparation() {
             value={topic.status || 'Not Started'}
             onChange={(e) => handleStatusChange(topic, e.target.value)}
             style={{
-              fontSize: 11, padding: '3px 8px', borderRadius: 4,
+              fontSize: 11, padding: '3px 6px', borderRadius: 4,
               background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border)'
             }}
           >
@@ -1142,21 +1141,21 @@ export default function Preparation() {
 
           {/* Details Button */}
           <button
-            className="btn btn-sm btn-ghost"
+            className="btn btn-xs btn-ghost"
             onClick={() => setSelectedTopicDetail(topic)}
-            style={{ padding: '4px 8px', fontSize: 11 }}
+            style={{ padding: '3px 6px', fontSize: 11 }}
           >
             Details
           </button>
 
           {/* Direct Delete Topic Button */}
           <button
-            className="btn btn-sm btn-ghost"
-            style={{ color: 'var(--danger)', padding: '4px 6px' }}
+            className="btn btn-xs btn-ghost"
+            style={{ color: 'var(--danger)', padding: '3px 5px' }}
             onClick={(e) => handleDeleteTopic(topic.id || topic._id, topic.name, e)}
             title={`Delete topic "${topic.name}"`}
           >
-            <Trash2 size={13} />
+            <Trash2 size={12} />
           </button>
         </div>
       </div>

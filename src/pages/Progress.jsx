@@ -260,7 +260,7 @@ export default function Progress() {
       </div>
 
       {/* ── 2. PREPARATION AREA PROGRESS & TOPIC STATUS ─────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 20, marginBottom: 24 }}>
+      <div className="progress-main-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 20, marginBottom: 24 }}>
         {/* Preparation Area Progress */}
         <div className="card">
           <div className="card-header" style={{ marginBottom: 14 }}>
