@@ -4,7 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently -n \"API,Vite\" -c \"cyan,magenta\" \"npm run server\" \"vite\"",
+    "server": "npm --prefix server start",
+    "server:install": "npm --prefix server install",
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview"
@@ -26,6 +28,7 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.4",
+    "concurrently": "^9.2.4",
     "fake-indexeddb": "^6.2.5",
     "oxlint": "^1.75.0",
     "vite": "^8.2.0"

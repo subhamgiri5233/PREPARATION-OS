@@ -64,13 +64,12 @@ export default function TopBar({ onMobileMenuOpen }) {
       <header className="topbar">
         {/* Mobile hamburger */}
         <button
-          className="topbar-btn"
+          className="topbar-btn mobile-only"
           onClick={onMobileMenuOpen}
-          style={{ display: 'none' }}
           id="mobile-menu-btn"
           aria-label="Open menu"
         >
-          <Menu size={16} />
+          <Menu size={18} />
         </button>
 
         <div className="flex items-center gap-8" style={{ flex: 1 }}>

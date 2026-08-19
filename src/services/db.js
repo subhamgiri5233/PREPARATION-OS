@@ -1,632 +1,348 @@
 // src/services/db.js
-// Dexie.js database schema and initialization
+// MongoDB Atlas API client — replaces Dexie/IndexedDB
+// All functions have the same signatures as before so no other files need changing.
 
-import Dexie from 'dexie';
-import {
-  defaultSettings,
-  defaultTeachingSchedule,
-  defaultPreparationAreas,
-  defaultCourses,
-  ibpsSubjects,
-  ibpsTopics,
-} from '../data/seedData.js';
+import { apiFetch } from './api.js';
 
-export const db = new Dexie('PreparationOS');
-
-db.version(1).stores({
-  settings: '++id',
-  preparationAreas: '++id, name, priority',
-  subjects: '++id, preparationAreaId, name',
-  topics: '++id, subjectId, preparationAreaId, status, priority',
-  studyTasks: '++id, topicId, subjectId, preparationAreaId, date, status',
-  studySessions: '++id, topicId, subjectId, preparationAreaId, startTime, endTime',
-  revisionTasks: '++id, topicId, dueDate, status',
-  mockTests: '++id, preparationAreaId, date, mockNumber',
-  mockSubjectResults: '++id, mockTestId, subjectId',
-  vocabulary: '++id, word, dateAdded',
-  vocabularyReviews: '++id, vocabularyId, reviewDate, status',
-  teachingSchedule: '++id, dayOfWeek',
-  notifications: '++id, type, scheduledAt, read',
-  dailyProgress: '++id, date',
-  weeklyProgress: '++id, weekStart',
-});
-
-db.version(2).stores({
-  errorLog: '++id, mockTestId, subjectId, topicId',
-});
-
-// Phase 4 Schema Additions (Marking schemes and expanded error log)
-db.version(3).stores({
-  mockTests: '++id, preparationAreaId, date, mockNumber', // Schema remains same for indexes, but fields expanded
-  errorLog: '++id, mockTestId, subjectId, topicId, errorType, reviewed, revisionTaskId',
-}).upgrade(tx => {
-  return tx.mockTests.toCollection().modify(mock => {
-    if (mock.positiveMarks === undefined) mock.positiveMarks = 1;
-    if (mock.negativeMarks === undefined) mock.negativeMarks = 0;
-  });
-});
-
-// Phase 5 Schema Additions (Revision Intelligence)
-db.version(4).stores({
-  revisionTasks: '++id, topicId, dueDate, status, revisionNumber, scheduledDate, completedDate, sourceType, sourceId, isManual',
-}).upgrade(tx => {
-  // Migrate existing topics to have difficulty and retentionScore
-  tx.topics.toCollection().modify(topic => {
-    if (!topic.difficulty) topic.difficulty = 'Medium';
-    if (topic.retentionScore === undefined) topic.retentionScore = 0;
-  });
-  
-  // Migrate existing revision tasks to have extended fields
-  tx.revisionTasks.toCollection().modify(rev => {
-    if (rev.confidence === undefined) rev.confidence = 0;
-    if (!rev.difficulty) rev.difficulty = 'Medium';
-    if (rev.intervalDays === undefined) rev.intervalDays = 1;
-    if (rev.errorCount === undefined) rev.errorCount = 0;
-    if (rev.repeatedErrorCount === undefined) rev.repeatedErrorCount = 0;
-    if (rev.sourceType === undefined) rev.sourceType = 'Topic Completion';
-    if (rev.isManual === undefined) rev.isManual = false;
-  });
-});
-
-// Phase 6 Schema Additions (Real Syllabus & Course Mapping System)
-db.version(5).stores({
-  courses: '++id, preparationAreaId, name',
-  subjects: '++id, preparationAreaId, courseId, name',
-  topics: '++id, subjectId, preparationAreaId, courseId, parentTopicId, status, priority, importance',
-}).upgrade(tx => {
-  return tx.topics.toCollection().modify(topic => {
-    if (topic.courseId === undefined) {
-      topic.courseId = topic.preparationAreaId === 1 ? 1 : null;
-    }
-    if (!topic.importance) topic.importance = topic.priority || 'High';
-    if (topic.completionPercentage === undefined) topic.completionPercentage = topic.completionPercent || 0;
-    if (topic.estimatedHours === undefined) topic.estimatedHours = 2;
-    if (topic.parentTopicId === undefined) topic.parentTopicId = null;
-    if (topic.resourceReference === undefined) topic.resourceReference = '';
-    if (topic.order === undefined) topic.order = 0;
-  });
-});
-
-// Phase 7 Schema Additions (Real Course & Syllabus Data Command Center)
-db.version(6).stores({
-  courses: '++id, preparationAreaId, name, status',
-  chapters: '++id, subjectId, preparationAreaId, courseId, name, order',
-  studyResources: '++id, topicId, preparationAreaId, courseId, subjectId, resourceType, completed',
-  topics: '++id, subjectId, preparationAreaId, courseId, chapterId, parentTopicId, status, priority, importance, difficulty',
-}).upgrade(tx => {
-  tx.courses.toCollection().modify(course => {
-    if (!course.status) course.status = 'Active';
-    if (course.provider === undefined) course.provider = course.platform || '';
-    if (course.startDate === undefined) course.startDate = null;
-    if (course.targetDate === undefined) course.targetDate = null;
-    if (course.notes === undefined) course.notes = '';
-  });
-  return tx.topics.toCollection().modify(topic => {
-    if (topic.chapterId === undefined) topic.chapterId = null;
-    if (topic.estimatedMinutes === undefined) topic.estimatedMinutes = (topic.estimatedHours || 2) * 60;
-    if (topic.lastStudiedDate === undefined) topic.lastStudiedDate = topic.dateStarted || null;
-    if (topic.nextRevisionDate === undefined) topic.nextRevisionDate = null;
-    if (topic.masteryScore === undefined) topic.masteryScore = topic.status === 'Mastered' ? 100 : topic.status === 'Completed' ? 80 : 0;
-  });
-});
-
-// Phase 8 Schema Additions (Personal Gita Shloka System)
-db.version(7).stores({
-  gitaShlokas: '++id, date, chapter, verse, favorite',
-}).upgrade(tx => {
-  return tx.settings.toCollection().modify(s => {
-    if (s.gitaReminderEnabled === undefined) s.gitaReminderEnabled = true;
-  });
-});
-
-// Initialize database with seed data if empty
+// ─── Database Initialization ──────────────────────────────────────────────────
+// Seeding is handled server-side; this just checks connectivity
 export async function initializeDatabase() {
   try {
-    const settingsCount = await db.settings.count();
-    if (settingsCount === 0) {
-      await db.settings.add(defaultSettings);
-    }
-
-    const areasCount = await db.preparationAreas.count();
-    if (areasCount === 0) {
-      await db.preparationAreas.bulkAdd(defaultPreparationAreas);
-    }
-
-    const coursesCount = await db.courses.count();
-    if (coursesCount === 0) {
-      await db.courses.bulkAdd(defaultCourses);
-    }
-
-    const subjectsCount = await db.subjects.count();
-    if (subjectsCount === 0) {
-      await db.subjects.bulkAdd(ibpsSubjects);
-    }
-
-    const topicsCount = await db.topics.count();
-    if (topicsCount === 0) {
-      const topicsWithDefaults = ibpsTopics.map((t, idx) => ({
-        ...t,
-        courseId: 1, // Adda247 MahaPack
-        chapterId: null,
-        parentTopicId: null,
-        importance: t.importance || t.priority || 'High',
-        difficulty: t.difficulty || 'Medium',
-        estimatedHours: t.estimatedHours || 2,
-        estimatedMinutes: (t.estimatedHours || 2) * 60,
-        order: idx + 1,
-        completionPercent: 0,
-        completionPercentage: 0,
-        studyHours: 0,
-        dateStarted: null,
-        dateCompleted: null,
-        lastStudiedDate: null,
-        nextRevisionDate: null,
-        masteryScore: 0,
-        notes: '',
-        resourceReference: '',
-        createdAt: new Date().toISOString(),
-      }));
-      await db.topics.bulkAdd(topicsWithDefaults);
-    }
-
-    const scheduleCount = await db.teachingSchedule.count();
-    if (scheduleCount === 0) {
-      await db.teachingSchedule.bulkAdd(defaultTeachingSchedule);
-    }
-
-    console.log('[DB] Initialization complete');
-  } catch (error) {
-    console.error('[DB] Initialization error:', error);
+    await apiFetch('/health');
+    console.log('[DB] Connected to MongoDB API server');
+  } catch (err) {
+    console.error('[DB] API server not reachable:', err.message);
   }
 }
 
 // ─── Settings ─────────────────────────────────────────────────────────────────
 export async function getSettings() {
-  // Always get the first (and only) settings record
-  const all = await db.settings.toArray();
-  return all[0] || defaultSettings;
+  return await apiFetch('/settings');
 }
 export async function updateSettings(updates) {
-  const existing = await db.settings.toArray();
-  if (existing.length > 0) {
-    return await db.settings.update(existing[0].id, updates);
-  }
-  return await db.settings.add({ ...defaultSettings, ...updates });
+  return await apiFetch('/settings', { method: 'PUT', body: updates });
 }
 
 // ─── Preparation Areas ────────────────────────────────────────────────────────
 export async function getAllAreas() {
-  return await db.preparationAreas.orderBy('priority').toArray();
+  return await apiFetch('/areas');
 }
 export async function addArea(area) {
-  return await db.preparationAreas.add(area);
+  return await apiFetch('/areas', { method: 'POST', body: area });
 }
 export async function updateArea(id, updates) {
-  return await db.preparationAreas.update(id, updates);
+  return await apiFetch(`/areas/${id}`, { method: 'PUT', body: updates });
 }
 export async function deleteArea(id) {
-  return await db.preparationAreas.delete(id);
+  return await apiFetch(`/areas/${id}`, { method: 'DELETE' });
 }
 
-// ─── Courses (Phase 6 & 7) ────────────────────────────────────────────────────
+// ─── Courses ──────────────────────────────────────────────────────────────────
 export async function getAllCourses() {
-  return await db.courses.toArray();
+  return await apiFetch('/courses');
 }
 export async function getCoursesByArea(preparationAreaId) {
-  return await db.courses.where('preparationAreaId').equals(preparationAreaId).toArray();
+  return await apiFetch(`/courses?preparationAreaId=${preparationAreaId}`);
 }
 export async function addCourse(course) {
-  return await db.courses.add({
-    ...course,
-    status: course.status || 'Active',
-    provider: course.provider || course.platform || '',
-    createdAt: new Date().toISOString()
-  });
+  return await apiFetch('/courses', { method: 'POST', body: course });
 }
 export async function updateCourse(id, updates) {
-  return await db.courses.update(id, updates);
+  return await apiFetch(`/courses/${id}`, { method: 'PUT', body: updates });
 }
 export async function deleteCourse(id) {
-  return await db.courses.delete(id);
+  return await apiFetch(`/courses/${id}`, { method: 'DELETE' });
 }
 export async function bulkAddCourses(courses) {
-  return await db.courses.bulkAdd(courses);
+  return await apiFetch('/courses/bulk', { method: 'POST', body: courses });
 }
 
-// ─── Chapters / Modules (Phase 7) ─────────────────────────────────────────────
+// ─── Chapters / Modules ───────────────────────────────────────────────────────
 export async function getAllChapters() {
-  return await db.chapters.toArray();
+  return await apiFetch('/chapters');
 }
 export async function getChaptersBySubject(subjectId) {
-  return await db.chapters.where('subjectId').equals(subjectId).toArray();
+  return await apiFetch(`/chapters?subjectId=${subjectId}`);
 }
 export async function getChaptersByCourse(courseId) {
-  return await db.chapters.where('courseId').equals(courseId).toArray();
+  return await apiFetch(`/chapters?courseId=${courseId}`);
 }
 export async function getChaptersByArea(preparationAreaId) {
-  return await db.chapters.where('preparationAreaId').equals(preparationAreaId).toArray();
+  return await apiFetch(`/chapters?preparationAreaId=${preparationAreaId}`);
 }
 export async function addChapter(chapter) {
-  return await db.chapters.add({
-    ...chapter,
-    order: chapter.order || 0,
-    createdAt: new Date().toISOString()
-  });
+  return await apiFetch('/chapters', { method: 'POST', body: chapter });
 }
 export async function updateChapter(id, updates) {
-  return await db.chapters.update(id, updates);
+  return await apiFetch(`/chapters/${id}`, { method: 'PUT', body: updates });
 }
 export async function deleteChapter(id) {
-  return await db.chapters.delete(id);
+  return await apiFetch(`/chapters/${id}`, { method: 'DELETE' });
 }
 export async function bulkAddChapters(chapters) {
-  return await db.chapters.bulkAdd(chapters);
+  return await apiFetch('/chapters/bulk', { method: 'POST', body: chapters });
 }
 
-// ─── Study Resources (Phase 7) ────────────────────────────────────────────────
+// ─── Study Resources ──────────────────────────────────────────────────────────
 export async function getAllStudyResources() {
-  return await db.studyResources.toArray();
+  return await apiFetch('/resources');
 }
 export async function getResourcesByTopic(topicId) {
-  return await db.studyResources.where('topicId').equals(topicId).toArray();
+  return await apiFetch(`/resources?topicId=${topicId}`);
 }
 export async function addStudyResource(resource) {
-  return await db.studyResources.add({
-    ...resource,
-    completed: resource.completed || false,
-    watchedPercentage: resource.watchedPercentage || 0,
-    createdAt: new Date().toISOString()
-  });
+  return await apiFetch('/resources', { method: 'POST', body: resource });
 }
 export async function updateStudyResource(id, updates) {
-  return await db.studyResources.update(id, updates);
+  return await apiFetch(`/resources/${id}`, { method: 'PUT', body: updates });
 }
 export async function deleteStudyResource(id) {
-  return await db.studyResources.delete(id);
+  return await apiFetch(`/resources/${id}`, { method: 'DELETE' });
 }
 export async function bulkAddStudyResources(resources) {
-  return await db.studyResources.bulkAdd(resources);
+  return await apiFetch('/resources/bulk', { method: 'POST', body: resources });
 }
 
 // ─── Subjects ─────────────────────────────────────────────────────────────────
 export async function getSubjectsByArea(preparationAreaId) {
-  return await db.subjects.where('preparationAreaId').equals(preparationAreaId).toArray();
+  return await apiFetch(`/subjects?preparationAreaId=${preparationAreaId}`);
 }
 export async function getSubjectsByCourse(courseId) {
-  return await db.subjects.where('courseId').equals(courseId).toArray();
+  return await apiFetch(`/subjects?courseId=${courseId}`);
 }
 export async function getAllSubjects() {
-  return await db.subjects.toArray();
+  return await apiFetch('/subjects');
 }
 export async function addSubject(subject) {
-  return await db.subjects.add(subject);
+  return await apiFetch('/subjects', { method: 'POST', body: subject });
 }
 export async function updateSubject(id, updates) {
-  return await db.subjects.update(id, updates);
+  return await apiFetch(`/subjects/${id}`, { method: 'PUT', body: updates });
 }
 export async function deleteSubject(id) {
-  return await db.subjects.delete(id);
+  return await apiFetch(`/subjects/${id}`, { method: 'DELETE' });
 }
 export async function bulkAddSubjects(subjects) {
-  return await db.subjects.bulkAdd(subjects);
+  return await apiFetch('/subjects/bulk', { method: 'POST', body: subjects });
 }
 
 // ─── Topics ───────────────────────────────────────────────────────────────────
 export async function getTopicsBySubject(subjectId) {
-  return await db.topics.where('subjectId').equals(subjectId).toArray();
+  return await apiFetch(`/topics?subjectId=${subjectId}`);
 }
 export async function getTopicsByChapter(chapterId) {
-  return await db.topics.where('chapterId').equals(chapterId).toArray();
+  return await apiFetch(`/topics?chapterId=${chapterId}`);
 }
 export async function getTopicsByCourse(courseId) {
-  return await db.topics.where('courseId').equals(courseId).toArray();
+  return await apiFetch(`/topics?courseId=${courseId}`);
 }
 export async function getTopicsByArea(preparationAreaId) {
-  return await db.topics.where('preparationAreaId').equals(preparationAreaId).toArray();
+  return await apiFetch(`/topics?preparationAreaId=${preparationAreaId}`);
 }
 export async function getAllTopics() {
-  return await db.topics.toArray();
+  return await apiFetch('/topics');
 }
 export async function addTopic(topic) {
-  const estHours = topic.estimatedHours || (topic.estimatedMinutes ? topic.estimatedMinutes / 60 : 2);
-  const estMins = topic.estimatedMinutes || estHours * 60;
-  return await db.topics.add({
-    ...topic,
-    chapterId: topic.chapterId || null,
-    importance: topic.importance || topic.priority || 'High',
-    difficulty: topic.difficulty || 'Medium',
-    status: topic.status || 'Not Started',
-    estimatedHours: estHours,
-    estimatedMinutes: estMins,
-    completionPercentage: topic.completionPercentage ?? topic.completionPercent ?? 0,
-    masteryScore: topic.masteryScore ?? 0,
-    lastStudiedDate: topic.lastStudiedDate || null,
-    nextRevisionDate: topic.nextRevisionDate || null,
-    createdAt: new Date().toISOString()
-  });
+  return await apiFetch('/topics', { method: 'POST', body: topic });
 }
 export async function updateTopic(id, updates) {
-  const syncUpdates = { ...updates };
-  if (updates.completionPercentage !== undefined && updates.completionPercent === undefined) {
-    syncUpdates.completionPercent = updates.completionPercentage;
-  } else if (updates.completionPercent !== undefined && updates.completionPercentage === undefined) {
-    syncUpdates.completionPercentage = updates.completionPercent;
-  }
-  if (updates.estimatedHours !== undefined && updates.estimatedMinutes === undefined) {
-    syncUpdates.estimatedMinutes = updates.estimatedHours * 60;
-  } else if (updates.estimatedMinutes !== undefined && updates.estimatedHours === undefined) {
-    syncUpdates.estimatedHours = updates.estimatedMinutes / 60;
-  }
-  return await db.topics.update(id, syncUpdates);
+  return await apiFetch(`/topics/${id}`, { method: 'PUT', body: updates });
 }
 export async function deleteTopic(id) {
-  return await db.topics.delete(id);
+  return await apiFetch(`/topics/${id}`, { method: 'DELETE' });
 }
 export async function bulkAddTopics(topics) {
-  return await db.topics.bulkAdd(topics);
+  return await apiFetch('/topics/bulk', { method: 'POST', body: topics });
 }
 
 // ─── Study Tasks ──────────────────────────────────────────────────────────────
 export async function getTasksByDate(date) {
-  return await db.studyTasks.where('date').equals(date).toArray();
+  return await apiFetch(`/tasks?date=${date}`);
 }
 export async function getAllTasks() {
-  return await db.studyTasks.orderBy('date').toArray();
+  return await apiFetch('/tasks');
 }
 export async function getTasksByDateRange(startDate, endDate) {
-  return await db.studyTasks
-    .filter((t) => t.date >= startDate && t.date <= endDate)
-    .toArray();
+  return await apiFetch(`/tasks?startDate=${startDate}&endDate=${endDate}`);
 }
 export async function addTask(task) {
-  return await db.studyTasks.add({ ...task, createdAt: new Date().toISOString() });
+  return await apiFetch('/tasks', { method: 'POST', body: task });
 }
 export async function updateTask(id, updates) {
-  return await db.studyTasks.update(id, updates);
+  return await apiFetch(`/tasks/${id}`, { method: 'PUT', body: updates });
 }
 export async function deleteTask(id) {
-  return await db.studyTasks.delete(id);
+  return await apiFetch(`/tasks/${id}`, { method: 'DELETE' });
 }
 
 // ─── Study Sessions ───────────────────────────────────────────────────────────
 export async function getAllSessions() {
-  return await db.studySessions.orderBy('startTime').reverse().toArray();
+  return await apiFetch('/sessions');
 }
 export async function getSessionsByDateRange(startDate, endDate) {
-  // startDate / endDate are ISO date strings: 'yyyy-MM-dd'
-  return await db.studySessions
-    .filter((s) => {
-      if (!s.startTime) return false;
-      const d = s.startTime.slice(0, 10);
-      return d >= startDate && d <= endDate;
-    })
-    .toArray();
+  return await apiFetch(`/sessions?startDate=${startDate}&endDate=${endDate}`);
 }
 export async function getSessionsByDate(date) {
-  return await db.studySessions
-    .filter((s) => s.startTime && s.startTime.startsWith(date))
-    .toArray();
+  return await apiFetch(`/sessions?date=${date}`);
 }
 export async function addSession(session) {
-  return await db.studySessions.add(session);
+  return await apiFetch('/sessions', { method: 'POST', body: session });
 }
 export async function updateSession(id, updates) {
-  return await db.studySessions.update(id, updates);
+  return await apiFetch(`/sessions/${id}`, { method: 'PUT', body: updates });
 }
 
 // ─── Revision Tasks ───────────────────────────────────────────────────────────
 export async function getRevisionByDate(date) {
-  return await db.revisionTasks.where('dueDate').equals(date).toArray();
+  return await apiFetch(`/revisions?dueDate=${date}`);
 }
 export async function getOverdueRevisions(today) {
-  return await db.revisionTasks
-    .where('dueDate').below(today)
-    .and((r) => r.status === 'Pending')
-    .toArray();
+  return await apiFetch(`/revisions?overdueBefore=${today}`);
 }
 export async function getPendingRevisions() {
-  return await db.revisionTasks.where('status').equals('Pending').toArray();
+  return await apiFetch('/revisions?status=Pending');
 }
 export async function addRevisionTask(revision) {
-  return await db.revisionTasks.add(revision);
+  return await apiFetch('/revisions', { method: 'POST', body: revision });
 }
 export async function updateRevisionTask(id, updates) {
-  return await db.revisionTasks.update(id, updates);
+  return await apiFetch(`/revisions/${id}`, { method: 'PUT', body: updates });
 }
 export async function bulkAddRevisions(revisions) {
-  return await db.revisionTasks.bulkAdd(revisions);
+  return await apiFetch('/revisions/bulk', { method: 'POST', body: revisions });
 }
 
 // ─── Mock Tests ───────────────────────────────────────────────────────────────
 export async function getAllMocks() {
-  return await db.mockTests.orderBy('date').reverse().toArray();
+  return await apiFetch('/mocks');
 }
 export async function getMocksByArea(preparationAreaId) {
-  const all = await db.mockTests.toArray();
-  return all
-    .filter((m) => m.preparationAreaId === preparationAreaId)
-    .sort((a, b) => b.date?.localeCompare(a.date));
+  return await apiFetch(`/mocks?preparationAreaId=${preparationAreaId}`);
 }
 export async function addMock(mock) {
-  return await db.mockTests.add({ ...mock, createdAt: new Date().toISOString() });
+  return await apiFetch('/mocks', { method: 'POST', body: mock });
 }
 export async function updateMock(id, updates) {
-  return await db.mockTests.update(id, updates);
+  return await apiFetch(`/mocks/${id}`, { method: 'PUT', body: updates });
 }
 export async function getMockSubjectResults(mockTestId) {
-  return await db.mockSubjectResults.where('mockTestId').equals(mockTestId).toArray();
+  return await apiFetch(`/mocks/subject-results?mockTestId=${mockTestId}`);
 }
 export async function addMockSubjectResults(results) {
-  return await db.mockSubjectResults.bulkAdd(results);
+  return await apiFetch('/mocks/subject-results/bulk', { method: 'POST', body: results });
 }
 export async function getAllMockSubjectResults() {
-  return await db.mockSubjectResults.toArray();
+  return await apiFetch('/mocks/subject-results');
 }
 
 // ─── Vocabulary ───────────────────────────────────────────────────────────────
 export async function getAllVocab() {
-  return await db.vocabulary.orderBy('dateAdded').reverse().toArray();
+  return await apiFetch('/vocabulary');
 }
 export async function getVocabByDate(date) {
-  return await db.vocabulary.where('dateAdded').equals(date).toArray();
+  return await apiFetch(`/vocabulary?date=${date}`);
 }
 export async function addVocabWord(word) {
-  return await db.vocabulary.add({ ...word, createdAt: new Date().toISOString() });
+  return await apiFetch('/vocabulary', { method: 'POST', body: word });
 }
 export async function addVocab(word) {
   return await addVocabWord(word);
 }
 export async function updateVocabWord(id, updates) {
-  return await db.vocabulary.update(id, updates);
+  return await apiFetch(`/vocabulary/${id}`, { method: 'PUT', body: updates });
 }
 export async function deleteVocabWord(id) {
-  return await db.vocabulary.delete(id);
+  return await apiFetch(`/vocabulary/${id}`, { method: 'DELETE' });
 }
 export async function addVocabReview(review) {
-  return await db.vocabularyReviews.add(review);
+  return await apiFetch('/vocabulary/reviews', { method: 'POST', body: review });
 }
 export async function getVocabReviews(vocabularyId) {
-  return await db.vocabularyReviews.where('vocabularyId').equals(vocabularyId).toArray();
+  return await apiFetch(`/vocabulary/${vocabularyId}/reviews`);
 }
 
 // ─── Teaching Schedule ────────────────────────────────────────────────────────
 export async function getTeachingSchedule() {
-  return await db.teachingSchedule.toArray();
+  return await apiFetch('/schedule');
 }
 export async function addTeachingSlot(slot) {
-  return await db.teachingSchedule.add(slot);
+  return await apiFetch('/schedule', { method: 'POST', body: slot });
 }
 export async function updateTeachingSlot(id, updates) {
-  return await db.teachingSchedule.update(id, updates);
+  return await apiFetch(`/schedule/${id}`, { method: 'PUT', body: updates });
 }
 export async function deleteTeachingSlot(id) {
-  return await db.teachingSchedule.delete(id);
+  return await apiFetch(`/schedule/${id}`, { method: 'DELETE' });
 }
 
 // ─── Notifications ────────────────────────────────────────────────────────────
 export async function getAllNotifications() {
-  return await db.notifications.orderBy('scheduledAt').reverse().toArray();
+  return await apiFetch('/notifications');
 }
 export async function getUnreadNotifications() {
-  // Dexie indexes booleans as 1/0 — filter manually for reliability
-  const all = await db.notifications.toArray();
-  return all.filter((n) => !n.read);
+  return await apiFetch('/notifications/unread');
 }
 export async function addNotification(notif) {
-  // Avoid duplicate notifications of the same type/title on the same day
-  const today = new Date().toISOString().slice(0, 10);
-  
-  if (notif.idempotencyKey) {
-    const existing = await db.notifications.filter(n => n.idempotencyKey === notif.idempotencyKey).first();
-    if (existing) return existing.id;
-  } else {
-    // Fallback logic
-    const existing = await db.notifications
-      .filter((n) => n.type === notif.type && n.title === notif.title && (n.scheduledAt || '').startsWith(today))
-      .first();
-    if (existing) return existing.id;
-  }
-  
-  return await db.notifications.add({ ...notif, read: false, createdAt: new Date().toISOString() });
+  return await apiFetch('/notifications', { method: 'POST', body: notif });
 }
 export async function markNotificationRead(id) {
-  return await db.notifications.update(id, { read: true });
+  return await apiFetch(`/notifications/${id}/read`, { method: 'PUT' });
 }
 export async function markAllNotificationsRead() {
-  const all = await db.notifications.toArray();
-  const unread = all.filter((n) => !n.read);
-  await Promise.all(unread.map((n) => db.notifications.update(n.id, { read: true })));
+  return await apiFetch('/notifications/read-all', { method: 'PUT' });
 }
 
 // ─── Daily Progress ───────────────────────────────────────────────────────────
 export async function getDailyProgress(date) {
-  return await db.dailyProgress.where('date').equals(date).first();
+  const results = await apiFetch(`/progress?date=${date}`);
+  return Array.isArray(results) ? results[0] || null : results;
 }
 export async function upsertDailyProgress(date, updates) {
-  const existing = await getDailyProgress(date);
-  if (existing) {
-    return await db.dailyProgress.update(existing.id, updates);
-  } else {
-    return await db.dailyProgress.add({ date, ...updates });
-  }
+  return await apiFetch('/progress/upsert', { method: 'POST', body: { date, ...updates } });
 }
 export async function getDailyProgressRange(startDate, endDate) {
-  return await db.dailyProgress
-    .where('date')
-    .between(startDate, endDate, true, true)
-    .toArray();
+  return await apiFetch(`/progress?startDate=${startDate}&endDate=${endDate}`);
 }
 
-// ─── Error Log ──────────────────────────────────────────────────────────────
+// ─── Error Log ────────────────────────────────────────────────────────────────
 export async function getErrorLogs() {
-  return await db.errorLog.toArray();
+  return await apiFetch('/error-log');
 }
 export async function getErrorLogsByMock(mockTestId) {
-  return await db.errorLog.where('mockTestId').equals(mockTestId).toArray();
+  return await apiFetch(`/error-log?mockTestId=${mockTestId}`);
 }
 export async function getErrorLogsByTopic(topicId) {
-  return await db.errorLog.where('topicId').equals(topicId).toArray();
+  return await apiFetch(`/error-log?topicId=${topicId}`);
 }
 export async function addErrorLog(errorData) {
-  return await db.errorLog.add({
-    ...errorData,
-    dateAdded: new Date().toISOString(),
-    reviewed: false,
-    revisionRequired: errorData.revisionRequired ?? false,
-    revisionTaskId: null
-  });
+  return await apiFetch('/error-log', { method: 'POST', body: errorData });
 }
 export async function updateErrorLog(id, updates) {
-  return await db.errorLog.update(id, updates);
+  return await apiFetch(`/error-log/${id}`, { method: 'PUT', body: updates });
 }
 export async function deleteErrorLog(id) {
-  return await db.errorLog.delete(id);
+  return await apiFetch(`/error-log/${id}`, { method: 'DELETE' });
 }
 
 // ─── Gita Shlokas ────────────────────────────────────────────────────────────
 export async function getAllGitaShlokas() {
-  return await db.gitaShlokas.orderBy('date').reverse().toArray();
+  return await apiFetch('/gita-shlokas');
 }
 export async function getTodayGitaShloka() {
-  const today = new Date().toISOString().slice(0, 10);
-  return await db.gitaShlokas.where('date').equals(today).first();
+  return await apiFetch('/gita-shlokas/today');
 }
 export async function getGitaShlokaById(id) {
-  return await db.gitaShlokas.get(id);
+  return await apiFetch(`/gita-shlokas/${id}`);
 }
 export async function addGitaShloka(data) {
-  const today = new Date().toISOString().slice(0, 10);
-  const now = new Date().toISOString();
-  return await db.gitaShlokas.add({
-    date: data.date || today,
-    chapter: data.chapter ? String(data.chapter) : '',
-    verse: data.verse ? String(data.verse) : '',
-    sanskritText: data.sanskritText || '',
-    transliteration: data.transliteration || '',
-    meaning: data.meaning || '',
-    personalReflection: data.personalReflection || '',
-    favorite: !!data.favorite,
-    createdAt: now,
-    updatedAt: now,
-  });
+  return await apiFetch('/gita-shlokas', { method: 'POST', body: data });
 }
 export async function updateGitaShloka(id, updates) {
-  const now = new Date().toISOString();
-  return await db.gitaShlokas.update(id, {
-    ...updates,
-    updatedAt: now,
-  });
+  return await apiFetch(`/gita-shlokas/${id}`, { method: 'PUT', body: updates });
 }
 export async function deleteGitaShloka(id) {
-  return await db.gitaShlokas.delete(id);
+  return await apiFetch(`/gita-shlokas/${id}`, { method: 'DELETE' });
 }
 export async function toggleGitaFavorite(id) {
-  const existing = await db.gitaShlokas.get(id);
-  if (!existing) return;
-  const now = new Date().toISOString();
-  return await db.gitaShlokas.update(id, {
-    favorite: !existing.favorite,
-    updatedAt: now,
-  });
+  return await apiFetch(`/gita-shlokas/${id}/favorite`, { method: 'PATCH' });
 }
-

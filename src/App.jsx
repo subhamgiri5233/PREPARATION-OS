@@ -1,5 +1,5 @@
 // src/App.jsx
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Layout from './components/layout/Layout';
 import Dashboard from './pages/Dashboard';
@@ -89,46 +89,82 @@ export default function App() {
     setTeachingSchedule, setUnreadCount, setDbReady, isDbReady
   } = useAppStore();
 
+  const [apiError, setApiError] = useState(false);
+
   useEffect(() => {
     async function init() {
-      await initializeDatabase();
-
-      // Load global data into store
-      const [areas, courses, subjects, chapters, topics, resources, settings, schedule, unread] = await Promise.all([
-        getAllAreas(),
-        getAllCourses(),
-        getAllSubjects(),
-        getAllChapters(),
-        getAllTopics(),
-        getAllStudyResources(),
-        getSettings(),
-        getTeachingSchedule(),
-        getUnreadNotifications(),
-      ]);
-
-      setPreparationAreas(areas);
-      setCourses(courses);
-      setSubjects(subjects);
-      setChapters(chapters);
-      setTopics(topics);
-      setStudyResources(resources);
-      setSettings(settings);
-      setTeachingSchedule(schedule);
-      setUnreadCount(unread.length);
-      setDbReady(true);
-
-      // Generate daily notifications after data is loaded
       try {
-        await generateDailyNotifications();
-        // Refresh unread count after generating notifications
-        const freshUnread = await getUnreadNotifications();
-        setUnreadCount(freshUnread.length);
+        await initializeDatabase();
       } catch (e) {
-        console.warn('[App] Daily notification generation failed:', e);
+        console.error('[App] API server unreachable:', e.message);
+        setApiError(true);
+        return;
+      }
+
+      try {
+        // Load global data into store
+        const [areas, courses, subjects, chapters, topics, resources, settings, schedule, unread] = await Promise.all([
+          getAllAreas(),
+          getAllCourses(),
+          getAllSubjects(),
+          getAllChapters(),
+          getAllTopics(),
+          getAllStudyResources(),
+          getSettings(),
+          getTeachingSchedule(),
+          getUnreadNotifications(),
+        ]);
+
+        setPreparationAreas(areas);
+        setCourses(courses);
+        setSubjects(subjects);
+        setChapters(chapters);
+        setTopics(topics);
+        setStudyResources(resources);
+        setSettings(settings);
+        setTeachingSchedule(schedule);
+        setUnreadCount(unread.length);
+        setDbReady(true);
+
+        // Generate daily notifications after data is loaded
+        try {
+          await generateDailyNotifications();
+          const freshUnread = await getUnreadNotifications();
+          setUnreadCount(freshUnread.length);
+        } catch (e) {
+          console.warn('[App] Daily notification generation failed:', e);
+        }
+      } catch (e) {
+        console.error('[App] Failed to load data:', e.message);
+        setApiError(true);
       }
     }
     init();
   }, []);
+
+  if (apiError) {
+    return (
+      <div style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        height: '100vh', gap: 12, background: '#0f0f1a', color: '#fff', textAlign: 'center', padding: 24,
+      }}>
+        <div style={{ fontSize: 48 }}>⚡</div>
+        <div style={{ fontSize: 22, fontWeight: 700 }}>API Server Offline</div>
+        <div style={{ fontSize: 14, color: '#94a3b8', maxWidth: 380 }}>
+          The backend server is not running. Please start it with:<br />
+          <code style={{ background: '#1e1e3a', padding: '6px 12px', borderRadius: 6, display: 'inline-block', marginTop: 10, fontSize: 13 }}>
+            npm run dev
+          </code>
+        </div>
+        <button
+          onClick={() => { setApiError(false); window.location.reload(); }}
+          style={{ marginTop: 8, padding: '10px 24px', borderRadius: 8, background: '#6366f1', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 600 }}
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   if (!isDbReady) {
     return (
@@ -144,7 +180,7 @@ export default function App() {
         }}>🎯</div>
         <div style={{ fontSize: 20, fontWeight: 700 }}>Preparation OS</div>
         <div className="spinner" style={{ width: 32, height: 32 }} />
-        <div style={{ fontSize: 13, color: 'var(--text-2)' }}>Loading your study data…</div>
+        <div style={{ fontSize: 13, color: 'var(--text-2)' }}>Connecting to MongoDB…</div>
       </div>
     );
   }

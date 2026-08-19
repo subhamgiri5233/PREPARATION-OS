@@ -1,6 +1,6 @@
 // src/pages/Progress.jsx
 import { useEffect, useState } from 'react';
-import { getAllTopics, getAllSessions, getAllMocks, getAllVocab, getAllAreas, getAllSubjects } from '../services/db';
+import { getAllTopics, getAllSessions, getAllMocks, getAllVocab, getAllAreas, getAllSubjects, getPendingRevisions } from '../services/db';
 import { getScoreTrend, calculateAccuracy, analyzeSubjectWiseMocks, classifySubjectPerformance } from '../services/analyticsService';
 import { format, subDays, startOfWeek, eachDayOfInterval } from 'date-fns';
 import {
@@ -26,7 +26,7 @@ export default function Progress() {
 
   const loadData = async () => {
     const [t, s, m, v, a, subs, revs] = await Promise.all([
-      getAllTopics(), getAllSessions(), getAllMocks(), getAllVocab(), getAllAreas(), getAllSubjects(), import('../services/db').then(m => m.db.revisionTasks.toArray())
+      getAllTopics(), getAllSessions(), getAllMocks(), getAllVocab(), getAllAreas(), getAllSubjects(), getPendingRevisions()
     ]);
     setTopics(t); setSessions(s); setMocks(m); setVocab(v); setAreas(a); setSubjects(subs); setRevisions(revs);
     setLoading(false);

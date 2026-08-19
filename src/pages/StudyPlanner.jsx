@@ -3,8 +3,8 @@ import { useEffect, useState } from 'react';
 import { format, addDays, startOfWeek, eachDayOfInterval, isSameDay, parseISO } from 'date-fns';
 import { Plus, X, ChevronLeft, ChevronRight, Clock, AlertTriangle } from 'lucide-react';
 import {
-  getTasksByDate, addTask, updateTask, deleteTask, getAllTopics,
-  getAllSubjects, getAllAreas, getTeachingSchedule, getAllSessions, getAllMocks, getSettings, db
+  getTasksByDate, addTask, updateTask, deleteTask, getAllTopics, getAllTasks,
+  getAllSubjects, getAllAreas, getTeachingSchedule, getAllSessions, getAllMocks, getSettings
 } from '../services/db';
 import { getRevisionsDueToday } from '../services/revisionService';
 import { generateDailyPlan } from '../services/studyPlanningEngine';
@@ -38,12 +38,12 @@ export default function StudyPlanner() {
     setTopics(t); setSubjects(s); setAreas(a); setTeachingSlots(ts);
     
     // Check for missed tasks globally
-    const allTasks = await db.studyTasks.toArray();
+    const allTasks = await getAllTasks();
     const todayStr = format(new Date(), 'yyyy-MM-dd');
     const newlyMissed = await scanAndMarkMissedTasks(allTasks, todayStr);
     
     // Refresh all tasks if we mutated them
-    const freshTasks = newlyMissed > 0 ? await db.studyTasks.toArray() : allTasks;
+    const freshTasks = newlyMissed > 0 ? await getAllTasks() : allTasks;
     const missed = freshTasks.filter(task => task.status === 'Missed');
     setMissedTasks(missed);
     

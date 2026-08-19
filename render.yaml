@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: preparation-os-api
+    runtime: node
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: MONGODB_URI
+        sync: false
+      - key: PORT
+        value: 3001

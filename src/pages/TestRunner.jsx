@@ -5,7 +5,7 @@ import { useEffect, useState, useRef } from 'react';
 import { format, addDays, parseISO } from 'date-fns';
 
 import {
-  db, initializeDatabase, getAllTopics, getAllSubjects, getAllCourses, getAllChapters,
+  initializeDatabase, getAllTopics, getAllSubjects, getAllCourses, getAllChapters,
   getAllStudyResources, getAllAreas, getSettings,
   addArea, updateArea, deleteArea,
   addCourse, updateCourse, deleteCourse,
@@ -15,7 +15,7 @@ import {
   addStudyResource, updateStudyResource, deleteStudyResource,
   addMock, addErrorLog, getAllMocks, getErrorLogs,
   addRevisionTask, getPendingRevisions, updateRevisionTask,
-  addNotification, getAllNotifications, getTeachingSchedule,
+  addNotification, getAllNotifications, getTeachingSchedule, addTeachingSlot, deleteTeachingSlot,
   getAllSessions
 } from '../services/db';
 
@@ -469,12 +469,12 @@ async function runAllPhase7Tests(log) {
   {
     const testDate = new Date();
     const dayOfWeek = testDate.getDay();
-    const slotId = await db.teachingSchedule.add({
+    const slotId = (await addTeachingSlot({
       dayOfWeek,
       startTime: '07:00',
       endTime: '08:00',
       subject: 'Phase 7 Verification Teaching'
-    });
+    }))._id || (await getTeachingSchedule()).at(-1)?._id;
 
     const slots = await getTeachingSchedule();
     const freeSlots = calculateAvailableSlots(testDate, slots, [], [], settings);
@@ -495,7 +495,7 @@ async function runAllPhase7Tests(log) {
       pass
     );
 
-    await db.teachingSchedule.delete(slotId);
+    if (slotId) await deleteTeachingSlot(slotId);
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -506,7 +506,7 @@ async function runAllPhase7Tests(log) {
     // Clean any prior pending revisions for testTopicId
     const pendings = await getPendingRevisions();
     for (const p of pendings.filter(r => r.topicId === testTopicId)) {
-      await db.revisionTasks.update(p.id, { status: 'Completed' });
+      await updateRevisionTask(p._id || p.id, { status: 'Completed' });
     }
 
     const rev = await createInitialRevision(testTopicId, 'Dijkstra & Bellman-Ford Shortest Paths', today);

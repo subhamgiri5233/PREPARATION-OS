@@ -1,7 +1,11 @@
 // src/pages/Settings.jsx
 import { useEffect, useState } from 'react';
 import { Save, Download, RotateCcw } from 'lucide-react';
-import { getSettings, updateSettings, getAllAreas, updateArea, db } from '../services/db';
+import { getSettings, updateSettings, getAllAreas, updateArea,
+  getAllCourses, getAllSubjects, getAllChapters, getAllTopics, getAllStudyResources,
+  getAllSessions, getAllMocks, getAllMockSubjectResults, getErrorLogs,
+  getAllVocab, getPendingRevisions, getAllTasks, getAllGitaShlokas
+} from '../services/db';
 import { useAppStore } from '../store/useAppStore';
 import { ArrowUp, ArrowDown } from 'lucide-react';
 
@@ -53,24 +57,30 @@ export default function Settings() {
   };
 
   const handleExport = async () => {
+    const [areas, courses, subjects, chapters, topics, resources, sessions,
+      mocks, mockResults, errorLog, vocab, revisions, tasks, gitaShlokas] = await Promise.all([
+      getAllAreas(), getAllCourses(), getAllSubjects(), getAllChapters(), getAllTopics(),
+      getAllStudyResources(), getAllSessions(), getAllMocks(), getAllMockSubjectResults(),
+      getErrorLogs(), getAllVocab(), getPendingRevisions(), getAllTasks(), getAllGitaShlokas()
+    ]);
     const data = {
       exportedAt: new Date().toISOString(),
       version: 7,
       settings: form,
-      preparationAreas: await db.preparationAreas.toArray(),
-      courses: await db.courses.toArray(),
-      subjects: await db.subjects.toArray(),
-      chapters: await db.chapters.toArray(),
-      topics: await db.topics.toArray(),
-      studyResources: await db.studyResources.toArray(),
-      studySessions: await db.studySessions.toArray(),
-      mockTests: await db.mockTests.toArray(),
-      mockSubjectResults: await db.mockSubjectResults.toArray(),
-      errorLog: await db.errorLog.toArray(),
-      vocabulary: await db.vocabulary.toArray(),
-      revisionTasks: await db.revisionTasks.toArray(),
-      studyTasks: await db.studyTasks.toArray(),
-      gitaShlokas: await db.gitaShlokas.toArray(),
+      preparationAreas: areas,
+      courses,
+      subjects,
+      chapters,
+      topics,
+      studyResources: resources,
+      studySessions: sessions,
+      mockTests: mocks,
+      mockSubjectResults: mockResults,
+      errorLog,
+      vocabulary: vocab,
+      revisionTasks: revisions,
+      studyTasks: tasks,
+      gitaShlokas,
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
