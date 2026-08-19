@@ -100,7 +100,10 @@ export default function StudySessions() {
     const now = new Date();
     const targetDateStr = format(selectedDate, 'yyyy-MM-dd');
 
+    const tempId = `temp-${Date.now()}`;
     const sessionData = {
+      id: tempId,
+      _id: tempId,
       topicId: topic?.id || topic?._id || sessionConfig.topicId || null,
       topicName: topic?.name || sessionConfig.topicName || 'Study Session',
       subjectId: subject?.id || subject?._id || sessionConfig.subjectId || null,
@@ -114,22 +117,34 @@ export default function StudySessions() {
       notes: sessionConfig.notes || '',
     };
 
-    const id = await addSession(sessionData);
-
-    // If attached to a scheduled task, mark task as In Progress
-    if (sessionConfig.taskId) {
-      await updateTask(sessionConfig.taskId, { status: 'In Progress' });
-      setTasks((prev) => prev.map((t) => String(t.id || t._id) === String(sessionConfig.taskId) ? { ...t, status: 'In Progress' } : t));
-    }
-
+    // Instant local activation
     sessionStartRef.current = Date.now();
     totalPausedRef.current = 0;
     pauseStartRef.current = null;
-    setActiveSession({ id, ...sessionData });
+    setActiveSession(sessionData);
     setElapsed(0);
     setIsPaused(false);
     setShowNewSession(false);
     setNewSession({ topicId: '', subjectId: '', preparationAreaId: '', taskId: null, notes: '' });
+
+    // Smooth scroll to top timer
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // Persist to MongoDB in background
+    try {
+      const realId = await addSession(sessionData);
+      if (realId) {
+        setActiveSession((prev) => (prev ? { ...prev, id: realId, _id: realId } : null));
+      }
+      if (sessionConfig.taskId) {
+        await updateTask(sessionConfig.taskId, { status: 'In Progress' });
+        setTasks((prev) =>
+          prev.map((t) => (String(t.id || t._id) === String(sessionConfig.taskId) ? { ...t, status: 'In Progress' } : t))
+        );
+      }
+    } catch (err) {
+      console.error('[StudySessions] Failed to save session start:', err);
+    }
   };
 
   const handlePause = () => {
@@ -471,6 +486,10 @@ export default function StudySessions() {
               const isLocked = !!task.isLocked;
               const isAi = task.source === 'auto' && !task.isUserEdited;
               const isEdited = !!task.isUserEdited;
+              const isCurrentActive =
+                activeSession &&
+                (String(activeSession.taskId) === String(task.id || task._id) ||
+                  (task.topicId && String(activeSession.topicId) === String(task.topicId)));
 
               return (
                 <div
@@ -478,20 +497,27 @@ export default function StudySessions() {
                   style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12,
                     padding: '12px 16px', borderRadius: 'var(--radius)',
-                    background: isDone ? 'var(--success-glass)' : 'var(--surface-2)',
-                    border: `1px solid ${isDone ? 'var(--success)' : isInProgress ? 'var(--warning)' : isLocked ? '#ef4444' : 'var(--border)'}`,
+                    background: isCurrentActive ? 'var(--primary-glass)' : isDone ? 'var(--success-glass)' : 'var(--surface-2)',
+                    border: `2px solid ${isCurrentActive ? 'var(--primary-light)' : isDone ? 'var(--success)' : isInProgress ? 'var(--warning)' : isLocked ? '#ef4444' : 'var(--border)'}`,
+                    boxShadow: isCurrentActive ? '0 0 16px rgba(99, 102, 241, 0.3)' : 'none',
                   }}
                 >
                   {/* Left: Status icon & Details */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 240, flex: 1 }}>
-                    <div style={{ color: isDone ? 'var(--success)' : isInProgress ? 'var(--warning)' : 'var(--text-3)' }}>
-                      {isDone ? <CheckCircle2 size={20} /> : <Circle size={20} />}
+                    <div style={{ color: isCurrentActive ? 'var(--primary-light)' : isDone ? 'var(--success)' : isInProgress ? 'var(--warning)' : 'var(--text-3)' }}>
+                      {isCurrentActive ? <Play size={20} style={{ animation: 'pulse 1.5s infinite' }} /> : isDone ? <CheckCircle2 size={20} /> : <Circle size={20} />}
                     </div>
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ fontSize: 14, fontWeight: 700, textDecoration: isDone ? 'line-through' : 'none', color: isDone ? 'var(--text-2)' : 'var(--text)' }}>
                           {task.topicName || task.title}
                         </span>
+
+                        {isCurrentActive && (
+                          <span className="badge badge-primary" style={{ fontSize: 10, fontWeight: 800 }}>
+                            🔴 LIVE: {formatSeconds(elapsed)}
+                          </span>
+                        )}
 
                         {/* Priority Badge */}
                         <span className={`badge ${task.priority === 'High' ? 'badge-danger' : task.priority === 'Medium' ? 'badge-warning' : 'badge-muted'}`} style={{ fontSize: 9 }}>
@@ -522,7 +548,22 @@ export default function StudySessions() {
 
                   {/* Right: Action Button */}
                   <div>
-                    {isDone ? (
+                    {isCurrentActive ? (
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        {!isPaused ? (
+                          <button className="btn btn-sm btn-ghost" onClick={handlePause}>
+                            <Pause size={12} /> Pause
+                          </button>
+                        ) : (
+                          <button className="btn btn-sm btn-primary" onClick={handleResume}>
+                            <Play size={12} /> Resume
+                          </button>
+                        )}
+                        <button className="btn btn-sm btn-success" onClick={handleComplete}>
+                          <Square size={12} /> Complete
+                        </button>
+                      </div>
+                    ) : isDone ? (
                       <span className="badge badge-success" style={{ fontSize: 11, padding: '4px 10px' }}>
                         ✅ Completed
                       </span>
@@ -731,6 +772,62 @@ export default function StudySessions() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── STICKY FLOATING BOTTOM TIMER BAR ────────────────────── */}
+      {activeSession && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: 24,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 999,
+            background: 'var(--surface-2)',
+            border: '2px solid var(--primary-light)',
+            borderRadius: 100,
+            padding: '10px 24px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 16,
+            boxShadow: '0 12px 36px rgba(0,0,0,0.6)',
+            backdropFilter: 'blur(12px)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span className="badge badge-primary" style={{ fontWeight: 800, fontSize: 10 }}>
+              🔴 {isPaused ? 'PAUSED' : 'LIVE'}
+            </span>
+            <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--text)', maxWidth: 220 }} className="truncate">
+              {activeSession.topicName || 'Study Session'}
+            </span>
+            <span
+              style={{
+                fontSize: 18,
+                fontWeight: 900,
+                color: isPaused ? 'var(--warning)' : 'var(--success)',
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            >
+              {formatSeconds(elapsed)}
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', gap: 8 }}>
+            {!isPaused ? (
+              <button className="btn btn-xs btn-ghost" onClick={handlePause}>
+                <Pause size={12} /> Pause
+              </button>
+            ) : (
+              <button className="btn btn-xs btn-primary" onClick={handleResume}>
+                <Play size={12} /> Resume
+              </button>
+            )}
+            <button className="btn btn-xs btn-success" onClick={handleComplete}>
+              <Square size={12} /> Complete & Save
+            </button>
           </div>
         </div>
       )}
