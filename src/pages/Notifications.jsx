@@ -15,6 +15,7 @@ import {
 } from '../services/nativeNotificationService';
 import { snoozeReminder, dismissReminder } from '../services/reminderScheduler';
 import { useAppStore } from '../store/useAppStore';
+import { requireEditPermission, canEdit } from '../services/mutationGuard.js';
 
 const NOTIF_ICONS = {
   'study-reminder': '⏰',
@@ -35,13 +36,13 @@ export default function Notifications() {
   const [permissionState, setPermissionState] = useState(getNotificationPermission());
 
   useEffect(() => {
-    // When the user opens the notifications page (SEEN), automatically mark all unread as read/seen!
+    // When the user opens the notifications page (SEEN), automatically mark all unread as read/seen if allowed!
     const initAndMarkSeen = async () => {
       try {
         const notifs = await getAllNotifications();
         const hasUnread = (notifs || []).some((n) => !n.read && !n.dismissed);
 
-        if (hasUnread) {
+        if (hasUnread && canEdit()) {
           await markAllNotificationsRead().catch(() => {});
           // Mark all in-memory as read
           const updated = (notifs || []).map((n) => ({ ...n, read: true }));
@@ -49,7 +50,7 @@ export default function Notifications() {
         } else {
           setNotifications(notifs || []);
         }
-        setUnreadCount(0);
+        if (canEdit()) setUnreadCount(0);
       } catch (err) {
         console.error('[Notifications] Error initializing seen status:', err);
       }
@@ -71,6 +72,10 @@ export default function Notifications() {
   };
 
   const handleMarkRead = async (id) => {
+    if (!canEdit()) {
+      requireEditPermission('mark notification read');
+      return;
+    }
     try {
       await markNotificationRead(id);
       setNotifications((prev) =>
@@ -83,6 +88,10 @@ export default function Notifications() {
   };
 
   const handleMarkAllRead = async () => {
+    if (!canEdit()) {
+      requireEditPermission('mark all notifications read');
+      return;
+    }
     try {
       await markAllNotificationsRead();
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
@@ -93,6 +102,10 @@ export default function Notifications() {
   };
 
   const handleDelete = async (id) => {
+    if (!canEdit()) {
+      requireEditPermission('delete notification');
+      return;
+    }
     if (!window.confirm('Are you sure you want to delete this notification?')) return;
     try {
       await deleteNotification(id);
@@ -104,6 +117,10 @@ export default function Notifications() {
   };
 
   const handleClearAll = async () => {
+    if (!canEdit()) {
+      requireEditPermission('clear all notifications');
+      return;
+    }
     if (!window.confirm('Are you sure you want to delete ALL notifications?')) return;
     try {
       await clearAllNotifications();
@@ -115,11 +132,19 @@ export default function Notifications() {
   };
 
   const handleSnooze = async (notifId) => {
+    if (!canEdit()) {
+      requireEditPermission('snooze reminder');
+      return;
+    }
     await snoozeReminder(notifId, 5);
     await loadNotifications();
   };
 
   const handleDismiss = async (notifId) => {
+    if (!canEdit()) {
+      requireEditPermission('dismiss reminder');
+      return;
+    }
     await dismissReminder(notifId);
     await loadNotifications();
   };

@@ -12,6 +12,7 @@ import {
 } from 'recharts';
 import AddMockWizard from '../components/AddMockWizard';
 import MockDetailModal from '../components/MockDetailModal';
+import { requireEditPermission, canEdit } from '../services/mutationGuard.js';
 
 export default function MockTests() {
   const [mocks, setMocks] = useState([]);
@@ -34,6 +35,10 @@ export default function MockTests() {
   };
 
   const handleDeleteMock = async (mockId) => {
+    if (!canEdit()) {
+      requireEditPermission('delete mock test');
+      return;
+    }
     if (!window.confirm('Are you sure you want to delete this mock test record and its subject results?')) return;
     try {
       await deleteMock(mockId);
@@ -70,7 +75,13 @@ export default function MockTests() {
           <h1 className="page-title">Mock Tests</h1>
           <p className="page-subtitle">Record and analyze your mock test performance</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowAdd(true)}>
+        <button className="btn btn-primary" onClick={() => {
+          if (!canEdit()) {
+            requireEditPermission('add mock test');
+            return;
+          }
+          setShowAdd(true);
+        }}>
           <Plus size={14} /> Add Mock Result
         </button>
       </div>

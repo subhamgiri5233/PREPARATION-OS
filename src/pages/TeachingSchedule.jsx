@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Plus, Trash2, Edit2, X } from 'lucide-react';
 import { getTeachingSchedule, addTeachingSlot, updateTeachingSlot, deleteTeachingSlot } from '../services/db';
 import { useAppStore } from '../store/useAppStore';
+import { requireEditPermission, canEdit } from '../services/mutationGuard.js';
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -22,6 +23,10 @@ export default function TeachingSchedule() {
   };
 
   const handleSave = async () => {
+    if (!canEdit()) {
+      requireEditPermission('save teaching slot');
+      return;
+    }
     if (editSlot) {
       await updateTeachingSlot(editSlot.id, form);
     } else {
@@ -34,6 +39,10 @@ export default function TeachingSchedule() {
   };
 
   const handleDelete = async (id) => {
+    if (!canEdit()) {
+      requireEditPermission('delete teaching slot');
+      return;
+    }
     await deleteTeachingSlot(id);
     loadSchedule();
   };
@@ -51,7 +60,13 @@ export default function TeachingSchedule() {
           <h1 className="page-title">Teaching Schedule</h1>
           <p className="page-subtitle">Manage your teaching periods — these are blocked from study planning</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowAdd(true)}>
+        <button className="btn btn-primary" onClick={() => {
+          if (!canEdit()) {
+            requireEditPermission('add teaching slot');
+            return;
+          }
+          setShowAdd(true);
+        }}>
           <Plus size={14} /> Add Slot
         </button>
       </div>

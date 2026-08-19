@@ -15,6 +15,7 @@ import {
 } from '../services/db';
 import { useAppStore } from '../store/useAppStore';
 import { useAuthStore } from '../store/useAuthStore';
+import { requireEditPermission, canEdit } from '../services/mutationGuard.js';
 
 function formatSeconds(totalSecs) {
   const h = Math.floor(totalSecs / 3600);
@@ -59,63 +60,70 @@ export default function StudySessions() {
 
   useEffect(() => {
     loadData();
-    return () => clearInterval(timerRef.current);
   }, []);
 
   const loadData = async () => {
     try {
-      const [sess, tsk, top, sub, ar, sett] = await Promise.all([
+      setLoading(true);
+      const [sess, top, sub, ar, t, sett] = await Promise.all([
         getAllSessions(),
-        getAllTasks(),
         getAllTopics(),
         getAllSubjects(),
         getAllAreas(),
+        getAllTasks(),
         getSettings(),
       ]);
       setSessions(sess || []);
-      setTasks(tsk || []);
       setTopics(top || []);
       setSubjects(sub || []);
       setAreas(ar || []);
+      setTasks(t || []);
       setSettings(sett || {});
     } catch (err) {
-      console.error('[StudySessions] Error loading data:', err);
+      console.error('[StudySessions] Failed to load data:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Timer interval tick
+  // Timer Tick
   useEffect(() => {
     if (activeSession && !isPaused) {
       timerRef.current = setInterval(() => {
         const now = Date.now();
-        const rawElapsed = now - sessionStartRef.current - totalPausedRef.current;
-        setElapsed(Math.floor(rawElapsed / 1000));
-      }, 500);
+        const start = sessionStartRef.current || now;
+        const currentPaused = totalPausedRef.current;
+        const totalMs = now - start - currentPaused;
+        setElapsed(Math.max(0, Math.floor(totalMs / 1000)));
+      }, 1000);
     } else {
       clearInterval(timerRef.current);
     }
     return () => clearInterval(timerRef.current);
   }, [activeSession, isPaused]);
 
-  // Start a new session
+  // ── TIMER CONTROLS ──────────────────────────────────────────────
   const handleStartTimer = (sessionConfig) => {
-    const topic = topics.find((t) => String(t.id || t._id) === String(sessionConfig.topicId));
-    const subject = subjects.find((s) => String(s.id || s._id) === String(sessionConfig.subjectId || topic?.subjectId));
-    const now = new Date();
-    const targetDateStr = format(selectedDate, 'yyyy-MM-dd');
+    if (!canEdit()) {
+      requireEditPermission('start study timer');
+      return;
+    }
+    if (activeSession) {
+      if (!window.confirm('A study session is already running. Finish or discard it before starting a new one?')) {
+        return;
+      }
+    }
 
     const sessionData = {
-      topicId: topic?.id || topic?._id || sessionConfig.topicId || null,
-      topicName: topic?.name || sessionConfig.topicName || 'Study Session',
-      subjectId: subject?.id || subject?._id || sessionConfig.subjectId || null,
-      subjectName: subject?.name || sessionConfig.subjectName || '',
-      preparationAreaId: sessionConfig.preparationAreaId || topic?.preparationAreaId || null,
+      id: `live-${Date.now()}`,
+      topicId: sessionConfig.topicId || null,
+      topicName: sessionConfig.topicName || 'Custom Study Session',
+      subjectId: sessionConfig.subjectId || null,
+      subjectName: sessionConfig.subjectName || '',
+      preparationAreaId: sessionConfig.preparationAreaId || null,
       taskId: sessionConfig.taskId || null,
-      startTime: now.toISOString(),
-      date: targetDateStr,
-      durationMinutes: 0,
+      startTime: new Date().toISOString(),
+      date: format(selectedDate, 'yyyy-MM-dd'),
       notes: sessionConfig.notes || '',
     };
 
@@ -152,6 +160,10 @@ export default function StudySessions() {
   };
 
   const handleComplete = async () => {
+    if (!canEdit()) {
+      requireEditPermission('complete study session');
+      return;
+    }
     if (!activeSession) return;
     clearInterval(timerRef.current);
 
@@ -224,6 +236,10 @@ export default function StudySessions() {
 
   // ── DELETE / EDIT HANDLERS ─────────────────────────────────────
   const handleDeleteSession = async (sessionId) => {
+    if (!canEdit()) {
+      requireEditPermission('delete study session');
+      return;
+    }
     if (!window.confirm('Are you sure you want to delete this study session record?')) return;
     try {
       await deleteSession(sessionId);
@@ -235,12 +251,16 @@ export default function StudySessions() {
 
   const handleSaveEditSession = async (e) => {
     e.preventDefault();
+    if (!canEdit()) {
+      requireEditPermission('edit study session');
+      return;
+    }
     if (!editingSession) return;
     try {
       await updateSession(editingSession.id || editingSession._id, {
-        durationMinutes: Number(editingSession.durationMinutes) || 0,
-        notes: editingSession.notes || '',
         topicName: editingSession.topicName,
+        durationMinutes: Number(editingSession.durationMinutes),
+        notes: editingSession.notes,
       });
       setEditingSession(null);
       await loadData();
@@ -250,7 +270,11 @@ export default function StudySessions() {
   };
 
   const handleDeleteTask = async (taskId) => {
-    if (!window.confirm('Are you sure you want to delete this scheduled task?')) return;
+    if (!canEdit()) {
+      requireEditPermission('delete task');
+      return;
+    }
+    if (!window.confirm('Delete this scheduled study task?')) return;
     try {
       await deleteTask(taskId);
       await loadData();
@@ -261,15 +285,20 @@ export default function StudySessions() {
 
   const handleSaveEditTask = async (e) => {
     e.preventDefault();
+    if (!canEdit()) {
+      requireEditPermission('edit task');
+      return;
+    }
     if (!editingTask) return;
     try {
       await updateTask(editingTask.id || editingTask._id, {
-        title: editingTask.title,
+        topicName: editingTask.topicName || editingTask.title,
         startTime: editingTask.startTime,
         endTime: editingTask.endTime,
-        durationMinutes: Number(editingTask.durationMinutes) || 60,
+        durationMinutes: Number(editingTask.durationMinutes),
         priority: editingTask.priority,
         status: editingTask.status,
+        isLocked: editingTask.isLocked,
         isUserEdited: true,
       });
       setEditingTask(null);

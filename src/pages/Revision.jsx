@@ -3,6 +3,7 @@ import { format, parseISO, isToday, isPast } from 'date-fns';
 import { RotateCcw, CheckCircle2, Clock, AlertTriangle, X, Target, Trash2 } from 'lucide-react';
 import { getAllSubjects, deleteRevisionTask } from '../services/db';
 import { getAllPendingRevisionsEnriched, completeRevision, skipRevision } from '../services/revisionService';
+import { requireEditPermission, canEdit } from '../services/mutationGuard.js';
 
 export default function Revision() {
   const [revisions, setRevisions] = useState([]);
@@ -27,6 +28,10 @@ export default function Revision() {
   };
 
   const handleDeleteRevision = async (revId) => {
+    if (!canEdit()) {
+      requireEditPermission('delete revision task');
+      return;
+    }
     if (!window.confirm('Are you sure you want to delete this revision task?')) return;
     try {
       await deleteRevisionTask(revId);
@@ -49,12 +54,20 @@ export default function Revision() {
   const topRevision = dueNow.length > 0 ? dueNow[0] : null;
 
   const handleStartSession = (rev) => {
+    if (!canEdit()) {
+      requireEditPermission('start revision session');
+      return;
+    }
     setSessionModal(rev);
     setMemoryRating(0);
     setNotes('');
   };
 
   const handleComplete = async () => {
+    if (!canEdit()) {
+      requireEditPermission('complete revision');
+      return;
+    }
     if (memoryRating === 0) return alert("Please rate your memory first.");
     await completeRevision(sessionModal.id, memoryRating, notes);
     setSessionModal(null);
@@ -62,6 +75,10 @@ export default function Revision() {
   };
 
   const handleSkip = async (id) => {
+    if (!canEdit()) {
+      requireEditPermission('skip revision');
+      return;
+    }
     await skipRevision(id);
     loadData();
   };

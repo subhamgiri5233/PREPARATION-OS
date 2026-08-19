@@ -6,6 +6,7 @@ import TopBar from './TopBar';
 import BottomNav from './BottomNav';
 import InstallAppBanner from '../InstallAppBanner';
 import LoginModal from '../LoginModal';
+import ViewOnlyModal from '../ViewOnlyModal';
 import LoginPage from '../../pages/LoginPage';
 import { useAppStore } from '../../store/useAppStore';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -13,7 +14,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 export default function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { sidebarOpen } = useAppStore();
-  const { isAuthenticated, isChecking, checkAuth } = useAuthStore();
+  const { isEditMode, isChecking, checkAuth } = useAuthStore();
 
   useEffect(() => {
     checkAuth();
@@ -41,6 +42,7 @@ export default function Layout() {
     <div className="app-layout">
       <InstallAppBanner />
       <LoginModal />
+      <ViewOnlyModal />
 
       <Sidebar
         mobileOpen={mobileOpen}

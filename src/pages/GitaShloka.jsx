@@ -17,6 +17,7 @@ import {
   getGitaStats,
   searchShlokas
 } from '../services/gitaService';
+import { requireEditPermission, canEdit } from '../services/mutationGuard.js';
 
 export const popularBengaliShlokas = [
   {
@@ -123,6 +124,10 @@ export default function GitaShloka() {
   };
 
   const handleOpenAddToday = () => {
+    if (!canEdit()) {
+      requireEditPermission('add gita shloka');
+      return;
+    }
     setEditingShloka(null);
     setFormData({
       chapter: '',
@@ -138,6 +143,10 @@ export default function GitaShloka() {
   };
 
   const handleSelectPopular = (pop) => {
+    if (!canEdit()) {
+      requireEditPermission('select popular shloka');
+      return;
+    }
     setFormData({
       ...formData,
       chapter: pop.chapter,
@@ -151,6 +160,10 @@ export default function GitaShloka() {
   };
 
   const handleOpenEdit = (shloka) => {
+    if (!canEdit()) {
+      requireEditPermission('edit gita shloka');
+      return;
+    }
     setEditingShloka(shloka);
     setFormData({
       chapter: shloka.chapter || '',
@@ -167,6 +180,10 @@ export default function GitaShloka() {
 
   const handleSave = async (e) => {
     e.preventDefault();
+    if (!canEdit()) {
+      requireEditPermission('save gita shloka');
+      return;
+    }
     if (!formData.sanskritText || !formData.sanskritText.trim()) {
       setFormError('শ্লোক টেক্সট (বাংলা বা সংস্কৃত অক্ষরে) আবশ্যক।');
       return;
@@ -189,6 +206,10 @@ export default function GitaShloka() {
   };
 
   const handleDelete = async (id) => {
+    if (!canEdit()) {
+      requireEditPermission('delete gita shloka');
+      return;
+    }
     if (window.confirm('আপনি কি এই গীতা শ্লোকটি মুছে ফেলতে চান?')) {
       await deleteGitaShloka(id);
       showToast('শ্লোক মুছে ফেলা হয়েছে।');
@@ -198,6 +219,10 @@ export default function GitaShloka() {
   };
 
   const handleToggleFavorite = async (id) => {
+    if (!canEdit()) {
+      requireEditPermission('toggle gita favorite');
+      return;
+    }
     await toggleGitaFavorite(id);
     loadData();
   };

@@ -15,6 +15,7 @@ import { useAuthStore } from '../store/useAuthStore';
 import { getRevisionsDueToday } from '../services/revisionService';
 import { generateDailyPlan, optimizeDailyRoutine } from '../services/studyPlanningEngine';
 import { scanAndMarkMissedTasks, getRescheduleRecommendations } from '../services/reschedulingEngine';
+import { requireEditPermission, canEdit } from '../services/mutationGuard.js';
 
 const PRIORITIES = ['High', 'Medium', 'Low'];
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -125,6 +126,10 @@ export default function StudyPlanner() {
   const { isAuthenticated, openLoginModal } = useAuthStore();
 
   const handleOpenAdd = (dateStr) => {
+    if (!canEdit()) {
+      requireEditPermission('add study task');
+      return;
+    }
     setEditTask(null);
     setForm({
       type: 'Concept Study',
@@ -136,6 +141,10 @@ export default function StudyPlanner() {
   };
 
   const handleOpenEdit = (task) => {
+    if (!canEdit()) {
+      requireEditPermission('edit study task');
+      return;
+    }
     setEditTask(task);
     setForm({
       ...task,
@@ -156,6 +165,10 @@ export default function StudyPlanner() {
   };
 
   const handleSaveTask = async (forceSave = false) => {
+    if (!canEdit()) {
+      requireEditPermission('save study task');
+      return;
+    }
     const targetDate = showAddTask || format(currentDate, 'yyyy-MM-dd');
     
     // Check conflict if not forcing save
@@ -215,6 +228,10 @@ export default function StudyPlanner() {
 
   const handleToggleLock = async (task, e) => {
     e.stopPropagation();
+    if (!canEdit()) {
+      requireEditPermission('toggle task lock');
+      return;
+    }
     const newLockState = !task.isLocked;
     await updateTask(task.id || task._id, { isLocked: newLockState, isUserEdited: true });
     loadTasks();
@@ -223,6 +240,10 @@ export default function StudyPlanner() {
   const [isGenerating, setIsGenerating] = useState(false);
 
   const handleRequestGenerate = (daysAhead = 0) => {
+    if (!canEdit()) {
+      requireEditPermission('generate routine');
+      return;
+    }
     const targetDate = addDays(new Date(), daysAhead);
     const targetDateStr = format(targetDate, 'yyyy-MM-dd');
     const dayTasks = getTasksForDate(targetDateStr);
@@ -239,6 +260,10 @@ export default function StudyPlanner() {
   };
 
   const executeGeneratePlan = async (targetDate, options) => {
+    if (!canEdit()) {
+      requireEditPermission('generate routine');
+      return;
+    }
     setShowRegenModal(false);
     setIsGenerating(true);
     try {
@@ -598,6 +623,10 @@ export default function StudyPlanner() {
                             <button
                               onClick={async (e) => {
                                 e.stopPropagation();
+                                if (!canEdit()) {
+                                  requireEditPermission('delete task');
+                                  return;
+                                }
                                 await deleteTask(task.id || task._id);
                                 loadTasks();
                               }}
@@ -635,10 +664,18 @@ export default function StudyPlanner() {
           onEditTask={handleOpenEdit}
           onToggleLock={handleToggleLock}
           onCompleteTask={async (taskId) => {
+            if (!canEdit()) {
+              requireEditPermission('complete task');
+              return;
+            }
             await updateTask(taskId, { status: 'Completed', completedAt: new Date().toISOString() });
             loadTasks();
           }}
           onDeleteTask={async (taskId) => {
+            if (!canEdit()) {
+              requireEditPermission('delete task');
+              return;
+            }
             await deleteTask(taskId);
             loadTasks();
           }}

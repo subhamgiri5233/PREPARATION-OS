@@ -6,6 +6,7 @@ import { Plus, Search, X, BookMarked, CheckCircle2, RefreshCcw, ChevronDown, Che
 import { format } from 'date-fns';
 import { getAllVocab, addVocabWord, updateVocabWord, deleteVocabWord, getVocabByDate } from '../services/db';
 import { wordBank } from '../data/seedData';
+import { requireEditPermission, canEdit } from '../services/mutationGuard.js';
 
 const TODAY = format(new Date(), 'yyyy-MM-dd');
 
@@ -33,8 +34,12 @@ export default function Vocabulary() {
     }
   };
 
-  const handleSave = async (e) => {
-    if (e) e.preventDefault();
+  const handleAddWord = async (e) => {
+    e.preventDefault();
+    if (!canEdit()) {
+      requireEditPermission('add vocabulary word');
+      return;
+    }
     if (!newWord.word || !newWord.meaning) return;
     const wordData = {
       ...newWord,
@@ -51,6 +56,10 @@ export default function Vocabulary() {
   };
 
   const handleAddFromBank = async (bankWord) => {
+    if (!canEdit()) {
+      requireEditPermission('add word from bank');
+      return;
+    }
     const wordData = {
       ...bankWord,
       revisionStatus: 'Learning',
@@ -61,6 +70,10 @@ export default function Vocabulary() {
   };
 
   const handleDelete = async (id) => {
+    if (!canEdit()) {
+      requireEditPermission('delete vocabulary word');
+      return;
+    }
     if (!window.confirm('Are you sure you want to delete this vocabulary word?')) return;
     try {
       await deleteVocabWord(id);
@@ -72,6 +85,10 @@ export default function Vocabulary() {
 
   const handleSaveEdit = async (e) => {
     e.preventDefault();
+    if (!canEdit()) {
+      requireEditPermission('edit vocabulary word');
+      return;
+    }
     if (!editingWord) return;
     try {
       await updateVocabWord(editingWord.id || editingWord._id, {
@@ -94,6 +111,10 @@ export default function Vocabulary() {
   };
 
   const handleToggleRevised = async (word) => {
+    if (!canEdit()) {
+      requireEditPermission('change revision status');
+      return;
+    }
     const newStatus = word.revisionStatus === 'Revised' ? 'Learning' : 'Revised';
     await updateVocabWord(word.id || word._id, { revisionStatus: newStatus });
     await loadData();

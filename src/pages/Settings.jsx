@@ -8,6 +8,7 @@ import { getSettings, updateSettings, getAllAreas, updateArea,
 import { useAppStore } from '../store/useAppStore';
 import { useAuthStore } from '../store/useAuthStore';
 import { updateMasterPin, updateAuthSettings } from '../services/authService';
+import { requireEditPermission, canEdit } from '../services/mutationGuard.js';
 
 export default function Settings() {
   const { setSettings } = useAppStore();
@@ -26,6 +27,10 @@ export default function Settings() {
   };
 
   const handleSave = async () => {
+    if (!canEdit()) {
+      requireEditPermission('save settings');
+      return;
+    }
     // Strip the DB id from the form before saving
     const { id, ...updates } = form;
     await updateSettings(updates);
@@ -304,6 +309,10 @@ function SecuritySettingsCard() {
 
   const handleUpdatePin = async (e) => {
     e.preventDefault();
+    if (!canEdit()) {
+      requireEditPermission('update master PIN');
+      return;
+    }
     if (newPin.length < 4) {
       setError('New PIN must be at least 4 digits/characters.');
       return;
@@ -330,6 +339,10 @@ function SecuritySettingsCard() {
   };
 
   const handleModeChange = async (newMode) => {
+    if (!canEdit()) {
+      requireEditPermission('change privacy mode');
+      return;
+    }
     setMode(newMode);
     try {
       await updateAuthSettings({ privacyMode: newMode });

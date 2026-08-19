@@ -1,36 +1,37 @@
 import React, { useState, useEffect } from 'react';
-import { Lock, Unlock, LogIn, KeyRound, X, ShieldAlert, Check } from 'lucide-react';
+import { Lock, LogIn, X, ShieldAlert } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
 
 export default function LoginModal() {
-  const { showLoginModal, closeLoginModal, login, ownerName, isConfigured } = useAuthStore();
+  const { showPinModal, cancelEditMode, login, pinError } = useAuthStore();
   const [pin, setPin] = useState('');
-  const [error, setError] = useState('');
+  const [localError, setLocalError] = useState('');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (showLoginModal) {
+    if (showPinModal) {
       setPin('');
-      setError('');
+      setLocalError('');
     }
-  }, [showLoginModal]);
+  }, [showPinModal]);
 
-  if (!showLoginModal) return null;
+  if (!showPinModal) return null;
+
+  const displayError = localError || pinError;
 
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
     if (!pin || pin.length < 4) {
-      setError('Please enter at least 4 digits/characters.');
+      setLocalError('Please enter at least 4 digits/characters.');
       return;
     }
 
     setLoading(true);
-    setError('');
+    setLocalError('');
     try {
       await login(pin);
-      closeLoginModal();
     } catch (err) {
-      setError(err.message || 'Incorrect Master PIN');
+      setLocalError(err.message || 'Incorrect PIN. Edit Mode remains disabled.');
     } finally {
       setLoading(false);
     }
@@ -39,22 +40,27 @@ export default function LoginModal() {
   const handleKeyPress = (num) => {
     if (pin.length < 12) {
       setPin((prev) => prev + num);
-      setError('');
+      setLocalError('');
     }
   };
 
   const handleBackspace = () => {
     setPin((prev) => prev.slice(0, -1));
-    setError('');
+    setLocalError('');
   };
 
   return (
-    <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && closeLoginModal()}>
+    <div
+      className="modal-overlay"
+      style={{ zIndex: 99999, background: 'rgba(0, 0, 0, 0.7)', backdropFilter: 'blur(4px)' }}
+      onClick={(e) => e.target === e.currentTarget && cancelEditMode()}
+    >
       <div className="modal" style={{ maxWidth: 380, textAlign: 'center', padding: '28px 24px' }}>
         <button
           className="modal-close"
-          onClick={closeLoginModal}
+          onClick={cancelEditMode}
           style={{ position: 'absolute', right: 16, top: 16 }}
+          title="Cancel"
         >
           <X size={16} />
         </button>
@@ -67,17 +73,17 @@ export default function LoginModal() {
           margin: '0 auto 16px auto',
           color: 'var(--primary-light)'
         }}>
-          <LogIn size={26} />
+          <Lock size={26} />
         </div>
 
         <h2 style={{ fontSize: 20, fontWeight: 800, margin: '0 0 6px 0', color: 'var(--text)' }}>
-          Enable Edit Mode
+          Enter PIN to Enable Edit Mode
         </h2>
         <p style={{ fontSize: 12, color: 'var(--text-2)', margin: '0 0 20px 0' }}>
-          Enter Master PIN (stored in DB) to edit schedules, create tasks, and manage data.
+          Enter your Master PIN to unlock full editing and scheduling operations.
         </p>
 
-        {error && (
+        {displayError && (
           <div style={{
             background: 'var(--danger-glass)',
             border: '1px solid var(--danger)',
@@ -91,7 +97,7 @@ export default function LoginModal() {
             gap: 6,
             justifyContent: 'center'
           }}>
-            <ShieldAlert size={14} /> {error}
+            <ShieldAlert size={14} /> {displayError}
           </div>
         )}
 
@@ -101,7 +107,7 @@ export default function LoginModal() {
               type="password"
               className="form-input"
               value={pin}
-              onChange={(e) => { setPin(e.target.value); setError(''); }}
+              onChange={(e) => { setPin(e.target.value); setLocalError(''); }}
               placeholder="••••"
               autoFocus
               style={{
@@ -184,18 +190,29 @@ export default function LoginModal() {
             </button>
           </div>
 
-          <button
-            type="submit"
-            className="btn btn-primary"
-            disabled={loading}
-            style={{ width: '100%', justifyContent: 'center', height: 42, fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}
-          >
-            <LogIn size={16} /> {loading ? 'Verifying PIN...' : 'Enable Edit Mode'}
-          </button>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={cancelEditMode}
+              disabled={loading}
+              style={{ flex: 1, height: 42, fontSize: 13, fontWeight: 600, justifyContent: 'center' }}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={loading}
+              style={{ flex: 2, height: 42, fontSize: 13, fontWeight: 700, justifyContent: 'center', display: 'flex', alignItems: 'center', gap: 6 }}
+            >
+              <LogIn size={15} /> {loading ? 'Verifying...' : 'Enable Edit Mode'}
+            </button>
+          </div>
         </form>
 
         <div style={{ marginTop: 14, fontSize: 11, color: 'var(--text-3)' }}>
-          Default PIN in DB is <strong style={{ color: 'var(--primary-light)' }}>1234</strong> (customizable in Settings)
+          Default PIN in DB is <strong style={{ color: 'var(--primary-light)' }}>1234</strong>
         </div>
       </div>
     </div>

@@ -51,13 +51,24 @@ function normalizeItem(item) {
   return copy;
 }
 
+import { requireEditPermission } from './mutationGuard.js';
+
 /**
- * apiFetch — wrapper around fetch with JSON defaults, error handling, and ID normalization
+ * apiFetch — wrapper around fetch with JSON defaults, error handling, ID normalization, and View Only protection
  * @param {string} path  - e.g. '/settings'
  * @param {object} opts  - fetch options (method, body, etc.)
  */
 export async function apiFetch(path, opts = {}) {
   const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  const method = (opts.method || 'GET').toUpperCase();
+
+  // Guard mutations: POST, PUT, PATCH, DELETE are blocked in View Only Mode
+  // Auth endpoints (status, login, verify, setup) and health checks are exempt so the user can unlock Edit Mode
+  const isAuthPath = cleanPath.startsWith('/auth') || cleanPath === '/health';
+  if (!isAuthPath && (method === 'POST' || method === 'PUT' || method === 'PATCH' || method === 'DELETE')) {
+    requireEditPermission(`${method} ${cleanPath}`);
+  }
+
   const url = `${BASE_URL}${cleanPath}`;
   
   const response = await fetch(url, {

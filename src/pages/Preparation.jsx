@@ -29,6 +29,7 @@ import {
   calculateSubjectProgress, calculateChapterProgress, calculateTopicResourceProgress,
   validateSyllabusJSON, executeSyllabusImport, generateSyllabusTemplateJSON, generateSyllabusTemplateCSV
 } from '../services/syllabusService';
+import { requireEditPermission, canEdit } from '../services/mutationGuard.js';
 
 const STATUS_CONFIG = {
   'Not Started': { label: 'Not Started', badge: 'badge-muted', icon: Circle, color: '#64748b' },
@@ -265,6 +266,10 @@ export default function Preparation() {
 
   // Status Change Handler with Phase 5 adaptive revision integration
   const handleStatusChange = async (topic, newStatus) => {
+    if (!canEdit()) {
+      requireEditPermission('change topic status');
+      return;
+    }
     const updates = { status: newStatus };
     const today = format(new Date(), 'yyyy-MM-dd');
 
@@ -313,6 +318,10 @@ export default function Preparation() {
 
   const handleDeleteChapter = async (chapterId, chapterName, e) => {
     if (e) e.stopPropagation();
+    if (!canEdit()) {
+      requireEditPermission('delete chapter');
+      return;
+    }
     if (!window.confirm(`Are you sure you want to delete chapter "${chapterName}"?`)) return;
     try {
       await deleteChapter(chapterId);
@@ -326,6 +335,10 @@ export default function Preparation() {
 
   const handleDeleteSubject = async (subjectId, subjectName, e) => {
     if (e) e.stopPropagation();
+    if (!canEdit()) {
+      requireEditPermission('delete subject');
+      return;
+    }
     if (!window.confirm(`Are you sure you want to delete subject "${subjectName}" and all its chapters & topics?`)) return;
     try {
       await deleteSubject(subjectId);
@@ -340,6 +353,10 @@ export default function Preparation() {
 
   const handleDeleteTopic = async (topicId, topicName, e) => {
     if (e) e.stopPropagation();
+    if (!canEdit()) {
+      requireEditPermission('delete topic');
+      return;
+    }
     if (!window.confirm(`Are you sure you want to delete topic "${topicName}"?`)) return;
     try {
       await deleteTopic(topicId);
@@ -355,6 +372,10 @@ export default function Preparation() {
 
   const handleDeleteCourse = async (courseId, courseName, e) => {
     if (e) e.stopPropagation();
+    if (!canEdit()) {
+      requireEditPermission('delete course');
+      return;
+    }
     if (!window.confirm(`Are you sure you want to delete course "${courseName}"?`)) return;
     try {
       await deleteCourse(courseId);
@@ -383,15 +404,31 @@ export default function Preparation() {
           <p className="page-subtitle">5-Tier preparation management: Area → Course → Subject → Chapter → Topic → Resources</p>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <button className="btn btn-ghost" onClick={() => setShowImportModal(true)}>
+          <button className="btn btn-ghost" onClick={() => {
+            if (!canEdit()) {
+              requireEditPermission('import syllabus');
+              return;
+            }
+            setShowImportModal(true);
+          }}>
             <Upload size={14} /> Import Syllabus
           </button>
-          <button className="btn btn-ghost" onClick={() => setShowAddSubject(true)}>
+          <button className="btn btn-ghost" onClick={() => {
+            if (!canEdit()) {
+              requireEditPermission('add subject');
+              return;
+            }
+            setShowAddSubject(true);
+          }}>
             <Plus size={14} /> Add Subject
           </button>
           <button
             className="btn btn-primary"
             onClick={() => {
+              if (!canEdit()) {
+                requireEditPermission('add topic');
+                return;
+              }
               setEditingTopic(null);
               setTopicContextForNewTopic({});
               setShowAddTopic(true);
@@ -848,23 +885,43 @@ export default function Preparation() {
           onClose={() => setSelectedTopicDetail(null)}
           onStatusChange={handleStatusChange}
           onAddResource={async (resData) => {
+            if (!canEdit()) {
+              requireEditPermission('add study resource');
+              return;
+            }
             const id = await addStudyResource(resData);
             setStudyResources((prev) => [...prev, { ...resData, id }]);
           }}
           onToggleResource={async (resId, completed, watchedPercentage) => {
+            if (!canEdit()) {
+              requireEditPermission('update study resource');
+              return;
+            }
             await updateStudyResource(resId, { completed, watchedPercentage });
             setStudyResources((prev) => prev.map((r) => r.id === resId ? { ...r, completed, watchedPercentage } : r));
           }}
           onDeleteResource={async (resId) => {
+            if (!canEdit()) {
+              requireEditPermission('delete study resource');
+              return;
+            }
             await deleteStudyResource(resId);
             setStudyResources((prev) => prev.filter((r) => r.id !== resId));
           }}
           onEdit={(t) => {
+            if (!canEdit()) {
+              requireEditPermission('edit topic');
+              return;
+            }
             setSelectedTopicDetail(null);
             setEditingTopic(t);
             setShowAddTopic(true);
           }}
           onDelete={async (id) => {
+            if (!canEdit()) {
+              requireEditPermission('delete topic');
+              return;
+            }
             await deleteTopic(id);
             setTopics((prev) => prev.filter((t) => t.id !== id));
             setSelectedTopicDetail(null);
@@ -884,6 +941,10 @@ export default function Preparation() {
           allTopics={currentTopics}
           onClose={() => { setShowAddTopic(false); setEditingTopic(null); }}
           onSave={async (topicData) => {
+            if (!canEdit()) {
+              requireEditPermission('save topic');
+              return;
+            }
             if (editingTopic) {
               await updateTopic(editingTopic.id, topicData);
               setTopics((prev) => prev.map((t) => (t.id === editingTopic.id ? { ...t, ...topicData } : t)));
