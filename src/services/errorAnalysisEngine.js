@@ -79,7 +79,7 @@ export function detectRepeatedErrors(errorLogs, topics) {
   const repeated = [];
   Object.keys(topicMap).forEach(topicId => {
     if (topicMap[topicId].size > 1) {
-      const topic = topics.find(t => t.id === parseInt(topicId));
+      const topic = topics.find(t => String(t.id || t._id) === String(topicId));
       if (topic) {
         repeated.push({
           topic,

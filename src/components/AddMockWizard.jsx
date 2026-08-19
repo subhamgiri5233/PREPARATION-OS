@@ -33,9 +33,9 @@ export default function AddMockWizard({ onClose, onSuccess, areas, subjects, top
   // Auto-populate subjects when area changes or on load
   React.useEffect(() => {
     if (mockForm.preparationAreaId) {
-      const areaSubjects = subjects.filter(s => s.preparationAreaId === parseInt(mockForm.preparationAreaId));
+      const areaSubjects = subjects.filter(s => String(s.preparationAreaId) === String(mockForm.preparationAreaId));
       setSubjectResults(areaSubjects.map(s => ({
-        subjectId: s.id,
+        subjectId: s.id || s._id,
         name: s.name,
         attempted: 0,
         correct: 0,
@@ -99,8 +99,8 @@ export default function AddMockWizard({ onClose, onSuccess, areas, subjects, top
       // 2. Save Mock
       const mockId = await addMock({
         ...mockForm,
-        preparationAreaId: parseInt(mockForm.preparationAreaId),
-        mockNumber: parseInt(mockForm.mockNumber),
+        preparationAreaId: mockForm.preparationAreaId,
+        mockNumber: parseInt(mockForm.mockNumber) || 1,
         attempted: totalAttempted,
         correct: totalCorrect,
         wrong: totalWrong,
@@ -121,8 +121,8 @@ export default function AddMockWizard({ onClose, onSuccess, areas, subjects, top
         if (err.topicId) {
           await addErrorLog({
             mockTestId: mockId,
-            subjectId: parseInt(err.subjectId),
-            topicId: parseInt(err.topicId),
+            subjectId: err.subjectId,
+            topicId: err.topicId,
             errorType: err.errorType,
             questionRef: err.questionRef,
             userAnswer: err.userAnswer,
@@ -266,8 +266,8 @@ export default function AddMockWizard({ onClose, onSuccess, areas, subjects, top
                         setErrors(newErrs);
                       }}>
                         <option value="">Select Topic...</option>
-                        {topics.filter(t => t.subjectId === parseInt(err.subjectId || subjectResults[0]?.subjectId)).map(t => (
-                          <option key={t.id} value={t.id}>{t.name}</option>
+                        {topics.filter(t => String(t.subjectId) === String(err.subjectId || subjectResults[0]?.subjectId)).map(t => (
+                          <option key={t.id || t._id} value={t.id || t._id}>{t.name}</option>
                         ))}
                       </select>
                     </div>

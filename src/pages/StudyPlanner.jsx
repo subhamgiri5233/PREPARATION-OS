@@ -78,16 +78,16 @@ export default function StudyPlanner() {
   const getTasksForDate = (dateStr) => tasks.filter((t) => t.date === dateStr);
 
   const handleAddTask = async () => {
-    const topic = topics.find((t) => t.id === parseInt(form.topicId));
-    const subject = subjects.find((s) => s.id === parseInt(form.subjectId));
+    const topic = topics.find((t) => String(t.id || t._id) === String(form.topicId));
+    const subject = subjects.find((s) => String(s.id || s._id) === String(form.subjectId));
     const taskData = {
       ...form,
       date: showAddTask || format(currentDate, 'yyyy-MM-dd'),
       topicName: topic?.name,
-      topicId: topic?.id,
+      topicId: topic?.id || topic?._id || form.topicId,
       subjectName: subject?.name,
-      subjectId: subject?.id,
-      preparationAreaId: parseInt(form.preparationAreaId),
+      subjectId: subject?.id || subject?._id || form.subjectId,
+      preparationAreaId: form.preparationAreaId || null,
       status: 'Not Started',
     };
     if (editTask) {
@@ -331,8 +331,8 @@ export default function StudyPlanner() {
                 <label className="form-label">Topic</label>
                 <select className="form-select" value={form.topicId} onChange={(e) => setForm({ ...form, topicId: e.target.value })}>
                   <option value="">Select topic...</option>
-                  {topics.filter((t) => !form.preparationAreaId || t.preparationAreaId === parseInt(form.preparationAreaId))
-                    .map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                  {topics.filter((t) => !form.preparationAreaId || String(t.preparationAreaId) === String(form.preparationAreaId))
+                    .map((t) => <option key={t.id || t._id} value={t.id || t._id}>{t.name}</option>)}
                 </select>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>

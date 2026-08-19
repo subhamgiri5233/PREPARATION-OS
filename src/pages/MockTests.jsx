@@ -39,7 +39,9 @@ export default function MockTests() {
     setSelectedMockResults(results);
   };
 
-  const filteredMocks = filter === 'all' ? mocks : mocks.filter((m) => m.preparationAreaId === parseInt(filter));
+  const filteredMocks = filter === 'all'
+    ? mocks
+    : mocks.filter((m) => String(m.preparationAreaId) === String(filter));
   const scoreTrend = getScoreTrend(filteredMocks);
 
   const avgAccuracy = filteredMocks.length
@@ -66,11 +68,18 @@ export default function MockTests() {
       {/* Filter tabs */}
       <div className="tabs mb-24" style={{ alignSelf: 'flex-start' }}>
         <button className={`tab ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>All</button>
-        {areas.map((a) => (
-          <button key={a.id} className={`tab ${filter === a.id ? 'active' : ''}`} onClick={() => setFilter(a.id)}>
-            {a.name}
-          </button>
-        ))}
+        {areas.map((a) => {
+          const areaId = a.id || a._id;
+          return (
+            <button
+              key={areaId}
+              className={`tab ${String(filter) === String(areaId) ? 'active' : ''}`}
+              onClick={() => setFilter(String(areaId))}
+            >
+              {a.name}
+            </button>
+          );
+        })}
       </div>
 
       {/* Quick Stats */}

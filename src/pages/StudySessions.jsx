@@ -69,15 +69,15 @@ export default function StudySessions() {
 
   const handleStart = async () => {
     if (!newSession.topicId) return;
-    const topic = topics.find((t) => t.id === parseInt(newSession.topicId));
-    const subject = subjects.find((s) => s.id === parseInt(newSession.subjectId));
+    const topic = topics.find((t) => String(t.id || t._id) === String(newSession.topicId));
+    const subject = subjects.find((s) => String(s.id || s._id) === String(newSession.subjectId));
     const now = new Date();
     const sessionData = {
-      topicId: topic?.id || null,
+      topicId: topic?.id || topic?._id || newSession.topicId,
       topicName: topic?.name || '',
-      subjectId: subject?.id || null,
+      subjectId: subject?.id || subject?._id || newSession.subjectId,
       subjectName: subject?.name || '',
-      preparationAreaId: parseInt(newSession.preparationAreaId) || null,
+      preparationAreaId: newSession.preparationAreaId || null,
       startTime: now.toISOString(),
       endTime: null,
       durationMinutes: 0,
@@ -88,9 +88,9 @@ export default function StudySessions() {
     sessionStartRef.current = Date.now();
     totalPausedRef.current = 0;
     pauseStartRef.current = null;
+    setActiveSession({ id, ...sessionData });
     setElapsed(0);
     setIsPaused(false);
-    setActiveSession({ id, ...sessionData });
     setShowNewSession(false);
     setNewSession({ topicId: '', subjectId: '', preparationAreaId: '', notes: '' });
   };

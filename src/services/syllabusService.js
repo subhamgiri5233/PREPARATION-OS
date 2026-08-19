@@ -74,7 +74,7 @@ export function calculateSyllabusProgress(topics = [], todayStr = new Date().toI
  * Calculates progress for a specific preparation area.
  */
 export function calculateAreaProgress(areaId, allTopics = []) {
-  const areaTopics = allTopics.filter((t) => t.preparationAreaId === areaId);
+  const areaTopics = allTopics.filter((t) => String(t.preparationAreaId) === String(areaId));
   return calculateSyllabusProgress(areaTopics);
 }
 
@@ -82,7 +82,7 @@ export function calculateAreaProgress(areaId, allTopics = []) {
  * Calculates progress for a specific course.
  */
 export function calculateCourseProgress(courseId, allTopics = []) {
-  const courseTopics = allTopics.filter((t) => t.courseId === courseId);
+  const courseTopics = allTopics.filter((t) => String(t.courseId) === String(courseId));
   return calculateSyllabusProgress(courseTopics);
 }
 
@@ -90,7 +90,7 @@ export function calculateCourseProgress(courseId, allTopics = []) {
  * Calculates progress for a specific subject.
  */
 export function calculateSubjectProgress(subjectId, allTopics = []) {
-  const subTopics = allTopics.filter((t) => t.subjectId === subjectId);
+  const subTopics = allTopics.filter((t) => String(t.subjectId) === String(subjectId));
   return calculateSyllabusProgress(subTopics);
 }
 
@@ -98,7 +98,7 @@ export function calculateSubjectProgress(subjectId, allTopics = []) {
  * Calculates progress for a specific chapter/module.
  */
 export function calculateChapterProgress(chapterId, allTopics = []) {
-  const chapTopics = allTopics.filter((t) => t.chapterId === chapterId);
+  const chapTopics = allTopics.filter((t) => String(t.chapterId) === String(chapterId));
   return calculateSyllabusProgress(chapTopics);
 }
 
@@ -106,7 +106,7 @@ export function calculateChapterProgress(chapterId, allTopics = []) {
  * Calculates resource tracking progress for a topic.
  */
 export function calculateTopicResourceProgress(topicId, allResources = []) {
-  const resources = allResources.filter((r) => r.topicId === topicId);
+  const resources = allResources.filter((r) => String(r.topicId) === String(topicId));
   const total = resources.length;
   if (total === 0) return { total: 0, completed: 0, percentage: 0, videosCount: 0, avgWatchedPercent: 0 };
 

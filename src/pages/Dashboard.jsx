@@ -157,25 +157,25 @@ export default function Dashboard() {
   // Filtered views based on selected Area
   const currentArea = useMemo(() => {
     if (selectedAreaId === 'all') return null;
-    return areas.find((a) => a.id === Number(selectedAreaId)) || null;
+    return areas.find((a) => String(a.id || a._id) === String(selectedAreaId)) || null;
   }, [areas, selectedAreaId]);
 
   const filteredTopics = useMemo(() => {
     if (selectedAreaId === 'all') return topics;
-    return topics.filter((t) => t.preparationAreaId === Number(selectedAreaId));
+    return topics.filter((t) => String(t.preparationAreaId) === String(selectedAreaId));
   }, [topics, selectedAreaId]);
 
   const filteredRevisions = useMemo(() => {
     if (selectedAreaId === 'all') return revisionsDue;
     return revisionsDue.filter((r) => {
-      const top = topics.find((t) => t.id === r.topicId);
-      return top && top.preparationAreaId === Number(selectedAreaId);
+      const top = topics.find((t) => String(t.id || t._id) === String(r.topicId));
+      return top && String(top.preparationAreaId) === String(selectedAreaId);
     });
   }, [revisionsDue, topics, selectedAreaId]);
 
   const filteredMocks = useMemo(() => {
     if (selectedAreaId === 'all') return allMocks;
-    return allMocks.filter((m) => m.preparationAreaId === Number(selectedAreaId));
+    return allMocks.filter((m) => String(m.preparationAreaId) === String(selectedAreaId));
   }, [allMocks, selectedAreaId]);
 
   // Today study calculations

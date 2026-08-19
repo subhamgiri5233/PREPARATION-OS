@@ -130,7 +130,7 @@ export default function Preparation() {
       setAllRevisions(revsList);
 
       if (areasList.length > 0 && !selectedAreaId) {
-        setSelectedAreaId(areasList[0].id);
+        setSelectedAreaId(String(areasList[0].id || areasList[0]._id));
       }
     } catch (err) {
       console.error('[Preparation] Failed to load data:', err);
@@ -144,27 +144,31 @@ export default function Preparation() {
   }, []);
 
   const currentArea = useMemo(() => {
-    return preparationAreas.find((a) => a.id === selectedAreaId) || preparationAreas[0] || null;
+    return preparationAreas.find((a) => String(a.id || a._id) === String(selectedAreaId)) || preparationAreas[0] || null;
   }, [preparationAreas, selectedAreaId]);
 
   const currentCourses = useMemo(() => {
     if (!currentArea) return [];
-    return courses.filter((c) => c.preparationAreaId === currentArea.id);
+    const areaId = String(currentArea.id || currentArea._id);
+    return courses.filter((c) => String(c.preparationAreaId) === areaId);
   }, [courses, currentArea]);
 
   const currentSubjects = useMemo(() => {
     if (!currentArea) return [];
-    return subjects.filter((s) => s.preparationAreaId === currentArea.id);
+    const areaId = String(currentArea.id || currentArea._id);
+    return subjects.filter((s) => String(s.preparationAreaId) === areaId);
   }, [subjects, currentArea]);
 
   const currentChapters = useMemo(() => {
     if (!currentArea) return [];
-    return chapters.filter((c) => c.preparationAreaId === currentArea.id);
+    const areaId = String(currentArea.id || currentArea._id);
+    return chapters.filter((c) => String(c.preparationAreaId) === areaId);
   }, [chapters, currentArea]);
 
   const currentTopics = useMemo(() => {
     if (!currentArea) return [];
-    return topics.filter((t) => t.preparationAreaId === currentArea.id);
+    const areaId = String(currentArea.id || currentArea._id);
+    return topics.filter((t) => String(t.preparationAreaId) === areaId);
   }, [topics, currentArea]);
 
   // Filtered topics based on search and filters
@@ -172,14 +176,12 @@ export default function Preparation() {
     return currentTopics.filter((t) => {
       // Course filter
       if (selectedCourseId !== 'all') {
-        const cId = Number(selectedCourseId);
-        if (t.courseId !== cId) return false;
+        if (String(t.courseId) !== String(selectedCourseId)) return false;
       }
 
       // Subject filter
       if (filterSubject !== 'all') {
-        const sId = Number(filterSubject);
-        if (t.subjectId !== sId) return false;
+        if (String(t.subjectId) !== String(filterSubject)) return false;
       }
 
       // Status filter
@@ -339,13 +341,14 @@ export default function Preparation() {
       {/* ── Preparation Area Tabs ──────────────────────────────── */}
       <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 6, marginBottom: 16 }}>
         {preparationAreas.map((area) => {
-          const stats = calculateAreaProgress(area.id, topics);
-          const isSelected = selectedAreaId === area.id;
+          const areaId = String(area.id || area._id);
+          const stats = calculateAreaProgress(areaId, topics);
+          const isSelected = String(selectedAreaId) === areaId;
           return (
             <button
-              key={area.id}
+              key={areaId}
               onClick={() => {
-                setSelectedAreaId(area.id);
+                setSelectedAreaId(areaId);
                 setSelectedCourseId('all');
                 setFilterSubject('all');
               }}

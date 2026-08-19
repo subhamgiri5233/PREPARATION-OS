@@ -66,15 +66,15 @@ export default function Analytics() {
 
   const filteredMocks = selectedArea === 'all' 
     ? mocks 
-    : mocks.filter((m) => m.preparationAreaId === parseInt(selectedArea));
+    : mocks.filter((m) => String(m.preparationAreaId) === String(selectedArea));
 
   const filteredSubjects = selectedArea === 'all'
     ? subjectAnalysis
-    : subjectAnalysis.filter((s) => s.preparationAreaId === parseInt(selectedArea));
+    : subjectAnalysis.filter((s) => String(s.preparationAreaId) === String(selectedArea));
 
   const filteredWeakTopics = selectedArea === 'all'
     ? weakTopics
-    : weakTopics.filter(t => t.preparationAreaId === parseInt(selectedArea));
+    : weakTopics.filter(t => String(t.preparationAreaId) === String(selectedArea));
 
   const withData = filteredSubjects.filter((s) => s.mockCount > 0);
   const weakSub = getWeakSubjects(filteredSubjects);
@@ -83,9 +83,10 @@ export default function Analytics() {
   const trendData = filteredMocks
     .sort((a, b) => new Date(a.date) - new Date(b.date))
     .map(m => ({
-      name: `Mock ${m.mockNumber}`,
-      scorePercent: m.maxScore ? Math.round((m.score / m.maxScore) * 100) : 0,
-      accuracy: calculateAccuracy(m.correct, m.attempted)
+      name: m.name.length > 12 ? m.name.slice(0, 12) + '…' : m.name,
+      score: m.maxScore ? Math.round((m.score / m.maxScore) * 100) : 0,
+      accuracy: calculateAccuracy(m.correct, m.attempted),
+      date: m.date,
     }));
 
   const pieData = errorDistribution.map(e => ({ name: e.type, value: e.count }));
@@ -96,16 +97,25 @@ export default function Analytics() {
     <div>
       <div className="page-header">
         <div className="page-header-left">
-          <h1 className="page-title">Analytics</h1>
-          <p className="page-subtitle">Deep analysis of your mock test performance and errors</p>
+          <h1 className="page-title">Mock & Weakness Analytics</h1>
+          <p className="page-subtitle">Identify weak areas, accuracy drops, and score trajectories</p>
         </div>
         <div className="tabs">
-          <button className={`tab ${selectedArea === 'all' ? 'active' : ''}`} onClick={() => setSelectedArea('all')}>All</button>
-          {areas.map((a) => (
-            <button key={a.id} className={`tab ${selectedArea === a.id ? 'active' : ''}`} onClick={() => setSelectedArea(a.id)}>
-              {a.name.split(' ')[0]}
-            </button>
-          ))}
+          <button className={`tab ${selectedArea === 'all' ? 'active' : ''}`} onClick={() => setSelectedArea('all')}>
+            All Areas
+          </button>
+          {areas.map((a) => {
+            const areaId = String(a.id || a._id);
+            return (
+              <button
+                key={areaId}
+                className={`tab ${String(selectedArea) === areaId ? 'active' : ''}`}
+                onClick={() => setSelectedArea(areaId)}
+              >
+                {a.name.split(' ')[0]}
+              </button>
+            );
+          })}
         </div>
       </div>
 
