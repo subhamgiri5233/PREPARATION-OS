@@ -1,7 +1,7 @@
-// src/components/layout/TopBar.jsx
 import { useState } from 'react';
-import { Menu, Bell, Zap, Search, X, BookOpen, GraduationCap, FileText, BookMarked } from 'lucide-react';
+import { Menu, Bell, Zap, Search, X, BookOpen, GraduationCap, FileText, BookMarked, Lock, Unlock } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
+import { useAuthStore } from '../../store/useAuthStore';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { searchGlobal } from '../../services/searchService';
@@ -59,6 +59,8 @@ export default function TopBar({ onMobileMenuOpen }) {
     navigate(path);
   };
 
+  const { isAuthenticated, openLoginModal, lock, ownerName } = useAuthStore();
+
   return (
     <>
       <header className="topbar">
@@ -90,6 +92,44 @@ export default function TopBar({ onMobileMenuOpen }) {
 
           {/* Active session indicator */}
           <ActiveSessionIndicator />
+
+          {/* Auth Lock/Unlock Toggle */}
+          {isAuthenticated ? (
+            <button
+              className="btn btn-xs btn-ghost"
+              onClick={lock}
+              title={`Unlocked as ${ownerName}. Click to Lock Workspace.`}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+                fontSize: 12,
+                color: 'var(--success)',
+                border: '1px solid rgba(34, 197, 94, 0.3)',
+                background: 'rgba(34, 197, 94, 0.1)',
+                padding: '4px 10px',
+                borderRadius: 'var(--radius-full)'
+              }}
+            >
+              <Unlock size={12} /> {ownerName || 'Admin'}
+            </button>
+          ) : (
+            <button
+              className="btn btn-xs btn-primary"
+              onClick={openLoginModal}
+              title="Click to Unlock Workspace with Master PIN"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+                fontSize: 12,
+                padding: '4px 10px',
+                borderRadius: 'var(--radius-full)'
+              }}
+            >
+              <Lock size={12} /> Unlock
+            </button>
+          )}
 
           {/* Notifications */}
           <a href="/notifications" className="topbar-btn" aria-label="Notifications">

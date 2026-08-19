@@ -1,13 +1,13 @@
-// src/pages/Settings.jsx
 import { useEffect, useState } from 'react';
-import { Save, Download, RotateCcw } from 'lucide-react';
+import { Save, Download, RotateCcw, ArrowUp, ArrowDown, Lock, Unlock, ShieldCheck, KeyRound } from 'lucide-react';
 import { getSettings, updateSettings, getAllAreas, updateArea,
   getAllCourses, getAllSubjects, getAllChapters, getAllTopics, getAllStudyResources,
   getAllSessions, getAllMocks, getAllMockSubjectResults, getErrorLogs,
   getAllVocab, getPendingRevisions, getAllTasks, getAllGitaShlokas
 } from '../services/db';
 import { useAppStore } from '../store/useAppStore';
-import { ArrowUp, ArrowDown } from 'lucide-react';
+import { useAuthStore } from '../store/useAuthStore';
+import { updateMasterPin, updateAuthSettings } from '../services/authService';
 
 export default function Settings() {
   const { setSettings } = useAppStore();
@@ -269,6 +269,9 @@ export default function Settings() {
           </div>
         </div>
 
+        {/* Security & Authentication */}
+        <SecuritySettingsCard />
+
         {/* Data Management */}
         <div className="card" style={{ gridColumn: '1 / -1' }}>
           <div className="card-header"><div className="card-title">💾 Data Management</div></div>
@@ -283,6 +286,199 @@ export default function Settings() {
               </p>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SecuritySettingsCard() {
+  const { isAuthenticated, lock, openLoginModal, privacyMode, ownerName } = useAuthStore();
+  const [currentPin, setCurrentPin] = useState('');
+  const [newPin, setNewPin] = useState('');
+  const [confirmPin, setConfirmPin] = useState('');
+  const [msg, setMsg] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [mode, setMode] = useState(privacyMode || 'privacy');
+
+  const handleUpdatePin = async (e) => {
+    e.preventDefault();
+    if (newPin.length < 4) {
+      setError('New PIN must be at least 4 digits/characters.');
+      return;
+    }
+    if (newPin !== confirmPin) {
+      setError('New PIN and Confirm PIN do not match.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    setMsg('');
+    try {
+      await updateMasterPin(currentPin, newPin);
+      setMsg('✅ Master PIN updated successfully!');
+      setCurrentPin('');
+      setNewPin('');
+      setConfirmPin('');
+    } catch (err) {
+      setError(err.message || 'Failed to update PIN');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleModeChange = async (newMode) => {
+    setMode(newMode);
+    try {
+      await updateAuthSettings({ privacyMode: newMode });
+      setMsg(`Mode updated to ${newMode === 'lockdown' ? 'Full Lockdown' : 'Privacy Protection'}`);
+      setTimeout(() => setMsg(''), 3000);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  return (
+    <div className="card" style={{ gridColumn: '1 / -1' }}>
+      <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <ShieldCheck size={18} color="var(--primary-light)" /> 🔐 Security, Authentication & Privacy Protection
+        </div>
+        {isAuthenticated ? (
+          <button className="btn btn-xs btn-ghost" onClick={lock} style={{ color: 'var(--warning)' }}>
+            <Lock size={12} /> Lock Workspace Now
+          </button>
+        ) : (
+          <button className="btn btn-xs btn-primary" onClick={openLoginModal}>
+            <Unlock size={12} /> Unlock Workspace
+          </button>
+        )}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
+        {/* Left Column: Privacy Mode Selector */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
+            Public Visitor Protection Mode
+          </div>
+          <p style={{ fontSize: 12, color: 'var(--text-2)', margin: 0 }}>
+            Control what visitors who open your website link can see when you are not logged in.
+          </p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
+            <label style={{
+              display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 12px',
+              borderRadius: 'var(--radius)', background: 'var(--surface-2)',
+              border: `1px solid ${mode === 'privacy' ? 'var(--primary)' : 'var(--border)'}`,
+              cursor: 'pointer'
+            }}>
+              <input
+                type="radio"
+                name="privacyMode"
+                checked={mode === 'privacy'}
+                onChange={() => handleModeChange('privacy')}
+                style={{ marginTop: 2 }}
+              />
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700 }}>
+                  🛡️ Privacy Mode (Recommended)
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>
+                  Visitors can see general study routine hours & streak, but all specific study topic names, notes, and reflections are locked and masked.
+                </div>
+              </div>
+            </label>
+
+            <label style={{
+              display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 12px',
+              borderRadius: 'var(--radius)', background: 'var(--surface-2)',
+              border: `1px solid ${mode === 'lockdown' ? 'var(--primary)' : 'var(--border)'}`,
+              cursor: 'pointer'
+            }}>
+              <input
+                type="radio"
+                name="privacyMode"
+                checked={mode === 'lockdown'}
+                onChange={() => handleModeChange('lockdown')}
+                style={{ marginTop: 2 }}
+              />
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700 }}>
+                  🔒 Full Lockdown
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>
+                  Entire application is restricted. Anyone visiting must enter Master PIN to access anything.
+                </div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        {/* Right Column: Change Master PIN */}
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>
+            Change Master PIN / Password
+          </div>
+
+          {msg && (
+            <div style={{ background: 'var(--success-glass)', color: 'var(--success)', padding: '6px 10px', borderRadius: 'var(--radius-sm)', fontSize: 12, marginBottom: 10 }}>
+              {msg}
+            </div>
+          )}
+          {error && (
+            <div style={{ background: 'var(--danger-glass)', color: 'var(--danger)', padding: '6px 10px', borderRadius: 'var(--radius-sm)', fontSize: 12, marginBottom: 10 }}>
+              ⚠️ {error}
+            </div>
+          )}
+
+          <form onSubmit={handleUpdatePin} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div className="form-group">
+              <label className="form-label" style={{ fontSize: 11 }}>Current PIN (if already set)</label>
+              <input
+                type="password"
+                className="form-input form-input-sm"
+                placeholder="Current PIN (Default is 1234)"
+                value={currentPin}
+                onChange={(e) => setCurrentPin(e.target.value)}
+              />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <div className="form-group">
+                <label className="form-label" style={{ fontSize: 11 }}>New Master PIN *</label>
+                <input
+                  type="password"
+                  className="form-input form-input-sm"
+                  placeholder="New PIN (min 4 digits)"
+                  value={newPin}
+                  onChange={(e) => setNewPin(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label" style={{ fontSize: 11 }}>Confirm New PIN *</label>
+                <input
+                  type="password"
+                  className="form-input form-input-sm"
+                  placeholder="Confirm New PIN"
+                  value={confirmPin}
+                  onChange={(e) => setConfirmPin(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              className="btn btn-sm btn-primary"
+              disabled={loading}
+              style={{ alignSelf: 'flex-start', marginTop: 4 }}
+            >
+              {loading ? 'Updating...' : 'Update Master PIN'}
+            </button>
+          </form>
         </div>
       </div>
     </div>

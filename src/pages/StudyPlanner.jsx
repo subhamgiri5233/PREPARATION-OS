@@ -5,12 +5,13 @@ import { useEffect, useState } from 'react';
 import { format, addDays, startOfWeek, eachDayOfInterval, isSameDay, parseISO } from 'date-fns';
 import {
   Plus, X, ChevronLeft, ChevronRight, Clock, AlertTriangle,
-  Lock, Unlock, Edit3, Trash2, CheckCircle2, Sparkles, User, Zap, RefreshCw
+  Lock, Unlock, Edit3, Trash2, CheckCircle2, Sparkles, User, Zap, RefreshCw, ShieldCheck
 } from 'lucide-react';
 import {
   getTasksByDate, addTask, updateTask, deleteTask, getAllTopics, getAllTasks,
   getAllSubjects, getAllAreas, getTeachingSchedule, getAllSessions, getAllMocks, getSettings
 } from '../services/db';
+import { useAuthStore } from '../store/useAuthStore';
 import { getRevisionsDueToday } from '../services/revisionService';
 import { generateDailyPlan, optimizeDailyRoutine } from '../services/studyPlanningEngine';
 import { scanAndMarkMissedTasks, getRescheduleRecommendations } from '../services/reschedulingEngine';
@@ -121,7 +122,13 @@ export default function StudyPlanner() {
 
   const getTasksForDate = (dateStr) => tasks.filter((t) => t.date === dateStr);
 
+  const { isAuthenticated, openLoginModal } = useAuthStore();
+
   const handleOpenAdd = (dateStr) => {
+    if (!isAuthenticated) {
+      openLoginModal();
+      return;
+    }
     setEditTask(null);
     setForm({
       type: 'Concept Study',
@@ -133,6 +140,10 @@ export default function StudyPlanner() {
   };
 
   const handleOpenEdit = (task) => {
+    if (!isAuthenticated) {
+      openLoginModal();
+      return;
+    }
     setEditTask(task);
     setForm({
       ...task,
@@ -415,6 +426,37 @@ export default function StudyPlanner() {
         <button className="btn btn-ghost btn-sm" onClick={() => setCurrentDate(new Date())}>Today</button>
       </div>
 
+      {/* Privacy Mode Banner for Public Visitors */}
+      {!isAuthenticated && (
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(139, 92, 246, 0.08))',
+          border: '1px solid var(--border-accent)',
+          padding: '12px 18px',
+          borderRadius: 'var(--radius)',
+          marginBottom: 16,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+          flexWrap: 'wrap'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <ShieldCheck size={20} color="var(--primary-light)" />
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
+                🔒 Public Visitor Mode
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--text-2)' }}>
+                General time routine is shown, but specific task topics and private notes are protected.
+              </div>
+            </div>
+          </div>
+          <button className="btn btn-sm btn-primary" onClick={openLoginModal}>
+            <Lock size={12} /> Unlock Workspace
+          </button>
+        </div>
+      )}
+
       {/* Missed Tasks Banner */}
       {missedTasks.length > 0 && (
         <div style={{ background: 'var(--danger-glass)', border: '1px solid var(--danger)', padding: 14, borderRadius: 'var(--radius)', marginBottom: 16 }}>
@@ -510,6 +552,9 @@ export default function StudyPlanner() {
                     const isAi = task.source === 'auto' && !task.isUserEdited;
                     const isEdited = !!task.isUserEdited;
                     const isLocked = !!task.isLocked;
+                    const displayTitle = isAuthenticated
+                      ? (task.topicName || task.title)
+                      : (task.title?.startsWith('🔄') ? '🔒 Private Revision' : '🔒 Focus Study');
 
                     return (
                       <div
@@ -524,7 +569,7 @@ export default function StudyPlanner() {
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
                           <span style={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '80%' }}>
-                            {task.topicName || task.title}
+                            {displayTitle}
                           </span>
                           <button
                             onClick={(e) => handleToggleLock(task, e)}
@@ -890,6 +935,10 @@ function DayView({ date, tasks, teachingBlocks, onAddTask, onEditTask, onToggleL
                   const isEdited = !!task.isUserEdited;
                   const isLocked = !!task.isLocked;
 
+                  const displayTitle = isAuthenticated
+                    ? (task.topicName || task.title)
+                    : (task.title?.startsWith('🔄') ? '🔒 Private Revision' : '🔒 Focus Study');
+
                   return (
                     <div key={task.id || task._id} style={{
                       background: task.status === 'Completed' ? 'var(--success-glass)' : 'var(--card)',
@@ -906,7 +955,7 @@ function DayView({ date, tasks, teachingBlocks, onAddTask, onEditTask, onToggleL
                       </button>
 
                       <span style={{ fontWeight: 700 }} onClick={() => onEditTask(task)}>
-                        {task.topicName || task.title}
+                        {displayTitle}
                       </span>
                       
                       <span style={{ color: 'var(--text-2)', fontSize: 11 }}>
@@ -924,33 +973,35 @@ function DayView({ date, tasks, teachingBlocks, onAddTask, onEditTask, onToggleL
                         <span className="badge badge-muted" style={{ fontSize: 8 }}>👤 Manual</span>
                       )}
 
-                      <div style={{ display: 'flex', gap: 4, marginLeft: 'auto' }}>
-                        <button
-                          className="btn btn-xs btn-ghost"
-                          onClick={() => onEditTask(task)}
-                          title="Edit Task"
-                        >
-                          <Edit3 size={11} />
-                        </button>
-                        {task.status !== 'Completed' && (
+                      {isAuthenticated && (
+                        <div style={{ display: 'flex', gap: 4, marginLeft: 'auto' }}>
                           <button
                             className="btn btn-xs btn-ghost"
-                            style={{ color: 'var(--success)' }}
-                            onClick={() => onCompleteTask(task.id || task._id)}
-                            title="Mark Complete"
+                            onClick={() => onEditTask(task)}
+                            title="Edit Task"
                           >
-                            <CheckCircle2 size={12} />
+                            <Edit3 size={11} />
                           </button>
-                        )}
-                        <button
-                          className="btn btn-xs btn-ghost"
-                          style={{ color: 'var(--danger)' }}
-                          onClick={() => onDeleteTask(task.id || task._id)}
-                          title="Delete"
-                        >
-                          <Trash2 size={11} />
-                        </button>
-                      </div>
+                          {task.status !== 'Completed' && (
+                            <button
+                              className="btn btn-xs btn-ghost"
+                              style={{ color: 'var(--success)' }}
+                              onClick={() => onCompleteTask(task.id || task._id)}
+                              title="Mark Complete"
+                            >
+                              <CheckCircle2 size={12} />
+                            </button>
+                          )}
+                          <button
+                            className="btn btn-xs btn-ghost"
+                            style={{ color: 'var(--danger)' }}
+                            onClick={() => onDeleteTask(task.id || task._id)}
+                            title="Delete"
+                          >
+                            <Trash2 size={11} />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   );
                 })}

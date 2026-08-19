@@ -30,6 +30,7 @@ import progressRouter from './routes/progress.js';
 import errorLogRouter from './routes/errorLog.js';
 import resourcesRouter from './routes/resources.js';
 import gitaShlokaRouter from './routes/gitaShlokas.js';
+import authRouter from './routes/auth.js';
 import { seedDatabase } from './seed.js';
 
 const app = express();
@@ -81,6 +82,7 @@ app.use('/api/error-logs', errorLogRouter);
 app.use('/api/mocks/errors', errorLogRouter);
 app.use('/api/resources', resourcesRouter);
 app.use('/api/gita-shlokas', gitaShlokaRouter);
+app.use('/api/auth', authRouter);
 
 // ─── 404 handler ─────────────────────────────────────────────────────────────
 app.use((req, res) => {

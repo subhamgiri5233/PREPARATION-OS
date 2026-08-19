@@ -14,6 +14,7 @@ import {
   updateTopic, updateTask, deleteTask, addNotification, getSettings
 } from '../services/db';
 import { useAppStore } from '../store/useAppStore';
+import { useAuthStore } from '../store/useAuthStore';
 
 function formatSeconds(totalSecs) {
   const h = Math.floor(totalSecs / 3600);
@@ -25,6 +26,7 @@ function formatSeconds(totalSecs) {
 
 export default function StudySessions() {
   const { activeSession, setActiveSession } = useAppStore();
+  const { isAuthenticated, openLoginModal } = useAuthStore();
   const [sessions, setSessions] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [topics, setTopics] = useState([]);
@@ -571,7 +573,7 @@ export default function StudySessions() {
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ fontSize: 14, fontWeight: 700, textDecoration: isDone ? 'line-through' : 'none', color: isDone ? 'var(--text-2)' : 'var(--text)' }}>
-                          {task.topicName || task.title}
+                          {isAuthenticated ? (task.topicName || task.title) : (task.title?.startsWith('🔄') ? '🔒 Private Revision' : '🔒 Focus Study Block')}
                         </span>
 
                         {isCurrentActive && (
@@ -720,7 +722,7 @@ export default function StudySessions() {
                 {displaySessions.map((s) => (
                   <tr key={s.id || s._id}>
                     <td style={{ fontWeight: 600, maxWidth: 180 }} className="truncate">
-                      {s.topicName || getTopicName(s.topicId)}
+                      {isAuthenticated ? (s.topicName || getTopicName(s.topicId)) : '🔒 Private Study Session'}
                     </td>
                     <td style={{ color: 'var(--text-2)' }}>
                       {s.subjectName || getSubjectName(s.subjectId)}
@@ -739,25 +741,31 @@ export default function StudySessions() {
                       )}
                     </td>
                     <td style={{ color: 'var(--text-3)', fontSize: 12, maxWidth: 140 }} className="truncate">
-                      {s.notes || '—'}
+                      {isAuthenticated ? (s.notes || '—') : (s.notes ? '🔒 Private Notes' : '—')}
                     </td>
                     <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                      <button
-                        className="btn btn-xs btn-ghost btn-icon"
-                        onClick={() => setEditingSession({ ...s })}
-                        title="Edit Session"
-                        style={{ marginRight: 4 }}
-                      >
-                        <Edit2 size={13} />
-                      </button>
-                      <button
-                        className="btn btn-xs btn-ghost btn-icon"
-                        onClick={() => handleDeleteSession(s.id || s._id)}
-                        title="Delete Session"
-                        style={{ color: 'var(--danger)' }}
-                      >
-                        <Trash2 size={13} />
-                      </button>
+                      {isAuthenticated ? (
+                        <>
+                          <button
+                            className="btn btn-xs btn-ghost btn-icon"
+                            onClick={() => setEditingSession({ ...s })}
+                            title="Edit Session"
+                            style={{ marginRight: 4 }}
+                          >
+                            <Edit2 size={13} />
+                          </button>
+                          <button
+                            className="btn btn-xs btn-ghost btn-icon"
+                            onClick={() => handleDeleteSession(s.id || s._id)}
+                            title="Delete Session"
+                            style={{ color: 'var(--danger)' }}
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </>
+                      ) : (
+                        <span style={{ fontSize: 11, color: 'var(--text-3)' }}>🔒 Locked</span>
+                      )}
                     </td>
                   </tr>
                 ))}
