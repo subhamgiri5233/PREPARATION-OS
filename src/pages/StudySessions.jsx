@@ -94,16 +94,13 @@ export default function StudySessions() {
   }, [activeSession, isPaused]);
 
   // Start a new session (either from planned task or manual modal)
-  const handleStartTimer = async (sessionConfig) => {
+  const handleStartTimer = (sessionConfig) => {
     const topic = topics.find((t) => String(t.id || t._id) === String(sessionConfig.topicId));
     const subject = subjects.find((s) => String(s.id || s._id) === String(sessionConfig.subjectId || topic?.subjectId));
     const now = new Date();
     const targetDateStr = format(selectedDate, 'yyyy-MM-dd');
 
-    const tempId = `temp-${Date.now()}`;
     const sessionData = {
-      id: tempId,
-      _id: tempId,
       topicId: topic?.id || topic?._id || sessionConfig.topicId || null,
       topicName: topic?.name || sessionConfig.topicName || 'Study Session',
       subjectId: subject?.id || subject?._id || sessionConfig.subjectId || null,
@@ -112,12 +109,11 @@ export default function StudySessions() {
       taskId: sessionConfig.taskId || null,
       startTime: now.toISOString(),
       date: targetDateStr,
-      endTime: null,
       durationMinutes: 0,
       notes: sessionConfig.notes || '',
     };
 
-    // Instant local activation
+    // Instant activation
     sessionStartRef.current = Date.now();
     totalPausedRef.current = 0;
     pauseStartRef.current = null;
@@ -130,20 +126,12 @@ export default function StudySessions() {
     // Smooth scroll to top timer
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    // Persist to MongoDB in background
-    try {
-      const realId = await addSession(sessionData);
-      if (realId) {
-        setActiveSession((prev) => (prev ? { ...prev, id: realId, _id: realId } : null));
-      }
-      if (sessionConfig.taskId) {
-        await updateTask(sessionConfig.taskId, { status: 'In Progress' });
-        setTasks((prev) =>
-          prev.map((t) => (String(t.id || t._id) === String(sessionConfig.taskId) ? { ...t, status: 'In Progress' } : t))
-        );
-      }
-    } catch (err) {
-      console.error('[StudySessions] Failed to save session start:', err);
+    // If attached to a scheduled task, mark task as In Progress
+    if (sessionConfig.taskId) {
+      updateTask(sessionConfig.taskId, { status: 'In Progress' }).catch(() => {});
+      setTasks((prev) =>
+        prev.map((t) => (String(t.id || t._id) === String(sessionConfig.taskId) ? { ...t, status: 'In Progress' } : t))
+      );
     }
   };
 
@@ -169,47 +157,69 @@ export default function StudySessions() {
     if (isPaused && pauseStartRef.current) {
       finalPaused += now - pauseStartRef.current;
     }
-    const actualMs = now - sessionStartRef.current - finalPaused;
+    const actualMs = now - (sessionStartRef.current || now) - finalPaused;
     const actualSeconds = Math.max(0, Math.floor(actualMs / 1000));
     const durationMinutes = Math.max(1, Math.round(actualSeconds / 60));
-
     const endTime = new Date();
-    await updateSession(activeSession.id, {
-      endTime: endTime.toISOString(),
-      durationMinutes,
-    });
 
-    // If attached to a scheduled task, mark task as Completed
-    if (activeSession.taskId) {
-      await updateTask(activeSession.taskId, { status: 'Completed' });
-    }
+    try {
+      const payload = {
+        topicId: activeSession.topicId || null,
+        topicName: activeSession.topicName || 'Study Session',
+        subjectId: activeSession.subjectId || null,
+        subjectName: activeSession.subjectName || '',
+        preparationAreaId: activeSession.preparationAreaId || null,
+        taskId: activeSession.taskId || null,
+        startTime: activeSession.startTime || new Date(now - actualMs).toISOString(),
+        endTime: endTime.toISOString(),
+        date: activeSession.date || format(new Date(), 'yyyy-MM-dd'),
+        durationMinutes,
+        notes: activeSession.notes || '',
+      };
 
-    // Update topic study hours
-    if (activeSession.topicId) {
-      const topic = topics.find((t) => String(t.id || t._id) === String(activeSession.topicId));
-      if (topic) {
-        const newHours = (Number(topic.studyHours) || 0) + durationMinutes / 60;
-        await updateTopic(activeSession.topicId, {
-          studyHours: Math.round(newHours * 10) / 10,
-          status: topic.status === 'Not Started' ? 'Learning' : topic.status,
-          lastStudiedDate: format(new Date(), 'yyyy-MM-dd'),
-        });
+      const isValidObjectId =
+        activeSession.id && typeof activeSession.id === 'string' && /^[0-9a-fA-F]{24}$/.test(activeSession.id);
+
+      if (isValidObjectId) {
+        await updateSession(activeSession.id, { endTime: endTime.toISOString(), durationMinutes });
+      } else {
+        await addSession(payload);
       }
+
+      // If attached to a scheduled task, mark task as Completed
+      if (activeSession.taskId) {
+        await updateTask(activeSession.taskId, { status: 'Completed' }).catch(() => {});
+      }
+
+      // Update topic study hours
+      if (activeSession.topicId) {
+        const topic = topics.find((t) => String(t.id || t._id) === String(activeSession.topicId));
+        if (topic) {
+          const newHours = (Number(topic.studyHours) || 0) + durationMinutes / 60;
+          await updateTopic(activeSession.topicId, {
+            studyHours: Math.round(newHours * 10) / 10,
+            status: topic.status === 'Not Started' ? 'Learning' : topic.status,
+            lastStudiedDate: format(new Date(), 'yyyy-MM-dd'),
+          }).catch(() => {});
+        }
+      }
+
+      // Add completion notification
+      await addNotification({
+        type: 'session',
+        title: '✅ Session Completed',
+        message: `${activeSession.topicName || 'Study session'} — ${durationMinutes} min studied.`,
+        scheduledAt: endTime.toISOString(),
+        idempotencyKey: `session-completed-${Date.now()}`,
+      }).catch(() => {});
+    } catch (err) {
+      console.error('[StudySessions] Error completing session:', err);
+    } finally {
+      setActiveSession(null);
+      setElapsed(0);
+      setIsPaused(false);
+      await loadData();
     }
-
-    // Add completion notification
-    await addNotification({
-      type: 'session',
-      title: '✅ Session Completed',
-      message: `${activeSession.topicName || 'Study session'} — ${durationMinutes} min studied.`,
-      scheduledAt: endTime.toISOString(),
-      idempotencyKey: `session-completed-${activeSession.id}`,
-    });
-
-    setActiveSession(null);
-    setElapsed(0);
-    setIsPaused(false);
-    await loadData();
   };
 
   const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
