@@ -103,6 +103,22 @@ ul, ol { list-style: none; }
 ::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: var(--radius-full); }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
 
+/* ─── Loading Spinner ────────────────────────────────────── */
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(99, 102, 241, 0.2);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 /* ─── Layout ─────────────────────────────────────────────── */
 .app-layout {
   display: flex;

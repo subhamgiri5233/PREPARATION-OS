@@ -445,7 +445,7 @@ export default function Preparation() {
       )}
 
       {/* ── EMPTY STATE IF NO SYLLABUS MAPPED ──────────────────── */}
-      {!areaProgress.isMapped ? (
+      {currentSubjects.length === 0 && currentTopics.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: '48px 24px' }}>
           <div style={{ fontSize: 44, marginBottom: 12 }}>📚</div>
           <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 6 }}>No syllabus mapped yet</h3>
@@ -583,21 +583,22 @@ export default function Preparation() {
           {/* ── 5-Tier Hierarchical Syllabus Tree View ───────────── */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {currentSubjects.map((subject) => {
-              const allSubTopics = currentTopics.filter((t) => t.subjectId === subject.id);
-              const subjectChapters = currentChapters.filter((c) => c.subjectId === subject.id);
-              const isSubCollapsed = collapsedSubjects[subject.id];
+              const subjId = String(subject.id || subject._id);
+              const allSubTopics = currentTopics.filter((t) => String(t.subjectId) === subjId);
+              const subjectChapters = currentChapters.filter((c) => String(c.subjectId) === subjId);
+              const isSubCollapsed = collapsedSubjects[subjId];
 
               // Topics matching filter under this subject
-              const matchingTopicsInSubj = filteredTopics.filter((t) => t.subjectId === subject.id);
+              const matchingTopicsInSubj = filteredTopics.filter((t) => String(t.subjectId) === subjId);
 
               if (matchingTopicsInSubj.length === 0 && (searchQuery || filterStatus !== 'all' || filterImportance !== 'all' || filterDifficulty !== 'all' || filterSubject !== 'all' || selectedCourseId !== 'all')) {
                 return null;
               }
 
-              const subStats = calculateSubjectProgress(subject.id, allSubTopics);
+              const subStats = calculateSubjectProgress(subjId, allSubTopics);
 
               return (
-                <div key={subject.id} className="card" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--border)' }}>
+                <div key={subjId} className="card" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--border)' }}>
                   {/* Subject Header */}
                   <div
                     onClick={() => toggleSubjectCollapse(subject.id)}
