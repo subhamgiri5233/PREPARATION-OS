@@ -335,18 +335,27 @@ export async function saveDailyProgress(progress) {
 
 // ─── Error Logs ───────────────────────────────────────────────────────────────
 export async function getErrorLogs(mockId) {
-  const url = mockId ? `/mocks/${mockId}/errors` : '/mocks/errors/all';
-  return await apiFetch(url);
+  try {
+    const url = mockId ? `/error-log?mockTestId=${mockId}` : '/error-log';
+    return await apiFetch(url);
+  } catch (err) {
+    console.warn('[db] getErrorLogs fallback:', err);
+    try {
+      return await apiFetch(mockId ? `/mocks/${mockId}/errors` : '/mocks/errors/all');
+    } catch (_) {
+      return [];
+    }
+  }
 }
 export async function addErrorLog(error) {
-  const res = await apiFetch('/mocks/errors', { method: 'POST', body: error });
+  const res = await apiFetch('/error-log', { method: 'POST', body: error });
   return res?.id || res?._id || res;
 }
 export async function updateErrorLog(id, updates) {
-  return await apiFetch(`/mocks/errors/${id}`, { method: 'PUT', body: updates });
+  return await apiFetch(`/error-log/${id}`, { method: 'PUT', body: updates });
 }
 export async function deleteErrorLog(id) {
-  return await apiFetch(`/mocks/errors/${id}`, { method: 'DELETE' });
+  return await apiFetch(`/error-log/${id}`, { method: 'DELETE' });
 }
 
 // ─── Gita Shlokas ─────────────────────────────────────────────────────────────

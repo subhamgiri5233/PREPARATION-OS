@@ -77,6 +77,8 @@ app.use('/api/schedule', scheduleRouter);
 app.use('/api/notifications', notificationsRouter);
 app.use('/api/progress', progressRouter);
 app.use('/api/error-log', errorLogRouter);
+app.use('/api/error-logs', errorLogRouter);
+app.use('/api/mocks/errors', errorLogRouter);
 app.use('/api/resources', resourcesRouter);
 app.use('/api/gita-shlokas', gitaShlokaRouter);
 

@@ -38,10 +38,16 @@ router.get('/subject-results', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/subject-results/bulk', async (req, res) => {
+import ErrorLog from '../models/ErrorLog.js';
+
+// Mock Errors by Mock ID
+router.get('/:mockId/errors', async (req, res) => {
   try {
-    const results = await MockSubjectResult.insertMany(req.body);
-    res.status(201).json(results);
+    const mockId = req.params.mockId;
+    const logs = await ErrorLog.find({
+      $or: [{ mockTestId: mockId }, { mockId: mockId }]
+    });
+    res.json(logs);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

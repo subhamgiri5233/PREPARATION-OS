@@ -16,6 +16,13 @@ router.get('/', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+router.get('/all', async (req, res) => {
+  try {
+    const logs = await ErrorLog.find({});
+    res.json(logs);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 router.post('/', async (req, res) => {
   try {
     const mockId = req.body.mockTestId || req.body.mockId;
