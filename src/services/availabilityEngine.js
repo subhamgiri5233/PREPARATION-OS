@@ -85,14 +85,16 @@ export function calculateAvailableSlots(date, teachingSlots, scheduledTasks, ses
   const freeSlots = [];
   let currentTime = windowStart;
 
-  // If calculating for TODAY, adjust current time to NOW (rounded up to next 15 mins) if NOW is after preferred start
+  // If calculating for TODAY, adjust current time to NOW (rounded up to next 15 mins)
+  // But if NOW is already at or past windowEnd, fall back to windowStart to plan full day routine
   if (format(new Date(), 'yyyy-MM-dd') === dateStr) {
     const now = new Date();
-    if (isAfter(now, windowStart)) {
-      // Round up to nearest 15 mins to avoid weird 3-minute slots
+    if (isAfter(now, windowStart) && isBefore(now, windowEnd)) {
       const ms = 1000 * 60 * 15;
       const roundedNow = new Date(Math.ceil(now.getTime() / ms) * ms);
-      currentTime = isAfter(roundedNow, windowStart) ? roundedNow : windowStart;
+      currentTime = isAfter(roundedNow, windowStart) && isBefore(roundedNow, windowEnd) ? roundedNow : windowStart;
+    } else if (isAfter(now, windowEnd)) {
+      currentTime = windowStart;
     }
   }
 
@@ -122,6 +124,39 @@ export function calculateAvailableSlots(date, teachingSlots, scheduledTasks, ses
         end: format(windowEnd, 'HH:mm'),
         durationMinutes: duration,
       });
+    }
+  }
+
+  // Fallback: If freeSlots is still empty (e.g. all slots occupied by past completed tasks),
+  // recalculate using purely the teaching schedule so new tasks can be scheduled
+  if (freeSlots.length === 0 && todaysTeaching.length < 5) {
+    let fallbackTime = windowStart;
+    todaysTeaching.forEach((t) => {
+      const tStart = parseTime(t.startTime, date);
+      const tEnd = parseTime(t.endTime, date);
+      if (isBefore(fallbackTime, tStart)) {
+        const duration = differenceInMinutes(tStart, fallbackTime);
+        if (duration >= 15) {
+          freeSlots.push({
+            start: format(fallbackTime, 'HH:mm'),
+            end: format(tStart, 'HH:mm'),
+            durationMinutes: duration,
+          });
+        }
+      }
+      if (isBefore(fallbackTime, tEnd)) {
+        fallbackTime = tEnd;
+      }
+    });
+    if (isBefore(fallbackTime, windowEnd)) {
+      const duration = differenceInMinutes(windowEnd, fallbackTime);
+      if (duration >= 15) {
+        freeSlots.push({
+          start: format(fallbackTime, 'HH:mm'),
+          end: format(windowEnd, 'HH:mm'),
+          durationMinutes: duration,
+        });
+      }
     }
   }
 

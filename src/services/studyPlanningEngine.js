@@ -140,6 +140,45 @@ export async function generateDailyPlan(dateObj, context, options = { preserveUs
     });
   });
 
+  // Fallback: If no pending syllabus topics or revisions exist, generate from subjects or areas
+  if (potentialTasks.length === 0) {
+    if (subjects && subjects.length > 0) {
+      subjects.forEach((sub, idx) => {
+        potentialTasks.push({
+          item: sub,
+          type: 'Concept Study',
+          score: 60 - idx,
+          subjectId: sub.id || sub._id,
+          preparationAreaId: sub.preparationAreaId,
+          title: `${sub.name} Study Session`,
+          reason: 'Daily routine subject block',
+          durationMinutes: 60,
+        });
+      });
+    } else if (prepAreas && prepAreas.length > 0) {
+      prepAreas.forEach((area, idx) => {
+        potentialTasks.push({
+          item: area,
+          type: 'Preparation Session',
+          score: 60 - idx,
+          preparationAreaId: area.id || area._id,
+          title: `${area.name} Study Session`,
+          reason: 'Daily routine preparation block',
+          durationMinutes: 60,
+        });
+      });
+    } else {
+      potentialTasks.push({
+        item: null,
+        type: 'General Study',
+        score: 50,
+        title: 'Core Subject Study Session',
+        reason: 'Daily routine study target',
+        durationMinutes: 60,
+      });
+    }
+  }
+
   // 5. Sort by highest score first
   potentialTasks.sort((a, b) => b.score - a.score);
 

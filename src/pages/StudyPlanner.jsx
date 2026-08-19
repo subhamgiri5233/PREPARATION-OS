@@ -207,10 +207,14 @@ export default function StudyPlanner() {
     loadTasks();
   };
 
+  const [isGenerating, setIsGenerating] = useState(false);
+
   const handleRequestGenerate = (daysAhead = 0) => {
     const targetDate = addDays(new Date(), daysAhead);
     const targetDateStr = format(targetDate, 'yyyy-MM-dd');
     const dayTasks = getTasksForDate(targetDateStr);
+
+    setCurrentDate(targetDate);
 
     const hasUserEdits = dayTasks.some((t) => t.isUserEdited || t.isLocked || t.source === 'manual');
     if (hasUserEdits) {
@@ -223,63 +227,86 @@ export default function StudyPlanner() {
 
   const executeGeneratePlan = async (targetDate, options) => {
     setShowRegenModal(false);
-    const [revDue, sess, mocks, sett] = await Promise.all([
-      getRevisionsDueToday(),
-      getAllSessions(),
-      getAllMocks(),
-      getSettings()
-    ]);
+    setIsGenerating(true);
+    try {
+      const [revDue, sess, mocks, sett, allT, allS, allA] = await Promise.all([
+        getRevisionsDueToday(),
+        getAllSessions(),
+        getAllMocks(),
+        getSettings(),
+        getAllTopics(),
+        getAllSubjects(),
+        getAllAreas(),
+      ]);
 
-    const context = {
-      topics,
-      revisionsDue: revDue,
-      teachingSlots,
-      scheduledTasks: tasks,
-      sessions: sess,
-      mocks,
-      prepAreas: areas,
-      subjects,
-      settings: sett,
-      today: format(new Date(), 'yyyy-MM-dd'),
-      vocabToday: 0
-    };
+      const context = {
+        topics: allT && allT.length > 0 ? allT : topics,
+        revisionsDue: revDue,
+        teachingSlots,
+        scheduledTasks: tasks,
+        sessions: sess,
+        mocks,
+        prepAreas: allA && allA.length > 0 ? allA : areas,
+        subjects: allS && allS.length > 0 ? allS : subjects,
+        settings: sett,
+        today: format(new Date(), 'yyyy-MM-dd'),
+        vocabToday: 0
+      };
 
-    const result = await generateDailyPlan(targetDate, context, options);
-    if (result.success) {
-      alert(`✨ Successfully generated daily routine (${result.tasksPlanned} sessions planned, ${Math.round(result.minutesPlanned / 60 * 10) / 10} hours).`);
-      loadTasks();
-    } else {
-      alert(result.reason || 'Failed to generate routine.');
+      const result = await generateDailyPlan(targetDate, context, options);
+      await loadData();
+      setCurrentDate(targetDate);
+      if (result.success) {
+        alert(`✨ Successfully generated daily routine (${result.tasksPlanned} sessions planned, ${Math.round(result.minutesPlanned / 60 * 10) / 10} hours).`);
+      } else {
+        alert(result.reason || 'No free slots available for this date.');
+      }
+    } catch (err) {
+      console.error('Error generating daily plan:', err);
+      alert('Error generating routine: ' + err.message);
+    } finally {
+      setIsGenerating(false);
     }
   };
 
   const handleOptimizeDay = async () => {
     const targetDate = currentDate;
-    const [revDue, sess, mocks, sett] = await Promise.all([
-      getRevisionsDueToday(),
-      getAllSessions(),
-      getAllMocks(),
-      getSettings()
-    ]);
+    setIsGenerating(true);
+    try {
+      const [revDue, sess, mocks, sett, allT, allS, allA] = await Promise.all([
+        getRevisionsDueToday(),
+        getAllSessions(),
+        getAllMocks(),
+        getSettings(),
+        getAllTopics(),
+        getAllSubjects(),
+        getAllAreas(),
+      ]);
 
-    const context = {
-      topics,
-      revisionsDue: revDue,
-      teachingSlots,
-      scheduledTasks: tasks,
-      sessions: sess,
-      mocks,
-      prepAreas: areas,
-      subjects,
-      settings: sett,
-      today: format(new Date(), 'yyyy-MM-dd'),
-      vocabToday: 0
-    };
+      const context = {
+        topics: allT && allT.length > 0 ? allT : topics,
+        revisionsDue: revDue,
+        teachingSlots,
+        scheduledTasks: tasks,
+        sessions: sess,
+        mocks,
+        prepAreas: allA && allA.length > 0 ? allA : areas,
+        subjects: allS && allS.length > 0 ? allS : subjects,
+        settings: sett,
+        today: format(new Date(), 'yyyy-MM-dd'),
+        vocabToday: 0
+      };
 
-    const result = await optimizeDailyRoutine(targetDate, context);
-    if (result.success) {
-      alert(`⚡ Routine optimized! Preserved your fixed commitments & filled available study gaps.`);
-      loadTasks();
+      const result = await optimizeDailyRoutine(targetDate, context);
+      await loadData();
+      if (result.success) {
+        alert(`⚡ Routine optimized! Preserved your fixed commitments & filled available study gaps (${result.tasksPlanned} sessions).`);
+      }
+    } catch (err) {
+      console.error('Error optimizing day:', err);
+      alert('Error optimizing routine: ' + err.message);
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -312,14 +339,14 @@ export default function StudyPlanner() {
           <p className="page-subtitle">Auto-generated intelligent routine with full editing control</p>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <button className="btn btn-ghost" onClick={() => handleRequestGenerate(0)}>
-            <Sparkles size={14} /> Generate Today
+          <button className="btn btn-ghost" disabled={isGenerating} onClick={() => handleRequestGenerate(0)}>
+            <Sparkles size={14} /> {isGenerating ? 'Generating...' : 'Generate Today'}
           </button>
-          <button className="btn btn-ghost" onClick={() => handleRequestGenerate(1)}>
-            <Sparkles size={14} /> Generate Tomorrow
+          <button className="btn btn-ghost" disabled={isGenerating} onClick={() => handleRequestGenerate(1)}>
+            <Sparkles size={14} /> {isGenerating ? 'Generating...' : 'Generate Tomorrow'}
           </button>
-          <button className="btn btn-ghost" onClick={handleOptimizeDay} title="Optimize remaining gaps while preserving your edits">
-            <Zap size={14} /> Optimize My Day
+          <button className="btn btn-ghost" disabled={isGenerating} onClick={handleOptimizeDay} title="Optimize remaining gaps while preserving your edits">
+            <Zap size={14} /> {isGenerating ? 'Optimizing...' : 'Optimize My Day'}
           </button>
           <div className="tabs">
             {['day', 'week'].map((v) => (
