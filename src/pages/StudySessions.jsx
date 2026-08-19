@@ -1,17 +1,17 @@
 // src/pages/StudySessions.jsx
-// Synchronized with Study Planner: Displays planned topics for selected date + Dual Stats (Day vs All-Time)
+// Synchronized with Study Planner: Displays planned topics for selected date + Dual Stats + Full Edit/Delete on every item
 
 import { useEffect, useState, useRef } from 'react';
 import {
   Play, Pause, Square, Plus, Clock, X, Calendar, ChevronLeft, ChevronRight,
   Sparkles, CheckCircle2, Circle, AlertCircle, BookOpen, Layers, BarChart2,
-  Lock, ArrowRight, RotateCcw
+  Lock, ArrowRight, RotateCcw, Edit2, Trash2
 } from 'lucide-react';
 import { format, addDays, parseISO, isSameDay } from 'date-fns';
 import {
-  addSession, updateSession, getAllSessions,
+  addSession, updateSession, deleteSession, getAllSessions,
   getAllTopics, getAllSubjects, getAllAreas, getAllTasks,
-  updateTopic, updateTask, addNotification, getSettings
+  updateTopic, updateTask, deleteTask, addNotification, getSettings
 } from '../services/db';
 import { useAppStore } from '../store/useAppStore';
 
@@ -44,6 +44,10 @@ export default function StudySessions() {
   const [newSession, setNewSession] = useState({
     topicId: '', subjectId: '', preparationAreaId: '', taskId: null, notes: ''
   });
+
+  // Edit Modals
+  const [editingSession, setEditingSession] = useState(null);
+  const [editingTask, setEditingTask] = useState(null);
 
   // Timer references
   const timerRef = useRef(null);
@@ -93,7 +97,7 @@ export default function StudySessions() {
     return () => clearInterval(timerRef.current);
   }, [activeSession, isPaused]);
 
-  // Start a new session (either from planned task or manual modal)
+  // Start a new session
   const handleStartTimer = (sessionConfig) => {
     const topic = topics.find((t) => String(t.id || t._id) === String(sessionConfig.topicId));
     const subject = subjects.find((s) => String(s.id || s._id) === String(sessionConfig.subjectId || topic?.subjectId));
@@ -113,7 +117,6 @@ export default function StudySessions() {
       notes: sessionConfig.notes || '',
     };
 
-    // Instant activation
     sessionStartRef.current = Date.now();
     totalPausedRef.current = 0;
     pauseStartRef.current = null;
@@ -123,10 +126,8 @@ export default function StudySessions() {
     setShowNewSession(false);
     setNewSession({ topicId: '', subjectId: '', preparationAreaId: '', taskId: null, notes: '' });
 
-    // Smooth scroll to top timer
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    // If attached to a scheduled task, mark task as In Progress
     if (sessionConfig.taskId) {
       updateTask(sessionConfig.taskId, { status: 'In Progress' }).catch(() => {});
       setTasks((prev) =>
@@ -186,12 +187,10 @@ export default function StudySessions() {
         await addSession(payload);
       }
 
-      // If attached to a scheduled task, mark task as Completed
       if (activeSession.taskId) {
         await updateTask(activeSession.taskId, { status: 'Completed' }).catch(() => {});
       }
 
-      // Update topic study hours
       if (activeSession.topicId) {
         const topic = topics.find((t) => String(t.id || t._id) === String(activeSession.topicId));
         if (topic) {
@@ -204,7 +203,6 @@ export default function StudySessions() {
         }
       }
 
-      // Add completion notification
       await addNotification({
         type: 'session',
         title: '✅ Session Completed',
@@ -222,6 +220,63 @@ export default function StudySessions() {
     }
   };
 
+  // ── DELETE / EDIT HANDLERS ─────────────────────────────────────
+  const handleDeleteSession = async (sessionId) => {
+    if (!window.confirm('Are you sure you want to delete this study session record?')) return;
+    try {
+      await deleteSession(sessionId);
+      await loadData();
+    } catch (err) {
+      alert('Failed to delete session: ' + err.message);
+    }
+  };
+
+  const handleSaveEditSession = async (e) => {
+    e.preventDefault();
+    if (!editingSession) return;
+    try {
+      await updateSession(editingSession.id || editingSession._id, {
+        durationMinutes: Number(editingSession.durationMinutes) || 0,
+        notes: editingSession.notes || '',
+        topicName: editingSession.topicName,
+      });
+      setEditingSession(null);
+      await loadData();
+    } catch (err) {
+      alert('Failed to update session: ' + err.message);
+    }
+  };
+
+  const handleDeleteTask = async (taskId) => {
+    if (!window.confirm('Are you sure you want to delete this scheduled task?')) return;
+    try {
+      await deleteTask(taskId);
+      await loadData();
+    } catch (err) {
+      alert('Failed to delete task: ' + err.message);
+    }
+  };
+
+  const handleSaveEditTask = async (e) => {
+    e.preventDefault();
+    if (!editingTask) return;
+    try {
+      await updateTask(editingTask.id || editingTask._id, {
+        title: editingTask.title,
+        startTime: editingTask.startTime,
+        endTime: editingTask.endTime,
+        durationMinutes: Number(editingTask.durationMinutes) || 60,
+        priority: editingTask.priority,
+        status: editingTask.status,
+        isUserEdited: true,
+      });
+      setEditingTask(null);
+      await loadData();
+    } catch (err) {
+      alert('Failed to update task: ' + err.message);
+    }
+  };
+
   const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
   const isSelectedToday = isSameDay(selectedDate, new Date());
 
@@ -235,7 +290,6 @@ export default function StudySessions() {
   });
 
   // ── STATS COMPUTATION ──────────────────────────────────────────
-  // 1. Day Stats (Selected Date)
   const dayStudyMinutes = selectedDaySessions.reduce((sum, s) => sum + (Number(s.durationMinutes) || 0), 0);
   const dayStudyHours = dayStudyMinutes / 60;
   const dayCompletedTasks = plannedDayTasks.filter((t) => (t.status || '').toLowerCase() === 'completed').length;
@@ -243,15 +297,12 @@ export default function StudySessions() {
     ? Math.round(dayStudyMinutes / selectedDaySessions.length)
     : 0;
 
-  // 2. All-Time Stats
   const totalStudyMinutes = sessions.reduce((sum, s) => sum + (Number(s.durationMinutes) || 0), 0);
   const totalStudyHours = totalStudyMinutes / 60;
   const allTimeAvgSessionMins = sessions.length
     ? Math.round(totalStudyMinutes / sessions.length)
     : 0;
-  const uniqueStudyDays = new Set(sessions.map((s) => (s.date || s.startTime || '').slice(0, 10)).filter(Boolean)).size;
 
-  // History table sessions
   const displaySessions = historyFilter === 'selected' ? selectedDaySessions : sessions;
 
   const getTopicName = (topicId) => topics.find((t) => String(t.id || t._id) === String(topicId))?.name || '—';
@@ -279,7 +330,7 @@ export default function StudySessions() {
       <div className="page-header" style={{ marginBottom: 16 }}>
         <div className="page-header-left">
           <h1 className="page-title">Study Sessions & Focus Timer</h1>
-          <p className="page-subtitle">Start sessions planned in your Study Planner and track focused study hours</p>
+          <p className="page-subtitle">Start sessions planned in your Study Planner, track focus time, and manage records</p>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {!activeSession && (
@@ -464,7 +515,7 @@ export default function StudySessions() {
               Scheduled Study Tasks for {format(selectedDate, 'MMMM d, yyyy')}
             </div>
             <p style={{ fontSize: 12, color: 'var(--text-2)', marginTop: 2 }}>
-              Items planned in your Study Planner for this day appear here for immediate 1-click execution.
+              Items planned in your Study Planner for this day appear here with full Edit, Delete, and 1-click timer execution.
             </p>
           </div>
           <span className="badge badge-primary">{plannedDayTasks.length} Planned</span>
@@ -556,8 +607,8 @@ export default function StudySessions() {
                     </div>
                   </div>
 
-                  {/* Right: Action Button */}
-                  <div>
+                  {/* Right: Actions */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     {isCurrentActive ? (
                       <div style={{ display: 'flex', gap: 8 }}>
                         {!isPaused ? (
@@ -595,6 +646,26 @@ export default function StudySessions() {
                         <Play size={12} /> Start Timer
                       </button>
                     )}
+
+                    {/* Edit Task Button */}
+                    <button
+                      className="btn btn-sm btn-ghost btn-icon"
+                      onClick={() => setEditingTask({ ...task })}
+                      title="Edit Task"
+                      style={{ padding: '6px' }}
+                    >
+                      <Edit2 size={13} />
+                    </button>
+
+                    {/* Delete Task Button */}
+                    <button
+                      className="btn btn-sm btn-ghost btn-icon"
+                      onClick={() => handleDeleteTask(task.id || task._id)}
+                      title="Delete Task"
+                      style={{ padding: '6px', color: 'var(--danger)' }}
+                    >
+                      <Trash2 size={13} />
+                    </button>
                   </div>
                 </div>
               );
@@ -642,12 +713,13 @@ export default function StudySessions() {
                   <th>Date & Time</th>
                   <th>Duration</th>
                   <th>Notes</th>
+                  <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {displaySessions.map((s) => (
                   <tr key={s.id || s._id}>
-                    <td style={{ fontWeight: 600, maxWidth: 200 }} className="truncate">
+                    <td style={{ fontWeight: 600, maxWidth: 180 }} className="truncate">
                       {s.topicName || getTopicName(s.topicId)}
                     </td>
                     <td style={{ color: 'var(--text-2)' }}>
@@ -666,8 +738,26 @@ export default function StudySessions() {
                         <span className="badge badge-warning">In Progress</span>
                       )}
                     </td>
-                    <td style={{ color: 'var(--text-3)', fontSize: 12, maxWidth: 180 }} className="truncate">
+                    <td style={{ color: 'var(--text-3)', fontSize: 12, maxWidth: 140 }} className="truncate">
                       {s.notes || '—'}
+                    </td>
+                    <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                      <button
+                        className="btn btn-xs btn-ghost btn-icon"
+                        onClick={() => setEditingSession({ ...s })}
+                        title="Edit Session"
+                        style={{ marginRight: 4 }}
+                      >
+                        <Edit2 size={13} />
+                      </button>
+                      <button
+                        className="btn btn-xs btn-ghost btn-icon"
+                        onClick={() => handleDeleteSession(s.id || s._id)}
+                        title="Delete Session"
+                        style={{ color: 'var(--danger)' }}
+                      >
+                        <Trash2 size={13} />
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -676,6 +766,149 @@ export default function StudySessions() {
           </div>
         )}
       </div>
+
+      {/* ── EDIT SESSION MODAL ────────────────────────────────────── */}
+      {editingSession && (
+        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setEditingSession(null)}>
+          <div className="modal" style={{ maxWidth: 440 }}>
+            <div className="modal-header">
+              <h2 className="modal-title">Edit Study Session</h2>
+              <button className="modal-close" onClick={() => setEditingSession(null)}>
+                <X size={14} />
+              </button>
+            </div>
+            <form onSubmit={handleSaveEditSession} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div className="form-group">
+                <label className="form-label">Topic / Title</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={editingSession.topicName || ''}
+                  onChange={(e) => setEditingSession({ ...editingSession, topicName: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Duration (Minutes)</label>
+                <input
+                  type="number"
+                  className="form-input"
+                  value={editingSession.durationMinutes || 0}
+                  onChange={(e) => setEditingSession({ ...editingSession, durationMinutes: e.target.value })}
+                  min="1"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Notes</label>
+                <textarea
+                  className="form-textarea"
+                  value={editingSession.notes || ''}
+                  onChange={(e) => setEditingSession({ ...editingSession, notes: e.target.value })}
+                  style={{ minHeight: 60 }}
+                />
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button type="button" className="btn btn-ghost" style={{ flex: 1 }} onClick={() => setEditingSession(null)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── EDIT SCHEDULED TASK MODAL ────────────────────────────── */}
+      {editingTask && (
+        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setEditingTask(null)}>
+          <div className="modal" style={{ maxWidth: 440 }}>
+            <div className="modal-header">
+              <h2 className="modal-title">Edit Scheduled Task</h2>
+              <button className="modal-close" onClick={() => setEditingTask(null)}>
+                <X size={14} />
+              </button>
+            </div>
+            <form onSubmit={handleSaveEditTask} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div className="form-group">
+                <label className="form-label">Task Title</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={editingTask.title || ''}
+                  onChange={(e) => setEditingTask({ ...editingTask, title: e.target.value })}
+                  required
+                />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div className="form-group">
+                  <label className="form-label">Start Time</label>
+                  <input
+                    type="time"
+                    className="form-input"
+                    value={editingTask.startTime || ''}
+                    onChange={(e) => setEditingTask({ ...editingTask, startTime: e.target.value })}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">End Time</label>
+                  <input
+                    type="time"
+                    className="form-input"
+                    value={editingTask.endTime || ''}
+                    onChange={(e) => setEditingTask({ ...editingTask, endTime: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div className="form-group">
+                  <label className="form-label">Duration (Min)</label>
+                  <input
+                    type="number"
+                    className="form-input"
+                    value={editingTask.durationMinutes || 60}
+                    onChange={(e) => setEditingTask({ ...editingTask, durationMinutes: e.target.value })}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Priority</label>
+                  <select
+                    className="form-select"
+                    value={editingTask.priority || 'Medium'}
+                    onChange={(e) => setEditingTask({ ...editingTask, priority: e.target.value })}
+                  >
+                    <option value="High">High</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Low">Low</option>
+                  </select>
+                </div>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Status</label>
+                <select
+                  className="form-select"
+                  value={editingTask.status || 'Not Started'}
+                  onChange={(e) => setEditingTask({ ...editingTask, status: e.target.value })}
+                >
+                  <option value="Not Started">Not Started</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Completed">Completed</option>
+                </select>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button type="button" className="btn btn-ghost" style={{ flex: 1 }} onClick={() => setEditingTask(null)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* ── CUSTOM NEW SESSION MODAL ──────────────────────────────── */}
       {showNewSession && (

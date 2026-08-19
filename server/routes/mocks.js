@@ -28,6 +28,14 @@ router.put('/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+router.delete('/:id', async (req, res) => {
+  try {
+    await MockTest.findByIdAndDelete(req.params.id);
+    await MockSubjectResult.deleteMany({ mockTestId: req.params.id });
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 // Mock Subject Results
 router.get('/subject-results', async (req, res) => {
   try {

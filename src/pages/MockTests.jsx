@@ -1,9 +1,9 @@
 // src/pages/MockTests.jsx
 import { useEffect, useState } from 'react';
-import { Plus, X, BarChart3, TrendingUp } from 'lucide-react';
+import { Plus, X, BarChart3, TrendingUp, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import {
-  getAllMocks, addMock, getMockSubjectResults, addMockSubjectResults,
+  getAllMocks, addMock, deleteMock, getMockSubjectResults, addMockSubjectResults,
   getAllAreas, getAllSubjects, getAllTopics, addNotification
 } from '../services/db';
 import { calculateAccuracy, getScoreTrend, classifySubjectPerformance } from '../services/analyticsService';
@@ -31,6 +31,16 @@ export default function MockTests() {
     setAreas(a);
     setSubjects(s);
     setTopics(t);
+  };
+
+  const handleDeleteMock = async (mockId) => {
+    if (!window.confirm('Are you sure you want to delete this mock test record and its subject results?')) return;
+    try {
+      await deleteMock(mockId);
+      await loadData();
+    } catch (err) {
+      alert('Failed to delete mock test: ' + err.message);
+    }
   };
 
   const handleViewMock = async (mock) => {
@@ -168,9 +178,17 @@ export default function MockTests() {
                       <td style={{ color: 'var(--text-2)', fontSize: 12 }}>
                         {m.timeTaken != null ? `${m.timeTaken}m` : '—'}
                       </td>
-                      <td>
-                        <button className="btn btn-sm btn-ghost" onClick={() => handleViewMock(m)}>
+                      <td style={{ whiteSpace: 'nowrap' }}>
+                        <button className="btn btn-sm btn-ghost" onClick={() => handleViewMock(m)} style={{ marginRight: 6 }}>
                           Details
+                        </button>
+                        <button
+                          className="btn btn-sm btn-ghost btn-icon"
+                          onClick={() => handleDeleteMock(m.id || m._id)}
+                          title="Delete Mock Test"
+                          style={{ color: 'var(--danger)' }}
+                        >
+                          <Trash2 size={13} />
                         </button>
                       </td>
                     </tr>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { format, parseISO, isToday, isPast } from 'date-fns';
-import { RotateCcw, CheckCircle2, Clock, AlertTriangle, X, Target } from 'lucide-react';
-import { getAllSubjects } from '../services/db';
+import { RotateCcw, CheckCircle2, Clock, AlertTriangle, X, Target, Trash2 } from 'lucide-react';
+import { getAllSubjects, deleteRevisionTask } from '../services/db';
 import { getAllPendingRevisionsEnriched, completeRevision, skipRevision } from '../services/revisionService';
 
 export default function Revision() {
@@ -24,6 +24,16 @@ export default function Revision() {
     revs.sort((a, b) => b.priorityData.score - a.priorityData.score);
     setRevisions(revs);
     setSubjects(subs);
+  };
+
+  const handleDeleteRevision = async (revId) => {
+    if (!window.confirm('Are you sure you want to delete this revision task?')) return;
+    try {
+      await deleteRevisionTask(revId);
+      await loadData();
+    } catch (err) {
+      alert('Failed to delete revision task: ' + err.message);
+    }
   };
 
   const getSubjectName = (subjectId) => subjects.find(s => s.id === subjectId)?.name || 'Unknown Subject';
@@ -158,9 +168,12 @@ export default function Revision() {
                 </div>
               </div>
               
-              <div style={{ display: 'flex', gap: '8px' }}>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                 <button className="btn btn-icon" onClick={() => handleSkip(rev.id)} title="Skip/Delay to tomorrow">
-                  <RotateCcw size={18} />
+                  <RotateCcw size={16} />
+                </button>
+                <button className="btn btn-icon" onClick={() => handleDeleteRevision(rev.id)} title="Delete Revision" style={{ color: 'var(--danger)' }}>
+                  <Trash2 size={16} />
                 </button>
                 <button className="btn btn-primary" onClick={() => handleStartSession(rev)}>
                   Review

@@ -198,6 +198,9 @@ export async function addSession(session) {
 export async function updateSession(id, updates) {
   return await apiFetch(`/sessions/${id}`, { method: 'PUT', body: updates });
 }
+export async function deleteSession(id) {
+  return await apiFetch(`/sessions/${id}`, { method: 'DELETE' });
+}
 
 // ─── Revision Tasks ───────────────────────────────────────────────────────────
 export async function getRevisionByDate(date) {
