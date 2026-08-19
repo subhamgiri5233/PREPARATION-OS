@@ -666,21 +666,47 @@ export default function StudyPlanner() {
                     if (form.type === 'Revision' && list.length === 0) {
                       return (
                         <>
-                          <option disabled value="">(No completed topics yet — showing all)</option>
-                          {areaFiltered.map((t) => (
-                            <option key={t.id || t._id} value={t.id || t._id}>
-                              {t.name} ({t.status || 'Not Started'})
-                            </option>
-                          ))}
+                          <option disabled value="" style={{ color: 'var(--text-3)' }}>
+                            (No completed topics yet — select any topic below)
+                          </option>
+                          {areaFiltered.map((t) => {
+                            const isDone = (t.status || '').toLowerCase() === 'completed';
+                            const isLearning = (t.status || '').toLowerCase() === 'learning' || (Number(t.studyHours) || 0) > 0;
+                            return (
+                              <option
+                                key={t.id || t._id}
+                                value={t.id || t._id}
+                                style={{
+                                  color: isDone ? '#22c55e' : isLearning ? '#eab308' : '#ef4444',
+                                  fontWeight: isDone ? 700 : 500,
+                                  background: '#111827',
+                                }}
+                              >
+                                {isDone ? '🟢' : isLearning ? '🟡' : '🔴'} {t.name} ({t.status || 'Not Started'})
+                              </option>
+                            );
+                          })}
                         </>
                       );
                     }
 
-                    return list.map((t) => (
-                      <option key={t.id || t._id} value={t.id || t._id}>
-                        {t.name} {((t.status || '').toLowerCase() === 'completed') ? '✅ (Completed)' : ''}
-                      </option>
-                    ));
+                    return list.map((t) => {
+                      const isDone = (t.status || '').toLowerCase() === 'completed';
+                      const isLearning = (t.status || '').toLowerCase() === 'learning' || (Number(t.studyHours) || 0) > 0;
+                      return (
+                        <option
+                          key={t.id || t._id}
+                          value={t.id || t._id}
+                          style={{
+                            color: isDone ? '#22c55e' : isLearning ? '#eab308' : '#ef4444',
+                            fontWeight: isDone ? 700 : 500,
+                            background: '#111827',
+                          }}
+                        >
+                          {isDone ? '🟢' : isLearning ? '🟡' : '🔴'} {t.name} ({isDone ? 'Completed' : isLearning ? 'Learning' : 'Not Started'})
+                        </option>
+                      );
+                    });
                   })()}
                 </select>
               </div>
