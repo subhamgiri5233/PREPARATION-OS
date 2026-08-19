@@ -38,7 +38,7 @@ const NAV_ITEMS = [
 
 export default function Sidebar({ mobileOpen, onMobileClose }) {
   const { sidebarOpen, toggleSidebar, unreadCount } = useAppStore();
-  const { isAuthenticated, toggleEditMode, lock, openLoginModal, ownerName } = useAuthStore();
+  const { isEditMode, isAuthenticated, toggleEditMode, lock, openLoginModal, ownerName } = useAuthStore();
   const location = useLocation();
 
   const handleAuthAction = () => {
