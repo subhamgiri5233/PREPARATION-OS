@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 const vocabularySchema = new mongoose.Schema({
   word: { type: String, required: true },
   meaning: { type: String, default: '' },
+  bengaliMeaning: { type: String, default: '' },
   partOfSpeech: { type: String, default: '' },
   exampleSentence: { type: String, default: '' },
   synonyms: { type: [String], default: [] },
