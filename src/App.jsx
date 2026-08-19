@@ -1,5 +1,5 @@
 // src/App.jsx
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Layout from './components/layout/Layout';
 import Dashboard from './pages/Dashboard';
@@ -22,6 +22,45 @@ import {
 } from './services/db';
 import { getRevisionsDueToday } from './services/revisionService';
 import { useAppStore } from './store/useAppStore';
+
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('[ErrorBoundary caught error]:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          minHeight: '60vh', gap: 16, padding: 32, textAlign: 'center', color: 'var(--text)'
+        }}>
+          <div style={{ fontSize: 44 }}>⚠️</div>
+          <h2 style={{ fontSize: 20, fontWeight: 700 }}>Something went wrong loading this view</h2>
+          <p style={{ fontSize: 13, color: 'var(--text-2)', maxWidth: 460 }}>
+            {this.state.error?.message || 'An unexpected rendering error occurred.'}
+          </p>
+          <button
+            className="btn btn-primary"
+            onClick={() => { this.setState({ hasError: false, error: null }); window.location.reload(); }}
+          >
+            Reload Page
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 /**
  * Module-level guard: prevents generateDailyNotifications() from running
@@ -187,25 +226,27 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <Routes>
-        <Route element={<Layout />}>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/preparation" element={<Preparation />} />
-          <Route path="/planner" element={<StudyPlanner />} />
-          <Route path="/sessions" element={<StudySessions />} />
-          <Route path="/mock-tests" element={<MockTests />} />
-          <Route path="/revision" element={<Revision />} />
-          <Route path="/vocabulary" element={<Vocabulary />} />
-          <Route path="/progress" element={<Progress />} />
-          <Route path="/analytics" element={<Analytics />} />
-          <Route path="/gita-shloka" element={<GitaShloka />} />
-          <Route path="/gita" element={<GitaShloka />} />
-          <Route path="/notifications" element={<Notifications />} />
-          <Route path="/teaching" element={<TeachingSchedule />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/test-runner" element={<TestRunner />} />
-        </Route>
-      </Routes>
+      <ErrorBoundary>
+        <Routes>
+          <Route element={<Layout />}>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/preparation" element={<Preparation />} />
+            <Route path="/planner" element={<StudyPlanner />} />
+            <Route path="/sessions" element={<StudySessions />} />
+            <Route path="/mock-tests" element={<MockTests />} />
+            <Route path="/revision" element={<Revision />} />
+            <Route path="/vocabulary" element={<Vocabulary />} />
+            <Route path="/progress" element={<Progress />} />
+            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/gita-shloka" element={<GitaShloka />} />
+            <Route path="/gita" element={<GitaShloka />} />
+            <Route path="/notifications" element={<Notifications />} />
+            <Route path="/teaching" element={<TeachingSchedule />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/test-runner" element={<TestRunner />} />
+          </Route>
+        </Routes>
+      </ErrorBoundary>
     </BrowserRouter>
   );
 }
