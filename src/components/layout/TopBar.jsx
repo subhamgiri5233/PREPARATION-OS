@@ -59,7 +59,7 @@ export default function TopBar({ onMobileMenuOpen }) {
     navigate(path);
   };
 
-  const { isAuthenticated, toggleEditMode, openLoginModal, lock, ownerName } = useAuthStore();
+  const { isEditMode, toggleEditMode, logout } = useAuthStore();
 
   return (
     <>
@@ -94,7 +94,7 @@ export default function TopBar({ onMobileMenuOpen }) {
           <ActiveSessionIndicator />
 
           {/* Edit Mode vs View-Only Toggle Switch */}
-          {isAuthenticated ? (
+          {isEditMode ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <button
                 className="btn btn-xs"
@@ -135,15 +135,6 @@ export default function TopBar({ onMobileMenuOpen }) {
                     transition: 'all 0.2s ease'
                   }} />
                 </div>
-              </button>
-
-              <button
-                className="btn btn-xs btn-ghost btn-icon"
-                onClick={lock}
-                title="Lock / Logout"
-                style={{ color: 'var(--danger)', padding: 5 }}
-              >
-                <LogOut size={13} />
               </button>
             </div>
           ) : (
@@ -188,6 +179,17 @@ export default function TopBar({ onMobileMenuOpen }) {
               </div>
             </button>
           )}
+
+          {/* Logout button */}
+          <button
+            className="topbar-btn"
+            onClick={logout}
+            title="Logout of Preparation OS"
+            aria-label="Logout"
+            style={{ color: 'var(--text-3)' }}
+          >
+            <LogOut size={16} />
+          </button>
 
           {/* Notifications */}
           <a href="/notifications" className="topbar-btn" aria-label="Notifications">

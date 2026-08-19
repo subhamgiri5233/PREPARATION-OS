@@ -9,6 +9,7 @@ async function authFetch(path, options = {}) {
   try {
     const res = await fetch(`${API_BASE}${path}`, {
       ...options,
+      signal: options.signal || AbortSignal.timeout(2500),
       headers: {
         'Content-Type': 'application/json',
         ...(options.headers || {})
@@ -21,7 +22,6 @@ async function authFetch(path, options = {}) {
     }
     return data;
   } catch (err) {
-    console.error(`[AuthService] Error on ${path}:`, err);
     throw err;
   }
 }
@@ -64,6 +64,14 @@ export async function updateMasterPin(currentPin, newPin) {
     method: 'POST',
     body: { currentPin, newPin }
   });
+}
+
+export async function logoutUser() {
+  try {
+    await authFetch('/auth/logout', { method: 'POST' });
+  } catch {
+    // ignore
+  }
 }
 
 export async function updateAuthSettings({ privacyMode, ownerName }) {

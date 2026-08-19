@@ -97,7 +97,7 @@ export default function Sidebar({ mobileOpen, onMobileClose }) {
 
         {/* Mode Toggle Switch & User Profile */}
         <div style={{ padding: '8px', borderTop: '1px solid var(--border)' }}>
-          {isAuthenticated ? (
+          {isEditMode ? (
             <div style={{
               display: 'flex',
               alignItems: 'center',
@@ -138,8 +138,8 @@ export default function Sidebar({ mobileOpen, onMobileClose }) {
                   display: 'flex', alignItems: 'center', gap: 4
                 }}
               >
-                <LogOut size={14} />
-                {sidebarOpen && <span style={{ fontSize: 11, fontWeight: 600 }}>Lock</span>}
+                <Eye size={14} />
+                {sidebarOpen && <span style={{ fontSize: 11, fontWeight: 600 }}>View Only</span>}
               </button>
             </div>
           ) : (

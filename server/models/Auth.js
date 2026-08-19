@@ -7,6 +7,8 @@ const authSchema = new mongoose.Schema({
   privacyMode: { type: String, enum: ['privacy', 'lockdown'], default: 'privacy' },
   ownerName: { type: String, default: 'Subham' },
   lastLogin: { type: Date },
+  currentChallenge: { type: String },
+  challengeTimestamp: { type: Date },
 }, { timestamps: true });
 
 authSchema.methods.verifyPin = function(pin) {

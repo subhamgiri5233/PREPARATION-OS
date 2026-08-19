@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Save, Download, RotateCcw, ArrowUp, ArrowDown, Lock, Unlock, ShieldCheck, KeyRound } from 'lucide-react';
+import { Save, Download, RotateCcw, ArrowUp, ArrowDown, Lock, Unlock, ShieldCheck, KeyRound, Fingerprint, Trash2, Plus } from 'lucide-react';
 import { getSettings, updateSettings, getAllAreas, updateArea,
   getAllCourses, getAllSubjects, getAllChapters, getAllTopics, getAllStudyResources,
   getAllSessions, getAllMocks, getAllMockSubjectResults, getErrorLogs,
@@ -8,6 +8,7 @@ import { getSettings, updateSettings, getAllAreas, updateArea,
 import { useAppStore } from '../store/useAppStore';
 import { useAuthStore } from '../store/useAuthStore';
 import { updateMasterPin, updateAuthSettings } from '../services/authService';
+import { listPasskeys, deletePasskey, registerPasskeyCredential } from '../services/webauthnService';
 import { requireEditPermission, canEdit } from '../services/mutationGuard.js';
 
 export default function Settings() {
@@ -493,7 +494,140 @@ function SecuritySettingsCard() {
             </button>
           </form>
         </div>
+
+        {/* Full-width Section: Biometric / Passkey Management */}
+        <div style={{ gridColumn: '1 / -1', borderTop: '1px solid var(--border)', paddingTop: 16, marginTop: 8 }}>
+          <PasskeySettingsSection />
+        </div>
       </div>
+    </div>
+  );
+}
+
+function PasskeySettingsSection() {
+  const [passkeys, setPasskeys] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState('');
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    loadPasskeys();
+  }, []);
+
+  const loadPasskeys = async () => {
+    try {
+      const keys = await listPasskeys();
+      setPasskeys(Array.isArray(keys) ? keys : []);
+    } catch (e) {
+      console.warn('Failed to load passkeys:', e);
+    }
+  };
+
+  const handleRegister = async () => {
+    if (!canEdit()) {
+      requireEditPermission('register biometric passkey');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    setMsg('');
+    try {
+      await registerPasskeyCredential('Browser / Device Passkey');
+      setMsg('✅ Biometric passkey registered successfully!');
+      await loadPasskeys();
+    } catch (e) {
+      setError(e.message || 'Failed to register biometric passkey');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeletePasskey = async (id) => {
+    if (!canEdit()) {
+      requireEditPermission('delete passkey');
+      return;
+    }
+    if (!window.confirm('Are you sure you want to remove this biometric passkey?')) return;
+    try {
+      await deletePasskey(id);
+      await loadPasskeys();
+      setMsg('Passkey deleted.');
+    } catch (e) {
+      setError(e.message || 'Failed to delete passkey');
+    }
+  };
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 12 }}>
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text)' }}>
+            <Fingerprint size={16} color="var(--primary-light)" /> Biometric & Passkey Login (WebAuthn)
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>
+            Set up secure biometric login: Use your fingerprint, Face ID, Windows Hello, or device passkey to securely log in.
+          </div>
+        </div>
+
+        <button
+          type="button"
+          className="btn btn-sm btn-primary"
+          onClick={handleRegister}
+          disabled={loading}
+          style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+        >
+          <Plus size={13} /> {loading ? 'Registering...' : 'Add Biometric / Passkey'}
+        </button>
+      </div>
+
+      {msg && (
+        <div style={{ background: 'var(--success-glass)', color: 'var(--success)', padding: '6px 10px', borderRadius: 'var(--radius-sm)', fontSize: 12, marginBottom: 10 }}>
+          {msg}
+        </div>
+      )}
+      {error && (
+        <div style={{ background: 'var(--danger-glass)', color: 'var(--danger)', padding: '6px 10px', borderRadius: 'var(--radius-sm)', fontSize: 12, marginBottom: 10 }}>
+          ⚠️ {error}
+        </div>
+      )}
+
+      {passkeys.length === 0 ? (
+        <div style={{ padding: '14px', background: 'var(--surface-2)', borderRadius: 'var(--radius)', fontSize: 12, color: 'var(--text-3)', textAlign: 'center' }}>
+          No biometric passkeys registered yet. Click <strong>"Add Biometric / Passkey"</strong> to register your device.
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {passkeys.map((pk) => (
+            <div
+              key={pk.credentialId || pk._id}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '10px 12px', borderRadius: 'var(--radius)', background: 'var(--surface-2)',
+                border: '1px solid var(--border)'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <Fingerprint size={18} color="var(--primary)" />
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 700 }}>{pk.deviceName || 'Device Passkey'}</div>
+                  <div style={{ fontSize: 10, color: 'var(--text-3)' }}>
+                    ID: {pk.credentialId.slice(0, 16)}... · Registered {new Date(pk.createdAt).toLocaleDateString()}
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="btn btn-xs btn-ghost"
+                onClick={() => handleDeletePasskey(pk.credentialId || pk._id)}
+                title="Remove passkey"
+                style={{ color: 'var(--danger)' }}
+              >
+                <Trash2 size={13} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

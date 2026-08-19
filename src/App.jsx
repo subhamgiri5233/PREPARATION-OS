@@ -17,6 +17,7 @@ import TeachingSchedule from './pages/TeachingSchedule';
 import Settings from './pages/Settings';
 import LoginPage from './pages/LoginPage';
 import TestRunner from './pages/TestRunner';
+import ProtectedRoute from './components/auth/ProtectedRoute';
 import {
   initializeDatabase, getAllAreas, getAllCourses, getAllSubjects, getAllChapters, getAllTopics, getAllStudyResources,
   getSettings, getTeachingSchedule, getUnreadNotifications, addNotification
@@ -242,7 +243,8 @@ export default function App() {
     <BrowserRouter>
       <ErrorBoundary>
         <Routes>
-          <Route element={<Layout />}>
+          <Route path="/login" element={<LoginPage />} />
+          <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
             <Route path="/" element={<Dashboard />} />
             <Route path="/preparation" element={<Preparation />} />
             <Route path="/planner" element={<StudyPlanner />} />
@@ -257,7 +259,6 @@ export default function App() {
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/teaching" element={<TeachingSchedule />} />
             <Route path="/settings" element={<Settings />} />
-            <Route path="/login" element={<LoginPage />} />
             <Route path="/test-runner" element={<TestRunner />} />
           </Route>
         </Routes>
