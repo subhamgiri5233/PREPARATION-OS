@@ -30,6 +30,7 @@ import progressRouter from './routes/progress.js';
 import errorLogRouter from './routes/errorLog.js';
 import resourcesRouter from './routes/resources.js';
 import gitaShlokaRouter from './routes/gitaShlokas.js';
+import dictionaryRouter from './routes/dictionary.js';
 import authRouter from './routes/auth.js';
 import { seedDatabase } from './seed.js';
 
@@ -88,6 +89,7 @@ app.use('/api/sessions', sessionsRouter);
 app.use('/api/revisions', revisionsRouter);
 app.use('/api/mocks', mocksRouter);
 app.use('/api/vocabulary', vocabularyRouter);
+app.use('/api/dictionary', dictionaryRouter);
 app.use('/api/schedule', scheduleRouter);
 app.use('/api/notifications', notificationsRouter);
 app.use('/api/progress', progressRouter);

@@ -259,31 +259,62 @@ export async function bulkAddMockSubjectResults(results) {
   return await apiFetch('/mocks/results/bulk', { method: 'POST', body: results });
 }
 
-// ─── Vocabulary ───────────────────────────────────────────────────────────────
+// ─── Dictionary & Vocabulary ──────────────────────────────────────────────────
+export async function lookupDictionary(word) {
+  if (!word || !word.trim()) throw new Error('Word is required');
+  return await apiFetch(`/dictionary/${encodeURIComponent(word.trim().toLowerCase())}`);
+}
+
+export async function getRecentSearches() {
+  try {
+    return await apiFetch('/dictionary/history');
+  } catch (_) {
+    return [];
+  }
+}
+
 export async function getAllVocab() {
   return await apiFetch('/vocabulary');
 }
+
 // getVocabByDate: returns ONLY words added on the given date (YYYY-MM-DD).
 // Uses 'dateAdded' field on server. Daily counter resets automatically on new day.
 export async function getVocabByDate(date) {
   return await apiFetch(`/vocabulary?date=${date}`);
 }
+
 export async function getReviewVocab() {
   return await apiFetch('/vocabulary?status=Review');
 }
+
 export async function addVocab(word) {
   const res = await apiFetch('/vocabulary', { method: 'POST', body: word });
   return res?.id || res?._id || res;
 }
+
 export async function updateVocab(id, updates) {
   return await apiFetch(`/vocabulary/${id}`, { method: 'PUT', body: updates });
 }
+
 export async function deleteVocab(id) {
   return await apiFetch(`/vocabulary/${id}`, { method: 'DELETE' });
 }
+
+export async function toggleVocabFavorite(id) {
+  return await apiFetch(`/vocabulary/${id}/favorite`, { method: 'PATCH' });
+}
+
+export async function markVocabLearned(id, status = 'Learned', date = null) {
+  return await apiFetch(`/vocabulary/${id}/learn`, {
+    method: 'PATCH',
+    body: { status, learnedDate: date }
+  });
+}
+
 export async function bulkAddVocab(words) {
   return await apiFetch('/vocabulary/bulk', { method: 'POST', body: words });
 }
+
 // getVocabDailyHistory: returns per-day summary for the history view.
 // Returns: [{ date, count, words }] sorted newest-first.
 export async function getVocabDailyHistory() {
