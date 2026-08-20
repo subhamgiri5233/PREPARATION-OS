@@ -284,13 +284,7 @@ export default function LoginPage() {
   const currentPreview = MODULE_PREVIEWS[activePreviewTab] || MODULE_PREVIEWS.planner;
 
   return (
-    <div style={{
-      maxWidth: 1160,
-      margin: '0 auto',
-      padding: '24px 16px 80px',
-      position: 'relative',
-      overflow: 'hidden'
-    }}>
+    <div className="landing-container">
       {/* ── AMBIENT AURORA GLOWS ──────────────────────────────────── */}
       <div style={{
         position: 'absolute',
@@ -307,42 +301,30 @@ export default function LoginPage() {
       }} />
 
       {/* ── TOP ANNOUNCEMENT BAR ──────────────────────────────────── */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        background: 'rgba(26, 26, 46, 0.75)',
-        backdropFilter: 'blur(12px)',
-        border: '1px solid var(--border-accent)',
-        padding: '8px 18px',
-        borderRadius: 'var(--radius-full)',
-        marginBottom: 36,
-        position: 'relative',
-        zIndex: 1,
-        flexWrap: 'wrap',
-        gap: 10
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div className="landing-topbar">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
           <span style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: 6,
+            gap: 5,
             background: 'var(--primary-glass)',
             color: 'var(--primary-light)',
-            padding: '2px 10px',
+            padding: '3px 10px',
             borderRadius: 'var(--radius-full)',
             fontSize: 11,
             fontWeight: 800,
-            letterSpacing: '0.04em'
+            letterSpacing: '0.03em',
+            whiteSpace: 'nowrap',
+            flexShrink: 0
           }}>
-            <Sparkles size={12} /> PRO EDITION 2026
+            <Sparkles size={12} /> PRO 2026
           </span>
-          <span style={{ fontSize: 12, color: 'var(--text-2)', fontWeight: 600 }}>
-            Preparation OS • The Ultimate High-Performance Command Center
+          <span className="landing-topbar-title truncate">
+            Preparation OS • The Ultimate Command Center
           </span>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
           <button
             onClick={() => setShowLoginModal(true)}
             className="btn btn-xs btn-primary"
@@ -363,79 +345,40 @@ export default function LoginPage() {
       </div>
 
       {/* ── HERO BANNER & VALUE PROPOSITION ──────────────────────── */}
-      <div style={{ textAlign: 'center', marginBottom: 48, position: 'relative', zIndex: 1 }}>
+      <div style={{ textAlign: 'center', marginBottom: 40, position: 'relative', zIndex: 1 }}>
         <div style={{
           display: 'inline-flex',
           alignItems: 'center',
-          gap: 8,
+          gap: 6,
           background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.18), rgba(236, 72, 153, 0.12))',
           border: '1px solid rgba(99, 102, 241, 0.4)',
-          padding: '6px 18px',
+          padding: '5px 14px',
           borderRadius: 'var(--radius-full)',
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: 800,
           color: '#c7d2fe',
-          marginBottom: 16,
-          boxShadow: '0 0 20px rgba(99, 102, 241, 0.25)'
+          marginBottom: 14,
+          boxShadow: '0 0 20px rgba(99, 102, 241, 0.25)',
+          maxWidth: '100%'
         }}>
-          <Flame size={14} color="#f59e0b" /> Designed Specifically for Competitive Exam Aspirants
+          <Flame size={14} color="#f59e0b" style={{ flexShrink: 0 }} />
+          <span className="truncate">Designed for Competitive Exam Aspirants</span>
         </div>
 
-        <h1 style={{
-          fontSize: 'clamp(32px, 4.5vw, 54px)',
-          fontWeight: 900,
-          letterSpacing: '-0.03em',
-          lineHeight: 1.15,
-          margin: '0 auto 18px auto',
-          maxWidth: 950,
-          background: 'linear-gradient(135deg, #ffffff 10%, #e2e8f0 45%, #818cf8 80%, #c084fc 100%)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          textShadow: '0 10px 30px rgba(0,0,0,0.5)'
-        }}>
+        <h1 className="landing-hero-title">
           Master Your Syllabus. Retain 100%. Crack Your Dream Exam.
         </h1>
 
-        <p style={{
-          fontSize: 16,
-          color: 'var(--text-2)',
-          maxWidth: 740,
-          margin: '0 auto 28px auto',
-          lineHeight: 1.65,
-          fontWeight: 400
-        }}>
+        <p className="landing-hero-desc">
           A unified, distraction-free preparation command center combining <strong>Smart AI Routine Scheduling</strong>, 
           science-backed <strong>5-Stage Spaced Repetition (SRS)</strong>, real-time <strong>Mock Error Diagnostics</strong>, 
           bilingual vocabulary drills, and daily <strong>Gita reflections</strong> for unwavering focus.
         </p>
 
         {/* Exam Badges Ticker Ribbon */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          gap: 8,
-          flexWrap: 'wrap',
-          maxWidth: 960,
-          margin: '0 auto 32px auto'
-        }}>
+        <div className="landing-badges-ribbon">
           {EXAM_BADGES.map((b, i) => (
-            <span
-              key={i}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                background: 'var(--surface-2)',
-                border: '1px solid var(--border)',
-                padding: '6px 14px',
-                borderRadius: 'var(--radius-full)',
-                fontSize: 11,
-                fontWeight: 700,
-                color: 'var(--text)',
-                boxShadow: '0 2px 6px rgba(0,0,0,0.3)'
-              }}
-            >
+            <span key={i} className="landing-badge-item">
               <span>{b.icon}</span> {b.name}
             </span>
           ))}
@@ -446,42 +389,19 @@ export default function LoginPage() {
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          gap: 14,
-          flexWrap: 'wrap',
           marginBottom: 10
         }}>
           <button
             onClick={() => setShowLoginModal(true)}
-            className="btn btn-primary"
-            style={{
-              padding: '16px 36px',
-              fontSize: 16,
-              fontWeight: 800,
-              borderRadius: 'var(--radius-full)',
-              boxShadow: '0 8px 30px rgba(99, 102, 241, 0.55)',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 10,
-              letterSpacing: '0.02em',
-              transition: 'all 0.2s ease',
-              cursor: 'pointer'
-            }}
+            className="btn btn-primary landing-cta-btn"
           >
-            <Fingerprint size={24} /> Log In to Command Center
+            <Fingerprint size={22} /> Log In to Command Center
           </button>
         </div>
       </div>
 
       {/* ── METRICS STRIP ─────────────────────────────────────────── */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-        gap: 14,
-        maxWidth: 1060,
-        margin: '0 auto 60px auto',
-        position: 'relative',
-        zIndex: 1
-      }}>
+      <div className="landing-metrics-grid">
         {METRICS.map((m, idx) => (
           <div
             key={idx}
@@ -489,7 +409,7 @@ export default function LoginPage() {
               background: 'linear-gradient(135deg, rgba(30, 30, 53, 0.7), rgba(26, 26, 46, 0.9))',
               border: '1px solid var(--border)',
               borderRadius: 'var(--radius)',
-              padding: '16px 18px',
+              padding: '14px 12px',
               textAlign: 'center',
               boxShadow: '0 4px 16px rgba(0,0,0,0.35)',
               backdropFilter: 'blur(8px)',
@@ -505,13 +425,13 @@ export default function LoginPage() {
               height: 2,
               background: 'linear-gradient(90deg, transparent, var(--primary-light), transparent)'
             }} />
-            <div style={{ fontSize: 24, fontWeight: 900, color: 'var(--primary-light)', letterSpacing: '-0.02em' }}>
+            <div style={{ fontSize: 'clamp(18px, 4vw, 24px)', fontWeight: 900, color: 'var(--primary-light)', letterSpacing: '-0.02em' }}>
               {m.value}
             </div>
-            <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)', marginTop: 2 }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--text)', marginTop: 2 }}>
               {m.label}
             </div>
-            <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 4 }}>
+            <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 3 }}>
               {m.sub}
             </div>
           </div>
@@ -519,25 +439,21 @@ export default function LoginPage() {
       </div>
 
       {/* ── SECTION 2: 6-CARD FULL WIDTH CAPABILITIES GRID ───────── */}
-      <div style={{ marginBottom: 60, position: 'relative', zIndex: 1 }}>
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <span className="badge badge-primary" style={{ fontSize: 11, padding: '3px 12px', marginBottom: 8 }}>
+      <div style={{ marginBottom: 48, position: 'relative', zIndex: 1 }}>
+        <div style={{ textAlign: 'center', marginBottom: 26 }}>
+          <span className="badge badge-primary" style={{ fontSize: 10, padding: '2px 10px', marginBottom: 6 }}>
             ⚡ CORE ARCHITECTURE
           </span>
-          <h2 style={{ fontSize: 26, fontWeight: 900, color: 'var(--text)', margin: '0 0 8px 0' }}>
+          <h2 style={{ fontSize: 'clamp(20px, 4.5vw, 26px)', fontWeight: 900, color: 'var(--text)', margin: '0 0 6px 0' }}>
             Engineered to Deliver Guaranteed Preparation Mastery
           </h2>
-          <p style={{ fontSize: 14, color: 'var(--text-2)', maxWidth: 640, margin: '0 auto' }}>
+          <p style={{ fontSize: 13, color: 'var(--text-2)', maxWidth: 640, margin: '0 auto' }}>
             Every module is designed to eliminate cognitive fatigue and enforce flawless spaced retention.
           </p>
         </div>
 
         {/* 6 Grid Cards */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-          gap: 18
-        }}>
+        <div className="landing-capabilities-grid">
           {ALL_FEATURES.map((feat) => {
             const Icon = feat.icon;
             return (
@@ -547,19 +463,18 @@ export default function LoginPage() {
                   background: 'linear-gradient(135deg, var(--card), var(--surface-2))',
                   border: '1px solid var(--border)',
                   borderRadius: 'var(--radius-lg)',
-                  padding: '22px 20px',
+                  padding: '18px 16px',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: 12,
+                  gap: 10,
                   boxShadow: '0 6px 20px rgba(0,0,0,0.3)',
-                  transition: 'transform 0.2s ease, border-color 0.2s ease',
                   position: 'relative'
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div style={{
-                    width: 44,
-                    height: 44,
+                    width: 40,
+                    height: 40,
                     borderRadius: 'var(--radius)',
                     background: feat.bg,
                     color: feat.color,
@@ -568,7 +483,7 @@ export default function LoginPage() {
                     justifyContent: 'center',
                     flexShrink: 0
                   }}>
-                    <Icon size={22} />
+                    <Icon size={20} />
                   </div>
                   <span
                     style={{
@@ -586,23 +501,23 @@ export default function LoginPage() {
                 </div>
 
                 <div>
-                  <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)', marginBottom: 4 }}>
+                  <h3 style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)', marginBottom: 3 }}>
                     {feat.title}
                   </h3>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--primary-light)', marginBottom: 8 }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--primary-light)', marginBottom: 6 }}>
                     {feat.tagline}
                   </div>
-                  <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.55, margin: 0 }}>
+                  <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5, margin: 0 }}>
                     {feat.desc}
                   </p>
                 </div>
 
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 'auto', paddingTop: 8 }}>
+                <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 'auto', paddingTop: 6 }}>
                   {feat.chips.map((chip, idx) => (
                     <span
                       key={idx}
                       style={{
-                        fontSize: 10,
+                        fontSize: 9,
                         fontWeight: 700,
                         padding: '2px 6px',
                         borderRadius: 'var(--radius-sm)',
@@ -621,42 +536,28 @@ export default function LoginPage() {
       </div>
 
       {/* ── SECTION 3: INTERACTIVE SIMULATION & MODULE DEEP DIVE ───── */}
-      <div style={{
-        background: 'linear-gradient(135deg, var(--card), var(--surface-2))',
-        border: '1px solid var(--border-accent)',
-        borderRadius: 'var(--radius-xl)',
-        padding: '32px 26px',
-        marginBottom: 50,
-        boxShadow: '0 16px 40px rgba(0,0,0,0.4)',
-        position: 'relative',
-        zIndex: 1
-      }}>
+      <div className="landing-card-section">
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           flexWrap: 'wrap',
-          gap: 12,
-          marginBottom: 20
+          gap: 10,
+          marginBottom: 16
         }}>
           <div>
             <span className="badge badge-primary" style={{ fontSize: 10, padding: '2px 8px', marginBottom: 4 }}>
               ⚡ LIVE ENGINE SIMULATION
             </span>
-            <h3 style={{ fontSize: 20, fontWeight: 900, color: 'var(--text)', margin: 0 }}>
+            <h3 style={{ fontSize: 'clamp(17px, 4vw, 20px)', fontWeight: 900, color: 'var(--text)', margin: 0 }}>
               Test Drive Preparation OS Modules
             </h3>
           </div>
-          <span style={{ fontSize: 12, color: 'var(--text-3)' }}>Click any module below to inspect its data flow</span>
+          <span style={{ fontSize: 11, color: 'var(--text-3)' }}>Click any module below to inspect live data flow</span>
         </div>
 
         {/* Tab Buttons */}
-        <div style={{
-          display: 'flex',
-          gap: 8,
-          flexWrap: 'wrap',
-          marginBottom: 20
-        }}>
+        <div className="landing-sim-tabs">
           {ALL_FEATURES.map((feat) => {
             const Icon = feat.icon;
             const isActive = activePreviewTab === feat.id;
@@ -667,20 +568,21 @@ export default function LoginPage() {
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 6,
-                  padding: '7px 14px',
+                  gap: 5,
+                  padding: '6px 12px',
                   borderRadius: 'var(--radius)',
                   background: isActive ? 'var(--primary)' : 'var(--surface-3)',
                   border: `1px solid ${isActive ? 'var(--primary-light)' : 'var(--border)'}`,
                   color: isActive ? '#ffffff' : 'var(--text-2)',
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: 700,
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
-                  boxShadow: isActive ? '0 4px 14px rgba(99, 102, 241, 0.4)' : 'none'
+                  boxShadow: isActive ? '0 4px 14px rgba(99, 102, 241, 0.4)' : 'none',
+                  flexShrink: 0
                 }}
               >
-                <Icon size={14} color={isActive ? '#ffffff' : feat.color} />
+                <Icon size={13} color={isActive ? '#ffffff' : feat.color} />
                 <span>{feat.badge}</span>
               </button>
             );
@@ -692,28 +594,30 @@ export default function LoginPage() {
           background: 'var(--bg-2)',
           border: '1px solid var(--border)',
           borderRadius: 'var(--radius)',
-          padding: 18
+          padding: '14px 12px'
         }}>
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: 14
+            marginBottom: 12,
+            flexWrap: 'wrap',
+            gap: 6
           }}>
             <div>
-              <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)' }}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)' }}>
                 {currentPreview.title}
               </div>
-              <div style={{ fontSize: 12, color: 'var(--primary-light)' }}>
+              <div style={{ fontSize: 11, color: 'var(--primary-light)' }}>
                 {currentPreview.subtitle}
               </div>
             </div>
-            <span className="badge" style={{ fontSize: 10, background: 'var(--surface-3)', color: 'var(--text-2)' }}>
+            <span className="badge" style={{ fontSize: 9, background: 'var(--surface-3)', color: 'var(--text-2)' }}>
               Realtime Dexie Engine
             </span>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 8 }}>
             {currentPreview.items.map((item, idx) => (
               <div
                 key={idx}
@@ -721,19 +625,19 @@ export default function LoginPage() {
                   background: 'var(--surface-2)',
                   borderLeft: `3px solid ${item.color}`,
                   borderRadius: 'var(--radius-sm)',
-                  padding: '10px 14px',
+                  padding: '9px 12px',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: 4
+                  gap: 3
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600 }}>{item.time}</span>
+                  <span style={{ fontSize: 10, color: 'var(--text-3)', fontWeight: 600 }}>{item.time}</span>
                   <span
                     style={{
-                      fontSize: 10,
+                      fontSize: 9,
                       fontWeight: 700,
-                      padding: '2px 8px',
+                      padding: '2px 7px',
                       borderRadius: 'var(--radius-full)',
                       background: 'rgba(255,255,255,0.06)',
                       color: item.color
@@ -742,7 +646,7 @@ export default function LoginPage() {
                     {item.type}
                   </span>
                 </div>
-                <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--text)' }}>{item.title}</div>
+                <div style={{ fontWeight: 700, fontSize: 12, color: 'var(--text)' }}>{item.title}</div>
               </div>
             ))}
           </div>
@@ -750,53 +654,44 @@ export default function LoginPage() {
       </div>
 
       {/* ── SECTION 4: COMPARISON MATRIX ───────────────────────────── */}
-      <div style={{
-        background: 'linear-gradient(135deg, var(--surface-2), var(--card))',
-        border: '1px solid var(--border)',
-        borderRadius: 'var(--radius-xl)',
-        padding: '36px 28px',
-        marginBottom: 50,
-        boxShadow: '0 16px 40px rgba(0,0,0,0.4)',
-        position: 'relative',
-        zIndex: 1
-      }}>
-        <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <span className="badge badge-warning" style={{ fontSize: 10, padding: '3px 10px', marginBottom: 8 }}>
+      <div className="landing-card-section">
+        <div style={{ textAlign: 'center', marginBottom: 20 }}>
+          <span className="badge badge-warning" style={{ fontSize: 10, padding: '2px 8px', marginBottom: 6 }}>
             ⚔️ THE ADVANTAGE
           </span>
-          <h2 style={{ fontSize: 24, fontWeight: 900, color: 'var(--text)', margin: '0 0 6px 0' }}>
+          <h2 style={{ fontSize: 'clamp(18px, 4vw, 24px)', fontWeight: 900, color: 'var(--text)', margin: '0 0 4px 0' }}>
             Traditional Study Habits vs. Preparation OS
           </h2>
-          <p style={{ fontSize: 13, color: 'var(--text-2)', maxWidth: 620, margin: '0 auto' }}>
+          <p style={{ fontSize: 12, color: 'var(--text-2)', maxWidth: 620, margin: '0 auto' }}>
             Why top rankers don't rely on willpower alone — they rely on high-leverage algorithmic systems.
           </p>
         </div>
 
-        <div className="table-wrapper">
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+        <div className="table-wrapper" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+          <table style={{ width: '100%', minWidth: 500, borderCollapse: 'collapse', fontSize: 12 }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--surface-3)' }}>
-                <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 800, color: 'var(--text-2)' }}>
+                <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 800, color: 'var(--text-2)' }}>
                   Preparation Dimension
                 </th>
-                <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 800, color: '#f87171' }}>
-                  ❌ Traditional Preparation
+                <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 800, color: '#f87171' }}>
+                  ❌ Traditional
                 </th>
-                <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 800, color: 'var(--success-light)' }}>
-                  ✨ With Preparation OS
+                <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 800, color: 'var(--success-light)' }}>
+                  ✨ With PrepOS
                 </th>
               </tr>
             </thead>
             <tbody>
               {COMPARISON_ROWS.map((row, idx) => (
                 <tr key={idx} style={{ borderBottom: '1px solid var(--border)', background: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)' }}>
-                  <td style={{ padding: '14px 16px', fontWeight: 700, color: 'var(--text)' }}>
+                  <td style={{ padding: '12px 14px', fontWeight: 700, color: 'var(--text)' }}>
                     {row.feature}
                   </td>
-                  <td style={{ padding: '14px 16px', color: 'var(--text-3)', lineHeight: 1.45 }}>
+                  <td style={{ padding: '12px 14px', color: 'var(--text-3)', lineHeight: 1.4 }}>
                     {row.traditional}
                   </td>
-                  <td style={{ padding: '14px 16px', color: 'var(--text)', fontWeight: 600, lineHeight: 1.45 }}>
+                  <td style={{ padding: '12px 14px', color: 'var(--text)', fontWeight: 600, lineHeight: 1.4 }}>
                     <span style={{ color: 'var(--success)', marginRight: 6 }}>✓</span>
                     {row.prepOS}
                   </td>
@@ -808,20 +703,10 @@ export default function LoginPage() {
       </div>
 
       {/* ── BOTTOM CALL TO ACTION ─────────────────────────────────── */}
-      <div style={{ textAlign: 'center', marginBottom: 40, position: 'relative', zIndex: 1 }}>
+      <div style={{ textAlign: 'center', marginBottom: 36, position: 'relative', zIndex: 1 }}>
         <button
           onClick={() => setShowLoginModal(true)}
-          className="btn btn-primary"
-          style={{
-            padding: '14px 30px',
-            fontSize: 15,
-            fontWeight: 800,
-            borderRadius: 'var(--radius-full)',
-            boxShadow: '0 6px 24px rgba(99, 102, 241, 0.45)',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 10
-          }}
+          className="btn btn-primary landing-cta-btn"
         >
           <Fingerprint size={20} /> Access Full Workspace Now
         </button>
@@ -830,21 +715,21 @@ export default function LoginPage() {
       {/* ── SECTION 5: BENGALI ASPIRANT QUOTE & FOOTER ─────────────── */}
       <div style={{
         textAlign: 'center',
-        padding: '24px 20px',
+        padding: '20px 16px',
         borderTop: '1px solid var(--border)',
         position: 'relative',
         zIndex: 1
       }}>
         <div style={{
-          fontSize: 16,
+          fontSize: 14,
           fontWeight: 700,
           color: 'var(--primary-light)',
           fontStyle: 'italic',
-          marginBottom: 8
+          marginBottom: 6
         }}>
           “স্মার্ট পরিকল্পনা, নির্ভুল পুনরাবৃত্তি এবং অবিচল নিষ্ঠা — সাফল্যের একমাত্র পথ।”
         </div>
-        <div style={{ fontSize: 12, color: 'var(--text-3)' }}>
+        <div style={{ fontSize: 11, color: 'var(--text-3)' }}>
           Preparation OS • Engineered with React 19, Dexie IndexedDB, WebAuthn FIDO2 & Spaced Repetition Algorithms.
         </div>
       </div>
@@ -862,36 +747,27 @@ export default function LoginPage() {
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 9999,
-            padding: 16,
+            padding: 12,
             animation: 'fadeIn 0.2s ease-out'
           }}
           onClick={(e) => {
             if (e.target === e.currentTarget) setShowLoginModal(false);
           }}
         >
-          <div style={{
-            background: 'linear-gradient(135deg, rgba(26, 26, 46, 0.98), rgba(30, 30, 53, 0.96))',
-            borderRadius: 'var(--radius-xl)',
-            border: '1px solid var(--border-accent)',
-            padding: '32px 28px',
-            maxWidth: 460,
-            width: '100%',
-            boxShadow: '0 24px 70px rgba(0, 0, 0, 0.8), 0 0 40px rgba(99, 102, 241, 0.3)',
-            position: 'relative'
-          }}>
+          <div className="landing-modal-box">
             {/* Close Button */}
             <button
               onClick={() => setShowLoginModal(false)}
               style={{
                 position: 'absolute',
-                top: 18,
-                right: 18,
+                top: 14,
+                right: 14,
                 background: 'var(--surface-3)',
                 border: '1px solid var(--border)',
                 color: 'var(--text-2)',
                 borderRadius: '50%',
-                width: 32,
-                height: 32,
+                width: 30,
+                height: 30,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',

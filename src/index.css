@@ -1301,3 +1301,202 @@ tbody tr:hover {
 .text-danger { color: var(--danger); }
 .truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .w-full { width: 100%; }
+
+/* ─── LoginPage / Landing Responsive Styles ───────────────── */
+.landing-container {
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 24px 16px 80px;
+  position: relative;
+  overflow: hidden;
+}
+
+.landing-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(26, 26, 46, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-accent);
+  padding: 8px 18px;
+  border-radius: var(--radius-full);
+  margin-bottom: 32px;
+  position: relative;
+  z-index: 1;
+  gap: 10px;
+}
+
+.landing-topbar-title {
+  font-size: 12px;
+  color: var(--text-2);
+  font-weight: 600;
+}
+
+.landing-hero-title {
+  font-size: clamp(23px, 5.5vw, 50px);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1.22;
+  margin: 0 auto 16px auto;
+  max-width: 950px;
+  background: linear-gradient(135deg, #ffffff 10%, #e2e8f0 45%, #818cf8 80%, #c084fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.landing-hero-desc {
+  font-size: 15px;
+  color: var(--text-2);
+  max-width: 740px;
+  margin: 0 auto 24px auto;
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+.landing-badges-ribbon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  max-width: 960px;
+  margin: 0 auto 28px auto;
+}
+
+.landing-badge-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  padding: 5px 12px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+.landing-cta-btn {
+  padding: 15px 32px;
+  font-size: 15px;
+  font-weight: 800;
+  border-radius: var(--radius-full);
+  box-shadow: 0 8px 30px rgba(99, 102, 241, 0.55);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  letter-spacing: 0.02em;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.landing-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  max-width: 1060px;
+  margin: 0 auto 50px auto;
+  position: relative;
+  z-index: 1;
+}
+
+.landing-capabilities-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.landing-card-section {
+  background: linear-gradient(135deg, var(--card), var(--surface-2));
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-xl);
+  padding: 28px 24px;
+  margin-bottom: 44px;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+  position: relative;
+  z-index: 1;
+}
+
+.landing-modal-box {
+  background: linear-gradient(135deg, rgba(26, 26, 46, 0.98), rgba(30, 30, 53, 0.96));
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-accent);
+  padding: 30px 24px;
+  max-width: 440px;
+  width: 100%;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.8), 0 0 40px rgba(99, 102, 241, 0.3);
+  position: relative;
+}
+
+.landing-sim-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 640px) {
+  .landing-container {
+    padding: 14px 10px 60px;
+  }
+  .landing-topbar {
+    padding: 6px 12px;
+    margin-bottom: 20px;
+    border-radius: var(--radius-lg);
+  }
+  .landing-topbar-title {
+    display: none; /* Hide long subtitle on mobile, keep logo/tag and login button */
+  }
+  .landing-hero-desc {
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 18px;
+  }
+  .landing-badges-ribbon {
+    gap: 4px;
+    margin-bottom: 20px;
+  }
+  .landing-badge-item {
+    padding: 3px 8px;
+    font-size: 10px;
+  }
+  .landing-cta-btn {
+    width: 100%;
+    max-width: 320px;
+    padding: 14px 20px;
+    font-size: 14px;
+  }
+  .landing-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 32px;
+  }
+  .landing-capabilities-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .landing-card-section {
+    padding: 18px 12px;
+    border-radius: var(--radius-lg);
+    margin-bottom: 28px;
+  }
+  .landing-modal-box {
+    padding: 20px 14px;
+    border-radius: var(--radius-lg);
+  }
+  .landing-sim-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+    scrollbar-width: none;
+  }
+  .landing-sim-tabs::-webkit-scrollbar {
+    display: none;
+  }
+}
+
