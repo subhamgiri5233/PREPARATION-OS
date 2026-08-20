@@ -13,4 +13,8 @@ const studySessionSchema = new mongoose.Schema({
   subjectName: { type: String, default: '' },
 }, { timestamps: true });
 
+studySessionSchema.index({ startTime: -1 });
+studySessionSchema.index({ subjectId: 1 });
+studySessionSchema.index({ topicId: 1 });
+
 export default mongoose.model('StudySession', studySessionSchema);

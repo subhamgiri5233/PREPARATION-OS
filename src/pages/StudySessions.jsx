@@ -2,6 +2,7 @@
 // Synchronized with Study Planner: Displays planned topics for selected date + Dual Stats + Full Edit/Delete on every item
 
 import { useEffect, useState, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Play, Pause, Square, Plus, Clock, X, Calendar, ChevronLeft, ChevronRight,
   Sparkles, CheckCircle2, Circle, AlertCircle, BookOpen, Layers, BarChart2,
@@ -562,9 +563,9 @@ export default function StudySessions() {
               Generate your routine in the Study Planner to see scheduled topics appear here automatically.
             </div>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
-              <a href="/planner" className="btn btn-primary btn-sm">
+              <Link to="/planner" className="btn btn-primary btn-sm">
                 <Sparkles size={12} /> Go to Study Planner
-              </a>
+              </Link>
               <button className="btn btn-ghost btn-sm" onClick={() => setShowNewSession(true)}>
                 <Plus size={12} /> Custom Session
               </button>

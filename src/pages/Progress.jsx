@@ -2,6 +2,7 @@
 // Visual analytics driven 100% by real user database entries
 
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   getAllTopics, getAllSessions, getAllMocks, getAllVocab,
   getAllAreas, getAllSubjects, getAllRevisions
@@ -239,9 +240,9 @@ export default function Progress() {
             <div style={{ fontSize: 13, color: 'var(--text-2)', maxWidth: 420, margin: '6px auto 14px' }}>
               Your daily study hours will automatically graph here in real-time as you complete study timer sessions.
             </div>
-            <a href="/sessions" className="btn btn-primary btn-sm">
+            <Link to="/sessions" className="btn btn-primary btn-sm">
               <Play size={12} /> Start Study Timer
-            </a>
+            </Link>
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={220}>

@@ -27,4 +27,11 @@ const topicSchema = new mongoose.Schema({
   order: { type: Number, default: 0 },
 }, { timestamps: true });
 
+// Indexes for fast syllabus and topic queries
+topicSchema.index({ subjectId: 1, order: 1 });
+topicSchema.index({ chapterId: 1 });
+topicSchema.index({ courseId: 1 });
+topicSchema.index({ preparationAreaId: 1 });
+topicSchema.index({ status: 1 });
+
 export default mongoose.model('Topic', topicSchema);

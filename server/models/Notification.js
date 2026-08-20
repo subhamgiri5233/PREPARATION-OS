@@ -18,4 +18,7 @@ const notificationSchema = new mongoose.Schema({
   data: { type: mongoose.Schema.Types.Mixed, default: {} },
 }, { timestamps: true });
 
+notificationSchema.index({ read: 1, createdAt: -1 });
+notificationSchema.index({ idempotencyKey: 1 });
+
 export default mongoose.model('Notification', notificationSchema);

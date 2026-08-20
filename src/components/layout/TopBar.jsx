@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Menu, Bell, Zap, Search, X, BookOpen, GraduationCap, FileText, BookMarked, Lock, Unlock, LogIn, LogOut, Eye, Edit3 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { useAuthStore } from '../../store/useAuthStore';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { searchGlobal } from '../../services/searchService';
 
@@ -183,10 +183,10 @@ export default function TopBar({ onMobileMenuOpen }) {
           )}
 
           {/* Notifications */}
-          <a href="/notifications" className="topbar-btn" aria-label="Notifications">
+          <Link to="/notifications" className="topbar-btn" aria-label="Notifications">
             <Bell size={16} />
             {unreadCount > 0 && <span className="notification-dot" />}
-          </a>
+          </Link>
 
           {/* Logout */}
           <button

@@ -25,4 +25,8 @@ const studyTaskSchema = new mongoose.Schema({
   completedAt: { type: String, default: null },
 }, { timestamps: true });
 
+studyTaskSchema.index({ date: 1, status: 1 });
+studyTaskSchema.index({ subjectId: 1 });
+studyTaskSchema.index({ topicId: 1 });
+
 export default mongoose.model('StudyTask', studyTaskSchema);

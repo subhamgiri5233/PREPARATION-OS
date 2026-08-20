@@ -20,4 +20,8 @@ const revisionTaskSchema = new mongoose.Schema({
   notes: { type: String, default: '' },
 }, { timestamps: true });
 
+revisionTaskSchema.index({ dueDate: 1, status: 1 });
+revisionTaskSchema.index({ topicId: 1 });
+revisionTaskSchema.index({ subjectId: 1 });
+
 export default mongoose.model('RevisionTask', revisionTaskSchema);

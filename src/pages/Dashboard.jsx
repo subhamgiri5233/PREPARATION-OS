@@ -2,6 +2,7 @@
 // Phase 7 Daily Command Center & Course-Specific Dashboard
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { format, isToday, parseISO } from 'date-fns';
 import {
   CheckCircle2, Circle, Clock, BookOpen, Target, Flame,
@@ -418,12 +419,12 @@ export default function Dashboard() {
                 </div>
 
                 <div style={{ display: 'flex', gap: 10 }}>
-                  <a href="/sessions" className="btn btn-primary" style={{ flex: 1, textAlign: 'center', justifyContent: 'center' }}>
+                  <Link to="/sessions" className="btn btn-primary" style={{ flex: 1, textAlign: 'center', justifyContent: 'center' }}>
                     <Play size={14} /> START SESSION ({recommendation.recommendedDuration || 60}m)
-                  </a>
-                  <a href="/planner" className="btn btn-ghost" style={{ flex: 1, textAlign: 'center', justifyContent: 'center' }}>
+                  </Link>
+                  <Link to="/planner" className="btn btn-ghost" style={{ flex: 1, textAlign: 'center', justifyContent: 'center' }}>
                     SCHEDULE IN PLANNER
-                  </a>
+                  </Link>
                 </div>
               </div>
             )}
@@ -435,9 +436,9 @@ export default function Dashboard() {
               <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Calendar size={16} /> TODAY'S ROUTINE ({tasks.length + (teachingSlots.filter((s) => s.active).length)} blocks)
               </div>
-              <a href="/planner" className="btn btn-sm btn-ghost">
+              <Link to="/planner" className="btn btn-sm btn-ghost">
                 Open Planner <ChevronRight size={12} />
-              </a>
+              </Link>
             </div>
 
             {(() => {
@@ -607,9 +608,9 @@ export default function Dashboard() {
               <div className="card-title">
                 <Clock size={16} /> Completed Session Logs ({todaySessions.length})
               </div>
-              <a href="/sessions" className="btn btn-sm btn-ghost">
+              <Link to="/sessions" className="btn btn-sm btn-ghost">
                 Session Timer <ChevronRight size={12} />
-              </a>
+              </Link>
             </div>
 
             {todaySessions.length === 0 ? (
@@ -641,9 +642,9 @@ export default function Dashboard() {
               <div className="card-title">
                 <RotateCcw size={16} /> Adaptive Revisions Due ({filteredRevisions.length})
               </div>
-              <a href="/revision" className="btn btn-sm btn-ghost">
+              <Link to="/revision" className="btn btn-sm btn-ghost">
                 View All <ChevronRight size={12} />
-              </a>
+              </Link>
             </div>
 
             {filteredRevisions.length === 0 ? (
@@ -698,9 +699,9 @@ export default function Dashboard() {
               <div className="card-title">
                 <BookOpen size={16} /> Syllabus Progress
               </div>
-              <a href="/preparation" className="btn btn-sm btn-ghost">
+              <Link to="/preparation" className="btn btn-sm btn-ghost">
                 Syllabus Map <ChevronRight size={12} />
-              </a>
+              </Link>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -732,9 +733,9 @@ export default function Dashboard() {
                     ) : (
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
                         <span style={{ fontSize: 11, color: 'var(--text-3)', fontStyle: 'italic' }}>No syllabus mapped yet</span>
-                        <a href="/preparation" style={{ fontSize: 11, color: area.color, fontWeight: 600 }}>
+                        <Link to="/preparation" style={{ fontSize: 11, color: area.color, fontWeight: 600 }}>
                           + Map Syllabus →
-                        </a>
+                        </Link>
                       </div>
                     )}
                   </div>
@@ -763,7 +764,7 @@ export default function Dashboard() {
                       <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>{topic.name}</div>
                       <div style={{ fontSize: 10, color: 'var(--danger)' }}>{count} errors recorded · {perf.label}</div>
                     </div>
-                    <a href="/preparation" className="btn btn-xs btn-ghost">Focus</a>
+                    <Link to="/preparation" className="btn btn-xs btn-ghost">Focus</Link>
                   </div>
                 ))}
               </div>
@@ -777,9 +778,9 @@ export default function Dashboard() {
                 <div className="card-title">
                   <BarChart3 size={16} /> Latest Mock Performance
                 </div>
-                <a href="/mocks" className="btn btn-sm btn-ghost">
+                <Link to="/mock-tests" className="btn btn-sm btn-ghost">
                   All Mocks <ChevronRight size={12} />
-                </a>
+                </Link>
               </div>
 
               {(() => {
@@ -816,9 +817,9 @@ export default function Dashboard() {
                   <span className="badge badge-warning">{todayVocab.length}/10 today</span>
                 )}
               </div>
-              <a href="/vocabulary" className="btn btn-sm btn-ghost">
+              <Link to="/vocabulary" className="btn btn-sm btn-ghost">
                 Add Words <ChevronRight size={12} />
-              </a>
+              </Link>
             </div>
 
             {/* Progress bar — only counts TODAY's words */}
@@ -880,9 +881,9 @@ export default function Dashboard() {
               <div className="card-title">
                 📖 Today's Gita Shloka
               </div>
-              <a href="/gita-shloka" className="btn btn-sm btn-ghost">
+              <Link to="/gita-shloka" className="btn btn-sm btn-ghost">
                 {todayGita ? 'View Shloka' : '+ Add Today\'s Shloka'} <ChevronRight size={12} />
-              </a>
+              </Link>
             </div>
 
             {todayGita ? (
@@ -913,9 +914,9 @@ export default function Dashboard() {
                 <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 8 }}>
                   No shloka added today.
                 </div>
-                <a href="/gita-shloka" className="btn btn-sm btn-primary">
+                <Link to="/gita-shloka" className="btn btn-sm btn-primary">
                   + Add Today's Shloka
-                </a>
+                </Link>
               </div>
             )}
           </div>

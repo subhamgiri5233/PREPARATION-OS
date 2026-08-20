@@ -2,6 +2,7 @@
 // Detailed Mock & Weakness Analytics driven 100% by genuine user database entries
 
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { getAllMocks, getMockSubjectResults, getAllSubjects, getAllAreas, getAllTopics, getErrorLogs } from '../services/db';
 import { analyzeSubjectWiseMocks, calculateAccuracy, getWeakSubjects } from '../services/analyticsService';
 import { getErrorTypeDistribution, detectRepeatedErrors } from '../services/errorAnalysisEngine';
@@ -145,7 +146,7 @@ export default function Analytics() {
             <div style={{ fontSize: 13, color: 'var(--text-2)', maxWidth: 420, margin: '6px auto 16px' }}>
               Add completed mock test scores and question error logs in the Mock Tests page to unlock score trends and weakness analytics.
             </div>
-            <a href="/mock-tests" className="btn btn-primary btn-sm">Go to Mock Tests</a>
+            <Link to="/mock-tests" className="btn btn-primary btn-sm">Go to Mock Tests</Link>
           </div>
         </div>
       ) : (
@@ -274,9 +275,9 @@ export default function Analytics() {
                           Mistakes repeated across {re.mockCount} different mock tests.
                         </div>
                       </div>
-                      <a href="/revision" className="btn btn-xs btn-ghost" style={{ fontWeight: 700 }}>
+                      <Link to="/revision" className="btn btn-xs btn-ghost" style={{ fontWeight: 700 }}>
                         Revise
-                      </a>
+                      </Link>
                     </div>
                   ))}
                 </div>
