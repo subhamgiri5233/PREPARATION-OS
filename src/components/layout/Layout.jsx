@@ -7,7 +7,6 @@ import BottomNav from './BottomNav';
 import InstallAppBanner from '../InstallAppBanner';
 import LoginModal from '../LoginModal';
 import ViewOnlyModal from '../ViewOnlyModal';
-import LoginPage from '../../pages/LoginPage';
 import { useAppStore } from '../../store/useAppStore';
 import { useAuthStore } from '../../store/useAuthStore';
 
