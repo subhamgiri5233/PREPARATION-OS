@@ -1,6 +1,6 @@
 // src/App.jsx
 // High Performance Client-Side Routing with Route-Level Code Splitting (React.lazy),
-// In-Memory Cached Data Layer, Error Boundaries, and Optimized Startup.
+// In-Memory Cached Data Layer, Instant Startup, and Error Boundaries.
 
 import React, { useEffect, useState, Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
@@ -44,7 +44,7 @@ function PageFallback() {
       color: 'var(--text-3)'
     }}>
       <div className="spinner" style={{ width: 28, height: 28 }} />
-      <div style={{ fontSize: 12 }}>Loading view…</div>
+      <div style={{ fontSize: 12 }}>Loading…</div>
     </div>
   );
 }
@@ -141,22 +141,15 @@ async function generateDailyNotifications() {
 export default function App() {
   const {
     setPreparationAreas, setCourses, setSubjects, setChapters, setTopics, setStudyResources, setSettings,
-    setTeachingSchedule, setUnreadCount, setDbReady, isDbReady
+    setTeachingSchedule, setUnreadCount, setDbReady
   } = useAppStore();
 
-  const [apiError, setApiError] = useState(false);
-
   useEffect(() => {
+    // Non-blocking background initialization
     async function init() {
       try {
-        await initializeDatabase();
-      } catch (e) {
-        console.error('[App] API server unreachable:', e.message);
-        setApiError(true);
-        return;
-      }
+        initializeDatabase().catch(() => {});
 
-      try {
         // Load global data in parallel using cached apiFetch
         const [areas, courses, subjects, chapters, topics, resources, settings, schedule, unread] = await Promise.all([
           getAllAreas(),
@@ -187,55 +180,12 @@ export default function App() {
           startReminderScheduler();
         }).catch((err) => console.warn('[App] ReminderScheduler error:', err));
       } catch (e) {
-        console.error('[App] Failed to load initial data:', e.message);
-        // Still allow app to open with partial data
+        console.warn('[App] Background data sync:', e.message);
         setDbReady(true);
       }
     }
     init();
   }, []);
-
-  if (apiError) {
-    return (
-      <div style={{
-        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        height: '100vh', gap: 12, background: '#0f0f1a', color: '#fff', textAlign: 'center', padding: 24,
-      }}>
-        <div style={{ fontSize: 48 }}>⚡</div>
-        <div style={{ fontSize: 22, fontWeight: 700 }}>API Server Offline</div>
-        <div style={{ fontSize: 14, color: '#94a3b8', maxWidth: 380 }}>
-          The backend server is not running. Please start it with:<br />
-          <code style={{ background: '#1e1e3a', padding: '6px 12px', borderRadius: 6, display: 'inline-block', marginTop: 10, fontSize: 13 }}>
-            npm run dev
-          </code>
-        </div>
-        <button
-          onClick={() => { setApiError(false); window.location.reload(); }}
-          style={{ marginTop: 8, padding: '10px 24px', borderRadius: 8, background: '#6366f1', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 600 }}
-        >
-          Retry
-        </button>
-      </div>
-    );
-  }
-
-  if (!isDbReady) {
-    return (
-      <div style={{
-        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        height: '100vh', gap: 16, background: 'var(--bg)',
-      }}>
-        <div style={{
-          width: 54, height: 54, borderRadius: 12,
-          background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 26, marginBottom: 4,
-        }}>🎯</div>
-        <div style={{ fontSize: 18, fontWeight: 700 }}>Preparation OS</div>
-        <div className="spinner" style={{ width: 28, height: 28 }} />
-      </div>
-    );
-  }
 
   return (
     <BrowserRouter>

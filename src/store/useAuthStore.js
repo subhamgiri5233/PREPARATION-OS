@@ -3,13 +3,15 @@ import { getAuthStatus, loginWithPin, verifyAuthToken, logoutUser } from '../ser
 import { authenticateWithPasskey, registerPasskeyCredential, checkBiometricSupport } from '../services/webauthnService.js';
 import { setEditModeAuthorized } from '../services/mutationGuard.js';
 
+const initialToken = typeof localStorage !== 'undefined' ? localStorage.getItem('prepos_auth_token') : null;
+
 export const useAuthStore = create((set, get) => ({
   // ── LAYER 1: APP LOGIN AUTHENTICATION ────────────────────────────────
-  isAppAuthenticated: false,
-  isAuthenticated: false, // alias for router & app state
-  token: typeof localStorage !== 'undefined' ? localStorage.getItem('prepos_auth_token') : null,
-  isCheckingSession: true,
-  isChecking: true,
+  isAppAuthenticated: !!initialToken,
+  isAuthenticated: !!initialToken, // Optimistic instant shell if token exists
+  token: initialToken,
+  isCheckingSession: !initialToken ? false : true,
+  isChecking: !initialToken ? false : true,
   isBiometricSupported: false,
   hasPasskeys: false,
 
@@ -22,61 +24,50 @@ export const useAuthStore = create((set, get) => ({
   pinError: '',
 
   /**
-   * Initializes session and WebAuthn status on application mount
+   * Initializes session and WebAuthn status on application mount (non-blocking fast-path)
    */
   checkAuth: async () => {
     // 1. Ensure Edit Mode ALWAYS starts in View Only
     setEditModeAuthorized(false);
     set({ isEditMode: false });
 
-    // 2. Check device biometric support
-    try {
-      const bioSupported = await checkBiometricSupport();
-      set({ isBiometricSupported: !!bioSupported });
-    } catch {
-      set({ isBiometricSupported: false });
-    }
-
-    // 3. Verify server session / token
     const token = typeof localStorage !== 'undefined' ? localStorage.getItem('prepos_auth_token') : null;
-    let authValid = false;
-    let authStatus = null;
 
+    // Fast parallel check: verify token & get auth status concurrently
     try {
-      authStatus = await getAuthStatus();
-      if (token) {
-        const verifyRes = await verifyAuthToken(token);
-        if (verifyRes && verifyRes.valid) {
-          authValid = true;
-        } else {
-          // Token invalid or expired — clear it
-          if (typeof localStorage !== 'undefined') localStorage.removeItem('prepos_auth_token');
-        }
-      }
-    } catch (err) {
-      console.warn('[useAuthStore] checkAuth: server unreachable, defaulting to unauthenticated (secure):', err.message || err);
-      // SECURITY: Do NOT auto-authenticate when server is unreachable.
-      // If we cannot verify the token server-side, treat as unauthenticated.
-      // This prevents bypass via offline/cold-start scenarios.
-      authValid = false;
-      if (typeof localStorage !== 'undefined') localStorage.removeItem('prepos_auth_token');
-    }
+      const [bioSupported, authStatus, verifyRes] = await Promise.all([
+        checkBiometricSupport().catch(() => false),
+        getAuthStatus().catch(() => null),
+        token ? verifyAuthToken(token).catch(() => ({ valid: false })) : Promise.resolve({ valid: false })
+      ]);
 
-    set({
-      isAppAuthenticated: authValid,
-      isAuthenticated: authValid,
-      isCheckingSession: false,
-      isChecking: false,
-      isConfigured: authStatus ? authStatus.isConfigured : true,
-      hasPasskeys: authStatus ? authStatus.hasPasskeys : false,
-      privacyMode: authStatus?.privacyMode || 'privacy',
-      ownerName: authStatus?.ownerName || 'Subham',
-    });
+      const authValid = token ? !!verifyRes?.valid : false;
+      if (token && !authValid) {
+        if (typeof localStorage !== 'undefined') localStorage.removeItem('prepos_auth_token');
+      }
+
+      set({
+        isBiometricSupported: !!bioSupported,
+        isAppAuthenticated: authValid,
+        isAuthenticated: authValid,
+        isCheckingSession: false,
+        isChecking: false,
+        isConfigured: authStatus ? authStatus.isConfigured : true,
+        hasPasskeys: authStatus ? authStatus.hasPasskeys : false,
+        privacyMode: authStatus?.privacyMode || 'privacy',
+        ownerName: authStatus?.ownerName || 'Subham',
+      });
+    } catch (err) {
+      console.warn('[useAuthStore] checkAuth error:', err.message || err);
+      set({
+        isCheckingSession: false,
+        isChecking: false,
+      });
+    }
   },
 
   /**
    * LAYER 1: Login using WebAuthn / Passkey (Biometric)
-   * Note: Successful biometric login enters strictly in VIEW ONLY mode.
    */
   loginWithPasskey: async () => {
     try {
@@ -85,153 +76,126 @@ export const useAuthStore = create((set, get) => ({
         if (typeof localStorage !== 'undefined') {
           localStorage.setItem('prepos_auth_token', res.token);
         }
-        // Biometric login authenticates app access, but starts strictly in View Only mode
         setEditModeAuthorized(false);
         set({
+          token: res.token,
           isAppAuthenticated: true,
           isAuthenticated: true,
-          token: res.token,
           isEditMode: false,
           ownerName: res.ownerName || 'Subham',
-          privacyMode: res.privacyMode || 'privacy',
+          pinError: ''
         });
-        return res;
+        return { success: true };
       }
-      throw new Error('Biometric authentication failed.');
+      return { success: false, error: 'Authentication failed' };
     } catch (err) {
-      throw err;
+      return { success: false, error: err.message || 'Passkey authentication failed' };
     }
   },
 
   /**
-   * LAYER 1: First-time or Settings Passkey Registration
+   * LAYER 1: Login using PIN
    */
-  registerPasskey: async (deviceName = 'My Device Passkey') => {
-    try {
-      const res = await registerPasskeyCredential(deviceName);
-      if (res && res.verified) {
-        set({ hasPasskeys: true });
-        if (res.token && typeof localStorage !== 'undefined') {
-          localStorage.setItem('prepos_auth_token', res.token);
-          set({ isAppAuthenticated: true, isAuthenticated: true, token: res.token });
-        }
-      }
-      return res;
-    } catch (err) {
-      throw err;
-    }
-  },
-
-  /**
-   * LAYER 1: PIN Fallback for App Login
-   * Enters in View Only mode.
-   */
-  loginWithPinFallback: async (pin) => {
+  loginWithPin: async (pin) => {
     try {
       const res = await loginWithPin(pin);
-      if (res && res.success && res.token) {
+      if (res && res.token) {
         if (typeof localStorage !== 'undefined') {
           localStorage.setItem('prepos_auth_token', res.token);
         }
         setEditModeAuthorized(false);
         set({
+          token: res.token,
           isAppAuthenticated: true,
           isAuthenticated: true,
-          token: res.token,
           isEditMode: false,
           ownerName: res.ownerName || 'Subham',
-          privacyMode: res.privacyMode || 'privacy',
+          pinError: ''
         });
-        return res;
+        return { success: true };
       }
-      throw new Error('Incorrect PIN. Please try again.');
+      return { success: false, error: 'Invalid PIN' };
     } catch (err) {
-      throw new Error('Incorrect PIN. Please try again.');
+      return { success: false, error: err.message || 'Login failed' };
     }
   },
 
   /**
-   * LAYER 2: Request Edit Mode (Requires PIN)
+   * LAYER 2: Unlock Edit Mode using Master PIN
    */
-  requestEditMode: () => {
-    set({ showPinModal: true, pinError: '' });
+  unlockEditMode: async (pin) => {
+    try {
+      const res = await loginWithPin(pin);
+      if (res && res.token) {
+        setEditModeAuthorized(true);
+        set({
+          isEditMode: true,
+          showPinModal: false,
+          pinError: ''
+        });
+        return { success: true };
+      }
+      set({ pinError: 'Invalid PIN' });
+      return { success: false, error: 'Invalid PIN' };
+    } catch (err) {
+      const msg = err.message || 'Verification failed';
+      set({ pinError: msg });
+      return { success: false, error: msg };
+    }
   },
 
-  cancelEditMode: () => {
-    set({ showPinModal: false, pinError: '' });
+  /**
+   * LAYER 2: Lock back to View Only Mode
+   */
+  lock: () => {
+    setEditModeAuthorized(false);
+    set({ isEditMode: false, showPinModal: false, pinError: '' });
   },
 
   toggleEditMode: () => {
     const { isEditMode } = get();
     if (isEditMode) {
-      get().disableEditMode();
-    } else {
-      get().requestEditMode();
-    }
-  },
-
-  /**
-   * LAYER 2: Unlock Edit Mode with PIN
-   */
-  login: async (pin) => {
-    try {
-      set({ pinError: '' });
-      const res = await loginWithPin(pin);
-      if (res && res.success) {
-        setEditModeAuthorized(true);
-        set({
-          isEditMode: true,
-          showPinModal: false,
-          pinError: '',
-          ownerName: res.ownerName || 'Subham',
-          privacyMode: res.privacyMode || 'privacy',
-        });
-        return res;
-      }
-      throw new Error('Incorrect PIN. Edit Mode remains disabled.');
-    } catch (err) {
       setEditModeAuthorized(false);
-      set({
-        isEditMode: false,
-        pinError: 'Incorrect PIN. Edit Mode remains disabled.',
-      });
-      throw new Error('Incorrect PIN. Edit Mode remains disabled.');
+      set({ isEditMode: false });
+    } else {
+      set({ showPinModal: true, pinError: '' });
     }
   },
 
-  disableEditMode: () => {
-    setEditModeAuthorized(false);
-    set({
-      isEditMode: false,
-      showPinModal: false,
-      pinError: '',
-    });
-  },
+  openLoginModal: () => set({ showPinModal: true, pinError: '' }),
+  closePinModal: () => set({ showPinModal: false, pinError: '' }),
 
   /**
-   * Complete Logout: invalidates session and returns to login screen
+   * Full App Logout
    */
   logout: async () => {
     try {
       await logoutUser();
-    } catch {
-      // ignore
-    }
+    } catch (_) {}
     if (typeof localStorage !== 'undefined') {
       localStorage.removeItem('prepos_auth_token');
     }
     setEditModeAuthorized(false);
     set({
+      token: null,
       isAppAuthenticated: false,
       isAuthenticated: false,
-      token: null,
       isEditMode: false,
       showPinModal: false,
+      pinError: ''
     });
   },
 
-  // Aliases for backwards compatibility
-  lock: () => get().logout(),
-  openLoginModal: () => get().requestEditMode(),
-  closeLoginModal: () => get().cancelEditMode(),
+  registerPasskey: async () => {
+    try {
+      const res = await registerPasskeyCredential();
+      if (res && res.verified) {
+        set({ hasPasskeys: true });
+        return { success: true };
+      }
+      return { success: false, error: 'Registration could not be completed' };
+    } catch (err) {
+      return { success: false, error: err.message || 'Passkey registration failed' };
+    }
+  }
 }));
