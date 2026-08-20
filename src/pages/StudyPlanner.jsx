@@ -2,7 +2,19 @@
 // Phase 9: Final Smart Daily Routine, Editable Schedule & Smart Reminders
 
 import { useEffect, useState } from 'react';
-import { format, addDays, startOfWeek, eachDayOfInterval, isSameDay, parseISO } from 'date-fns';
+import {
+  format,
+  addDays,
+  addMonths,
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
+  isSameDay,
+  isSameMonth,
+  parseISO
+} from 'date-fns';
 import {
   Plus, X, ChevronLeft, ChevronRight, Clock, AlertTriangle,
   Lock, Unlock, Edit3, Trash2, CheckCircle2, Sparkles, User, Zap, RefreshCw, ShieldCheck
@@ -73,8 +85,17 @@ export default function StudyPlanner() {
   };
 
   const loadTasks = async () => {
-    const start = view === 'week' ? startOfWeek(currentDate) : currentDate;
-    const end = view === 'week' ? addDays(startOfWeek(currentDate), 6) : currentDate;
+    let start, end;
+    if (view === 'month') {
+      start = startOfWeek(startOfMonth(currentDate));
+      end = endOfWeek(endOfMonth(currentDate));
+    } else if (view === 'week') {
+      start = startOfWeek(currentDate);
+      end = addDays(startOfWeek(currentDate), 6);
+    } else {
+      start = currentDate;
+      end = currentDate;
+    }
     const days = eachDayOfInterval({ start, end });
     const taskArrays = await Promise.all(days.map((d) => getTasksByDate(format(d, 'yyyy-MM-dd'))));
     setTasks(taskArrays.flat());
@@ -387,7 +408,7 @@ export default function StudyPlanner() {
             <Zap size={14} /> {isGenerating ? 'Optimizing...' : 'Optimize My Day'}
           </button>
           <div className="tabs">
-            {['day', 'week'].map((v) => (
+            {['day', 'week', 'month'].map((v) => (
               <button key={v} className={`tab ${view === v ? 'active' : ''}`} onClick={() => setView(v)}>
                 {v.charAt(0).toUpperCase() + v.slice(1)}
               </button>
@@ -429,15 +450,17 @@ export default function StudyPlanner() {
 
       {/* Navigation */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-        <button className="btn btn-ghost btn-icon" onClick={() => setCurrentDate((d) => view === 'week' ? addDays(d, -7) : addDays(d, -1))}>
+        <button className="btn btn-ghost btn-icon" onClick={() => setCurrentDate((d) => view === 'month' ? addMonths(d, -1) : view === 'week' ? addDays(d, -7) : addDays(d, -1))}>
           <ChevronLeft size={16} />
         </button>
         <span style={{ fontSize: 15, fontWeight: 700 }}>
-          {view === 'week'
+          {view === 'month'
+            ? format(currentDate, 'MMMM yyyy')
+            : view === 'week'
             ? `${format(weekStart, 'MMM d')} – ${format(addDays(weekStart, 6), 'MMM d, yyyy')}`
             : format(currentDate, 'EEEE, MMMM d, yyyy')}
         </span>
-        <button className="btn btn-ghost btn-icon" onClick={() => setCurrentDate((d) => view === 'week' ? addDays(d, 7) : addDays(d, 1))}>
+        <button className="btn btn-ghost btn-icon" onClick={() => setCurrentDate((d) => view === 'month' ? addMonths(d, 1) : view === 'week' ? addDays(d, 7) : addDays(d, 1))}>
           <ChevronRight size={16} />
         </button>
         <button className="btn btn-ghost btn-sm" onClick={() => setCurrentDate(new Date())}>Today</button>
@@ -709,6 +732,35 @@ export default function StudyPlanner() {
           tasks={getTasksForDate(format(currentDate, 'yyyy-MM-dd'))}
           teachingBlocks={getTeachingBlocksForDay(currentDate.getDay())}
           onAddTask={() => handleOpenAdd(format(currentDate, 'yyyy-MM-dd'))}
+          onEditTask={handleOpenEdit}
+          onToggleLock={handleToggleLock}
+          onCompleteTask={async (taskId) => {
+            if (!canEdit()) {
+              requireEditPermission('complete task');
+              return;
+            }
+            await updateTask(taskId, { status: 'Completed', completedAt: new Date().toISOString() });
+            loadTasks();
+          }}
+          onDeleteTask={async (taskId) => {
+            if (!canEdit()) {
+              requireEditPermission('delete task');
+              return;
+            }
+            await deleteTask(taskId);
+            loadTasks();
+          }}
+        />
+      )}
+
+      {/* Month View */}
+      {view === 'month' && (
+        <MonthView
+          currentDate={currentDate}
+          getTasksForDate={getTasksForDate}
+          getTeachingBlocksForDay={getTeachingBlocksForDay}
+          onSelectDate={(day) => setCurrentDate(day)}
+          onAddTask={handleOpenAdd}
           onEditTask={handleOpenEdit}
           onToggleLock={handleToggleLock}
           onCompleteTask={async (taskId) => {
@@ -1102,6 +1154,327 @@ function DayView({ date, tasks, teachingBlocks, onAddTask, onEditTask, onToggleL
             </div>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+function MonthView({
+  currentDate,
+  getTasksForDate,
+  getTeachingBlocksForDay,
+  onSelectDate,
+  onAddTask,
+  onEditTask,
+  onToggleLock,
+  onCompleteTask,
+  onDeleteTask,
+}) {
+  const monthStart = startOfMonth(currentDate);
+  const monthEnd = endOfMonth(currentDate);
+  const startDate = startOfWeek(monthStart);
+  const endDate = endOfWeek(monthEnd);
+  const calendarDays = eachDayOfInterval({ start: startDate, end: endDate });
+
+  const selectedDateStr = format(currentDate, 'yyyy-MM-dd');
+  const selectedDayTasks = getTasksForDate(selectedDateStr);
+  const selectedTeachingBlocks = getTeachingBlocksForDay(currentDate.getDay());
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {/* Desktop Calendar Grid */}
+      <div className="desktop-only" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {/* Day of Week Headers */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 8, textAlign: 'center' }}>
+          {DAY_NAMES.map((name, idx) => (
+            <div
+              key={name}
+              style={{
+                padding: '8px 4px',
+                fontSize: 12,
+                fontWeight: 700,
+                color: idx === 0 || idx === 6 ? 'var(--primary-light)' : 'var(--text-2)',
+                background: 'var(--surface-2)',
+                borderRadius: 'var(--radius-sm)',
+                border: '1px solid var(--border)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+              }}
+            >
+              {name}
+            </div>
+          ))}
+        </div>
+
+        {/* 7-Column Month Days Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 8 }}>
+          {calendarDays.map((day) => {
+            const dateStr = format(day, 'yyyy-MM-dd');
+            const dayOfWeek = day.getDay();
+            const dayTasks = getTasksForDate(dateStr);
+            const teachingBlocks = getTeachingBlocksForDay(dayOfWeek);
+            const isCurrentMonth = isSameMonth(day, currentDate);
+            const isToday = isSameDay(day, new Date());
+            const isSelected = isSameDay(day, currentDate);
+
+            return (
+              <div
+                key={dateStr}
+                onClick={() => onSelectDate(day)}
+                style={{
+                  background: isToday
+                    ? 'var(--primary-glass)'
+                    : isSelected
+                    ? 'var(--surface-2)'
+                    : 'var(--card)',
+                  border: `1px solid ${
+                    isToday
+                      ? 'var(--primary)'
+                      : isSelected
+                      ? 'var(--border-accent)'
+                      : 'var(--border)'
+                  }`,
+                  borderRadius: 'var(--radius)',
+                  padding: 8,
+                  minHeight: 140,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  opacity: isCurrentMonth ? 1 : 0.45,
+                  cursor: 'pointer',
+                  position: 'relative',
+                  transition: 'background 0.15s ease, border-color 0.15s ease',
+                }}
+              >
+                {/* Header inside cell */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span
+                      style={{
+                        fontSize: 13,
+                        fontWeight: isToday ? 800 : 700,
+                        color: isToday ? '#fff' : isCurrentMonth ? 'var(--text)' : 'var(--text-3)',
+                        width: 22,
+                        height: 22,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        borderRadius: '50%',
+                        background: isToday ? 'var(--primary)' : 'transparent',
+                      }}
+                    >
+                      {format(day, 'd')}
+                    </span>
+                    {dayTasks.length > 0 && (
+                      <span
+                        className="badge"
+                        style={{
+                          fontSize: 9,
+                          padding: '1px 5px',
+                          background: 'var(--surface-3)',
+                          color: 'var(--text-2)',
+                        }}
+                      >
+                        {dayTasks.length}
+                      </span>
+                    )}
+                  </div>
+
+                  <button
+                    className="btn btn-ghost btn-icon btn-xs"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onAddTask(dateStr);
+                    }}
+                    title={`Add task for ${dateStr}`}
+                    style={{ padding: 2, height: 20, width: 20 }}
+                  >
+                    <Plus size={12} />
+                  </button>
+                </div>
+
+                {/* Teaching slots badge */}
+                {teachingBlocks.length > 0 && (
+                  <div
+                    style={{
+                      background: 'var(--warning-glass)',
+                      border: '1px solid var(--warning)',
+                      borderRadius: 'var(--radius-sm)',
+                      padding: '2px 4px',
+                      marginBottom: 4,
+                      fontSize: 9,
+                      color: 'var(--warning)',
+                      fontWeight: 600,
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}
+                    title={teachingBlocks.map((b) => `${b.startTime}–${b.endTime} (${b.label || 'Teaching'})`).join(', ')}
+                  >
+                    🏫 {teachingBlocks[0].startTime}–{teachingBlocks[0].endTime}
+                    {teachingBlocks.length > 1 ? ` (+${teachingBlocks.length - 1})` : ''}
+                  </div>
+                )}
+
+                {/* Tasks list */}
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3, overflow: 'hidden' }}>
+                  {dayTasks.slice(0, 3).map((task) => {
+                    const isLocked = !!task.isLocked;
+                    const isDone = task.status === 'Completed';
+                    const displayTitle = task.topicName || task.title;
+
+                    return (
+                      <div
+                        key={task.id || task._id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEditTask(task);
+                        }}
+                        style={{
+                          background: isDone ? 'var(--success-glass)' : 'var(--surface-2)',
+                          border: `1px solid ${isDone ? 'var(--success)' : isLocked ? '#ef4444' : 'var(--border)'}`,
+                          borderRadius: 'var(--radius-sm)',
+                          padding: '3px 6px',
+                          fontSize: 10,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: 4,
+                          cursor: 'pointer',
+                        }}
+                        title={`${displayTitle} (${task.startTime}–${task.endTime})`}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                          {isDone ? (
+                            <CheckCircle2 size={10} color="var(--success)" style={{ flexShrink: 0 }} />
+                          ) : isLocked ? (
+                            <Lock size={9} color="#ef4444" style={{ flexShrink: 0 }} />
+                          ) : null}
+                          <span style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', textDecoration: isDone ? 'line-through' : 'none' }}>
+                            {displayTitle}
+                          </span>
+                        </div>
+                        <span style={{ fontSize: 9, color: 'var(--text-3)', flexShrink: 0 }}>
+                          {task.startTime}
+                        </span>
+                      </div>
+                    );
+                  })}
+                  {dayTasks.length > 3 && (
+                    <div
+                      style={{
+                        fontSize: 9,
+                        color: 'var(--primary-light)',
+                        fontWeight: 700,
+                        textAlign: 'center',
+                        padding: '1px 0',
+                      }}
+                    >
+                      +{dayTasks.length - 3} more
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  style={{
+                    width: '100%',
+                    padding: '2px',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px dashed var(--border)',
+                    background: 'transparent',
+                    color: 'var(--text-3)',
+                    fontSize: 10,
+                    cursor: 'pointer',
+                    marginTop: 4,
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAddTask(dateStr);
+                  }}
+                >
+                  + Add Task
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Mobile Month View */}
+      <div className="mobile-only" style={{ display: 'flex', flexDirection: 'column', gap: 14, width: '100%' }}>
+        {/* Month Calendar Mini-Grid */}
+        <div className="card" style={{ padding: 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, textAlign: 'center', marginBottom: 6 }}>
+            {DAY_NAMES.map((name) => (
+              <div key={name} style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-3)' }}>
+                {name.slice(0, 1)}
+              </div>
+            ))}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
+            {calendarDays.map((day) => {
+              const dateStr = format(day, 'yyyy-MM-dd');
+              const dayTasks = getTasksForDate(dateStr);
+              const teachingBlocks = getTeachingBlocksForDay(day.getDay());
+              const isCurrentMonth = isSameMonth(day, currentDate);
+              const isToday = isSameDay(day, new Date());
+              const isSelected = isSameDay(day, currentDate);
+
+              return (
+                <button
+                  key={dateStr}
+                  onClick={() => onSelectDate(day)}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '6px 2px',
+                    borderRadius: 'var(--radius-sm)',
+                    background: isSelected
+                      ? 'var(--primary)'
+                      : isToday
+                      ? 'var(--primary-glass)'
+                      : 'transparent',
+                    border: `1px solid ${isSelected ? 'var(--primary)' : isToday ? 'var(--border-accent)' : 'transparent'}`,
+                    color: isSelected
+                      ? '#fff'
+                      : isToday
+                      ? 'var(--primary-light)'
+                      : isCurrentMonth
+                      ? 'var(--text)'
+                      : 'var(--text-3)',
+                    cursor: 'pointer',
+                    minHeight: 44,
+                  }}
+                >
+                  <span style={{ fontSize: 12, fontWeight: isToday || isSelected ? 800 : 500 }}>
+                    {format(day, 'd')}
+                  </span>
+                  <div style={{ display: 'flex', gap: 2, marginTop: 2, height: 4 }}>
+                    {dayTasks.length > 0 && (
+                      <span style={{ width: 4, height: 4, borderRadius: '50%', background: isSelected ? '#fff' : 'var(--primary-light)' }} />
+                    )}
+                    {teachingBlocks.length > 0 && (
+                      <span style={{ width: 4, height: 4, borderRadius: '50%', background: isSelected ? '#fef08a' : 'var(--warning)' }} />
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Selected Date Detail on Mobile */}
+        <DayView
+          date={currentDate}
+          tasks={selectedDayTasks}
+          teachingBlocks={selectedTeachingBlocks}
+          onAddTask={() => onAddTask(selectedDateStr)}
+          onEditTask={onEditTask}
+          onToggleLock={onToggleLock}
+          onCompleteTask={onCompleteTask}
+          onDeleteTask={onDeleteTask}
+        />
       </div>
     </div>
   );
