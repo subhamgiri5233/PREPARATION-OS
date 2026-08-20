@@ -805,32 +805,68 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* MODULE 6: DAILY VOCABULARY */}
+          {/* MODULE 6: DAILY VOCABULARY — today-only count, resets at midnight */}
           <div className="card">
-            <div className="card-header" style={{ marginBottom: 10 }}>
+            <div className="card-header" style={{ marginBottom: 12 }}>
               <div className="card-title">
                 <BookMarked size={16} /> Daily Vocabulary
-                <span className={`badge ${todayVocab.length >= 10 ? 'badge-success' : 'badge-warning'}`}>
-                  {todayVocab.length}/10 words
-                </span>
+                {todayVocab.length >= 10 ? (
+                  <span className="badge badge-success">✅ Goal Done</span>
+                ) : (
+                  <span className="badge badge-warning">{todayVocab.length}/10 today</span>
+                )}
               </div>
               <a href="/vocabulary" className="btn btn-sm btn-ghost">
-                Practice <ChevronRight size={12} />
+                Add Words <ChevronRight size={12} />
               </a>
             </div>
 
+            {/* Progress bar — only counts TODAY's words */}
+            <div style={{ marginBottom: 10 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-3)', marginBottom: 4 }}>
+                <span>Today's Goal</span>
+                <span style={{ fontWeight: 700, color: todayVocab.length >= 10 ? 'var(--success)' : 'var(--text-2)' }}>
+                  {todayVocab.length} / 10 words
+                </span>
+              </div>
+              <div style={{ height: 6, background: 'var(--surface-2)', borderRadius: 3, overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%',
+                  width: `${Math.min(100, (todayVocab.length / 10) * 100)}%`,
+                  background: todayVocab.length >= 10
+                    ? 'linear-gradient(90deg, #22c55e, #4ade80)'
+                    : 'linear-gradient(90deg, var(--primary), var(--primary-light))',
+                  borderRadius: 3,
+                  transition: 'width 0.4s ease',
+                }} />
+              </div>
+              {todayVocab.length < 10 && (
+                <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 4 }}>
+                  {10 - todayVocab.length} word{10 - todayVocab.length !== 1 ? 's' : ''} remaining — resets tomorrow at midnight
+                </div>
+              )}
+            </div>
+
             {todayVocab.length === 0 ? (
-              <div style={{ padding: '16px', textAlign: 'center', color: 'var(--text-3)', fontSize: 12 }}>
-                No words learned today yet. Add 10 words to maintain your vocabulary target!
+              <div style={{ textAlign: 'center', color: 'var(--text-3)', fontSize: 12, padding: '8px 0' }}>
+                No words added today yet. Start learning!
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {todayVocab.slice(0, 3).map((v) => (
-                  <div key={v.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 10px', background: 'var(--surface)', borderRadius: 'var(--radius-sm)', fontSize: 12 }}>
-                    <strong>{v.word}</strong>
-                    <span style={{ color: 'var(--text-2)' }}>{v.meaning}</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {todayVocab.slice(0, 3).map((v, i) => (
+                  <div key={v._id || v.id || i} style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    padding: '5px 10px', background: 'var(--surface)', borderRadius: 'var(--radius-sm)', fontSize: 12
+                  }}>
+                    <strong style={{ color: 'var(--primary-light)' }}>{v.word}</strong>
+                    <span style={{ color: 'var(--text-2)', fontSize: 11 }}>{v.bengaliMeaning || v.meaning}</span>
                   </div>
                 ))}
+                {todayVocab.length > 3 && (
+                  <div style={{ fontSize: 11, color: 'var(--text-3)', textAlign: 'center', paddingTop: 2 }}>
+                    +{todayVocab.length - 3} more words today
+                  </div>
+                )}
               </div>
             )}
           </div>

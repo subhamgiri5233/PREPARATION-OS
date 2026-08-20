@@ -263,8 +263,10 @@ export async function bulkAddMockSubjectResults(results) {
 export async function getAllVocab() {
   return await apiFetch('/vocabulary');
 }
+// getVocabByDate: returns ONLY words added on the given date (YYYY-MM-DD).
+// Uses 'dateAdded' field on server. Daily counter resets automatically on new day.
 export async function getVocabByDate(date) {
-  return await apiFetch(`/vocabulary?learnedDate=${date}`);
+  return await apiFetch(`/vocabulary?date=${date}`);
 }
 export async function getReviewVocab() {
   return await apiFetch('/vocabulary?status=Review');
@@ -281,6 +283,11 @@ export async function deleteVocab(id) {
 }
 export async function bulkAddVocab(words) {
   return await apiFetch('/vocabulary/bulk', { method: 'POST', body: words });
+}
+// getVocabDailyHistory: returns per-day summary for the history view.
+// Returns: [{ date, count, words }] sorted newest-first.
+export async function getVocabDailyHistory() {
+  return await apiFetch('/vocabulary/daily-history');
 }
 
 // ─── Teaching Schedule ───────────────────────────────────────────────────────
