@@ -1,5 +1,5 @@
 // src/pages/LoginPage.jsx
-// Premium High-Converting Promotional Landing & Biometric/PIN Login Portal
+// Premium High-Converting Promotional Landing & Centered Biometric/PIN Login Portal
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
@@ -31,7 +31,7 @@ const METRICS = [
   { value: '0 Mins', label: 'Zero Distractions', sub: 'Ad-free, high-yield focused UI' }
 ];
 
-const MODULE_TABS = [
+const ALL_FEATURES = [
   {
     id: 'planner',
     title: 'Smart Daily Routine Engine',
@@ -39,22 +39,9 @@ const MODULE_TABS = [
     icon: Calendar,
     color: '#6366f1',
     bg: 'rgba(99, 102, 241, 0.15)',
-    tagline: 'Never waste time deciding what to study next.',
-    desc: 'Intelligently auto-schedules high-priority topics into your free slots while strictly respecting teaching commitments and high-energy cognitive windows.',
-    highlights: [
-      'Automatic conflict detection with teaching hours',
-      'Day, Week, and Month multi-calendar views',
-      'One-click routine optimization preserving manual edits'
-    ],
-    preview: {
-      title: 'Today’s AI Generated Flow',
-      items: [
-        { time: '07:00 – 08:30', title: 'Indian Polity (Fundamental Rights)', type: 'High Yield', color: '#6366f1' },
-        { time: '09:00 – 10:00', title: '🏫 Morning Teaching Slot (Blocked)', type: 'Teaching', color: '#f59e0b' },
-        { time: '10:30 – 11:45', title: 'Quantitative Aptitude (Arithmetic)', type: 'Practice', color: '#06b6d4' },
-        { time: '14:00 – 15:00', title: '🔄 SRS Stage-3 Revision (Modern History)', type: 'Revision', color: '#22c55e' }
-      ]
-    }
+    tagline: 'Intelligent daily scheduling around energy peaks & commitments',
+    desc: 'Auto-generates optimized daily study blocks based on target hours while strictly respecting teaching commitments and cognitive focus intervals.',
+    chips: ['Day/Week/Month Views', 'Conflict Shield', 'Auto-Optimizer']
   },
   {
     id: 'srs',
@@ -63,21 +50,9 @@ const MODULE_TABS = [
     icon: RotateCcw,
     color: '#22c55e',
     bg: 'rgba(34, 197, 94, 0.15)',
-    tagline: 'Beat the forgetting curve with mathematical precision.',
+    tagline: 'Defeat the forgetting curve with mathematical revision triggers',
     desc: 'Automatically schedules topic reviews at 1, 3, 7, 14, and 30-day intervals so critical concepts transition permanently into your long-term memory.',
-    highlights: [
-      'Automated revision queue based on Ebbinghaus curve',
-      'Topic mastery rating (Learning → Reviewing → Mastered)',
-      'Spaced repetition alerts preventing syllabus fade'
-    ],
-    preview: {
-      title: 'Retention Curve Status',
-      items: [
-        { time: 'Stage 1 (Day 1)', title: 'West Bengal Geography & Rivers', type: 'Retention: 98%', color: '#22c55e' },
-        { time: 'Stage 3 (Day 7)', title: 'Indian Constitution Amendments', type: 'Retention: 91%', color: '#6366f1' },
-        { time: 'Stage 5 (Day 30)', title: 'Percentage & Compound Interest', type: 'Permanent Memory', color: '#ec4899' }
-      ]
-    }
+    chips: ['Ebbinghaus Curve', 'Mastery Stages', 'Never Forget']
   },
   {
     id: 'diagnostics',
@@ -86,44 +61,20 @@ const MODULE_TABS = [
     icon: BarChart3,
     color: '#06b6d4',
     bg: 'rgba(6, 182, 212, 0.15)',
-    tagline: 'Turn every mock test mistake into guaranteed exam marks.',
+    tagline: 'Categorize & eradicate test mistakes to gain guaranteed marks',
     desc: 'Deep-dive into test errors by categorizing mistakes into Conceptual, Silly Mistakes, or Calculation slips. Auto-generates targeted recovery sessions.',
-    highlights: [
-      'Error root-cause categorization (Silly / Conceptual / Speed)',
-      'Subject-wise accuracy breakdown & percentile tracking',
-      'Instant topic-level remediation workflows'
-    ],
-    preview: {
-      title: 'Error Diagnostic Radar',
-      items: [
-        { time: 'Conceptual Gaps (35%)', title: 'Governor Powers & Ordinances', type: 'Priority Fix', color: '#ef4444' },
-        { time: 'Silly Slips (45%)', title: 'Unit Conversion in Time & Distance', type: 'Avoidable -1.33m', color: '#f59e0b' },
-        { time: 'Speed / Timeout (20%)', title: 'Reading Comprehension Passage 2', type: 'Time Drill', color: '#06b6d4' }
-      ]
-    }
+    chips: ['Root-Cause Analysis', 'Subject Radar', 'Error Recovery']
   },
   {
     id: 'gita',
-    title: 'Daily Gita Shloka & Mindfulness',
+    title: 'Daily Gita Shloka & Wisdom',
     badge: 'Mental Clarity',
     icon: BookOpen,
     color: '#f59e0b',
     bg: 'rgba(245, 158, 11, 0.15)',
-    tagline: 'Build unbreakable mental focus, resilience & inner calm.',
-    desc: 'Start each preparation day with inspiring Bhagavad Gita shlokas in Sanskrit, with authentic Bengali pronunciation, deep meaning, and practical aspirant reflection.',
-    highlights: [
-      'Authentic Sanskrit verses with Bengali phonetics',
-      'Daily practical reflection for exam stress & focus',
-      'Bookmark favorite verses with personal study notes'
-    ],
-    preview: {
-      title: 'Today’s Verse Reflection',
-      items: [
-        { time: 'BG 2.47', title: 'কর্মণ্যেবাধিকারস্তে মা ফলেষু কদাচন...', type: 'Sanskrit', color: '#f59e0b' },
-        { time: 'Bengali Meaning', title: 'কর্মে তোমার অধিকার, ফলাফলে কখনো নয়—একনিষ্ঠ প্রচেষ্টাই বিজয়ের দ্বার।', type: 'Wisdom', color: '#818cf8' },
-        { time: 'Aspirant Takeaway', title: 'ফলাফলের উদ্বেগ ত্যাগ করে আজকের দৈনিক লক্ষ্যে ১০০% মনোনিবেশ করো।', type: 'Mindset', color: '#22c55e' }
-      ]
-    }
+    tagline: 'Build unbreakable mental focus, resilience & inner calm',
+    desc: 'Start each preparation day with inspiring Bhagavad Gita shlokas in Sanskrit, with authentic Bengali pronunciation, deep meaning, and practical reflection.',
+    chips: ['Bengali Phonetics', 'Daily Reflections', 'Exam Mindset']
   },
   {
     id: 'vocab',
@@ -132,46 +83,80 @@ const MODULE_TABS = [
     icon: BookMarked,
     color: '#ec4899',
     bg: 'rgba(236, 72, 153, 0.15)',
-    tagline: '10 High-Yield words daily with Bengali meanings & audio.',
+    tagline: '10 High-Yield words daily with Bengali meanings & audio',
     desc: 'Master English for WBPSC, SSC, and Banking with real-time dictionary lookups, phonetic pronunciation, parts of speech, synonyms, and daily mastery tests.',
-    highlights: [
-      'Instant online dictionary lookup with Bengali definitions',
-      'Audio pronunciation & sentence examples',
-      'Daily 10-word target tracker with quiz drills'
-    ],
-    preview: {
-      title: 'Daily Word Master Card',
-      items: [
-        { time: 'Word: Resilient (adj.)', title: 'স্থিতিস্থাপক / প্রতিকূলতা কাটিয়ে উঠতে সক্ষম', type: 'Exam High-Yield', color: '#ec4899' },
-        { time: 'Synonyms', title: 'Tenacious, buoyant, invincible, sturdy', type: 'Antonyms: Fragile', color: '#06b6d4' },
-        { time: 'Exam Context', title: 'A resilient aspirant transforms failures into milestones.', type: 'Usage Drill', color: '#22c55e' }
-      ]
-    }
+    chips: ['10 Words Daily', 'Bengali Meanings', 'Audio Pronounce']
   },
   {
     id: 'pwa',
-    title: 'Smart Reminders & Desktop/Mobile PWA',
+    title: 'Smart Reminders & Offline PWA',
     badge: 'Offline & Mobile',
     icon: Bell,
     color: '#8b5cf6',
     bg: 'rgba(139, 92, 246, 0.15)',
-    tagline: 'Your complete study companion on Android, iOS & Windows.',
+    tagline: 'Your complete study companion on Android, iOS & Windows',
     desc: '5-minute pre-study audio-visual alerts, seamless background synchronization, and full offline functionality even without active internet access.',
-    highlights: [
-      'Smart 5-minute pre-session browser & push alerts',
-      'Installable PWA app for mobile home screen & desktop',
-      'Complete local Dexie database — 100% private'
-    ],
-    preview: {
-      title: 'Alerts & Offline Engine',
-      items: [
-        { time: '🔔 10:25 AM Alert', title: 'Quantitative Aptitude starts in 5 minutes', type: 'Smart Reminder', color: '#8b5cf6' },
-        { time: '⚡ Local Dexie DB', title: 'All records synced locally — zero latency', type: 'Offline Ready', color: '#22c55e' },
-        { time: '📱 PWA Standalone', title: 'Installed as native app on Windows / Android', type: 'Cross Platform', color: '#6366f1' }
-      ]
-    }
+    chips: ['5-Min Alerts', 'Local Dexie DB', 'Installable PWA']
   }
 ];
+
+const MODULE_PREVIEWS = {
+  planner: {
+    title: 'Smart Daily Routine Engine',
+    subtitle: 'Auto-scheduled flow for peak cognitive retention',
+    items: [
+      { time: '07:00 – 08:30', title: 'Indian Polity (Fundamental Rights)', type: 'High Yield', color: '#6366f1' },
+      { time: '09:00 – 10:00', title: '🏫 Morning Teaching Slot (Protected)', type: 'Teaching', color: '#f59e0b' },
+      { time: '10:30 – 11:45', title: 'Quantitative Aptitude (Arithmetic)', type: 'Practice Drill', color: '#06b6d4' },
+      { time: '14:00 – 15:00', title: '🔄 SRS Stage-3 Revision (Modern History)', type: 'Revision Due', color: '#22c55e' }
+    ]
+  },
+  srs: {
+    title: '5-Stage Spaced Repetition (SRS)',
+    subtitle: 'Automated 1, 3, 7, 14, 30 day interval tracking',
+    items: [
+      { time: 'Stage 1 (Day 1)', title: 'West Bengal Geography & Rivers', type: 'Retention: 98%', color: '#22c55e' },
+      { time: 'Stage 3 (Day 7)', title: 'Indian Constitution Amendments', type: 'Retention: 91%', color: '#6366f1' },
+      { time: 'Stage 5 (Day 30)', title: 'Percentage & Compound Interest', type: 'Permanent Memory', color: '#ec4899' }
+    ]
+  },
+  diagnostics: {
+    title: 'Mock Diagnostics & Error Log',
+    subtitle: 'Systematic elimination of repeated exam errors',
+    items: [
+      { time: 'Conceptual Gaps (35%)', title: 'Governor Powers & Ordinances', type: 'Priority Fix', color: '#ef4444' },
+      { time: 'Silly Slips (45%)', title: 'Unit Conversion in Time & Distance', type: 'Avoidable -1.33m', color: '#f59e0b' },
+      { time: 'Speed / Timeout (20%)', title: 'Reading Comprehension Passage 2', type: 'Time Drill', color: '#06b6d4' }
+    ]
+  },
+  gita: {
+    title: 'Daily Gita Shloka & Wisdom',
+    subtitle: 'Authentic Sanskrit verses & Bengali aspirant reflections',
+    items: [
+      { time: 'BG 2.47', title: 'কর্মণ্যেবাধিকারস্তে মা ফলেষু কদাচন...', type: 'Sanskrit', color: '#f59e0b' },
+      { time: 'Bengali Meaning', title: 'কর্মে তোমার অধিকার, ফলাফলে কখনো নয়—একনিষ্ঠ প্রচেষ্টাই বিজয়ের দ্বার।', type: 'Wisdom', color: '#818cf8' },
+      { time: 'Aspirant Takeaway', title: 'ফলাফলের উদ্বেগ ত্যাগ করে আজকের দৈনিক লক্ষ্যে ১০০% মনোনিবেশ করো।', type: 'Mindset', color: '#22c55e' }
+    ]
+  },
+  vocab: {
+    title: 'Bilingual Vocabulary Builder',
+    subtitle: 'Exam-focused Oxford dictionary lookup & Bengali translation',
+    items: [
+      { time: 'Word: Resilient (adj.)', title: 'স্থিতিস্থাপক / প্রতিকূলতা কাটিয়ে উঠতে সক্ষম', type: 'High Yield', color: '#ec4899' },
+      { time: 'Synonyms & Antonyms', title: 'Tenacious, buoyant (Syn) • Fragile (Ant)', type: 'Exam Context', color: '#06b6d4' },
+      { time: 'Sentence Context', title: 'A resilient aspirant transforms failures into milestones.', type: 'Usage Drill', color: '#22c55e' }
+    ]
+  },
+  pwa: {
+    title: 'Smart Reminders & Offline PWA',
+    subtitle: 'Local-first zero latency indexed database & push triggers',
+    items: [
+      { time: '🔔 10:25 AM Alert', title: 'Quantitative Aptitude starts in 5 minutes', type: 'Smart Reminder', color: '#8b5cf6' },
+      { time: '⚡ Local Dexie DB', title: 'All records synced locally — zero latency', type: 'Offline Ready', color: '#22c55e' },
+      { time: '📱 PWA Standalone', title: 'Installed as native app on Windows / Android', type: 'Cross Platform', color: '#6366f1' }
+    ]
+  }
+};
 
 const COMPARISON_ROWS = [
   {
@@ -218,7 +203,7 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPinInput, setShowPinInput] = useState(false);
-  const [activeModuleTab, setActiveModuleTab] = useState('planner');
+  const [activePreviewTab, setActivePreviewTab] = useState('planner');
 
   useEffect(() => {
     checkAuth();
@@ -292,12 +277,11 @@ export default function LoginPage() {
     setError('');
   };
 
-  const currentTab = MODULE_TABS.find((t) => t.id === activeModuleTab) || MODULE_TABS[0];
-  const CurrentIcon = currentTab.icon;
+  const currentPreview = MODULE_PREVIEWS[activePreviewTab] || MODULE_PREVIEWS.planner;
 
   return (
     <div style={{
-      maxWidth: 1200,
+      maxWidth: 1160,
       margin: '0 auto',
       padding: '24px 16px 80px',
       position: 'relative',
@@ -306,14 +290,14 @@ export default function LoginPage() {
       {/* ── AMBIENT AURORA GLOWS ──────────────────────────────────── */}
       <div style={{
         position: 'absolute',
-        top: -100,
+        top: -80,
         left: '50%',
         transform: 'translateX(-50%)',
-        width: '90%',
-        maxWidth: 900,
-        height: 380,
-        background: 'radial-gradient(ellipse at center, rgba(99, 102, 241, 0.22) 0%, rgba(139, 92, 246, 0.12) 45%, rgba(6, 182, 212, 0.04) 75%, transparent 100%)',
-        filter: 'blur(60px)',
+        width: '85%',
+        maxWidth: 800,
+        height: 350,
+        background: 'radial-gradient(ellipse at center, rgba(99, 102, 241, 0.25) 0%, rgba(139, 92, 246, 0.15) 45%, rgba(6, 182, 212, 0.05) 75%, transparent 100%)',
+        filter: 'blur(70px)',
         zIndex: 0,
         pointerEvents: 'none'
       }} />
@@ -323,12 +307,12 @@ export default function LoginPage() {
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        background: 'rgba(26, 26, 46, 0.7)',
+        background: 'rgba(26, 26, 46, 0.75)',
         backdropFilter: 'blur(12px)',
         border: '1px solid var(--border-accent)',
         padding: '8px 18px',
         borderRadius: 'var(--radius-full)',
-        marginBottom: 32,
+        marginBottom: 36,
         position: 'relative',
         zIndex: 1,
         flexWrap: 'wrap',
@@ -350,7 +334,7 @@ export default function LoginPage() {
             <Sparkles size={12} /> PRO EDITION 2026
           </span>
           <span style={{ fontSize: 12, color: 'var(--text-2)', fontWeight: 600 }}>
-            Preparation OS • The High-Performance Command Center for Aspirants
+            Preparation OS • The Ultimate High-Performance Command Center
           </span>
         </div>
 
@@ -369,8 +353,8 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* ── HERO BANNER & VALUE PROPOSITION ──────────────────────── */}
-      <div style={{ textAlign: 'center', marginBottom: 44, position: 'relative', zIndex: 1 }}>
+      {/* ── HERO BANNER ──────────────────────────────────────────── */}
+      <div style={{ textAlign: 'center', marginBottom: 36, position: 'relative', zIndex: 1 }}>
         <div style={{
           display: 'inline-flex',
           alignItems: 'center',
@@ -389,12 +373,12 @@ export default function LoginPage() {
         </div>
 
         <h1 style={{
-          fontSize: 'clamp(32px, 4.5vw, 54px)',
+          fontSize: 'clamp(30px, 4.2vw, 50px)',
           fontWeight: 900,
           letterSpacing: '-0.03em',
-          lineHeight: 1.15,
+          lineHeight: 1.18,
           margin: '0 auto 16px auto',
-          maxWidth: 950,
+          maxWidth: 920,
           background: 'linear-gradient(135deg, #ffffff 10%, #e2e8f0 45%, #818cf8 80%, #c084fc 100%)',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
@@ -404,16 +388,16 @@ export default function LoginPage() {
         </h1>
 
         <p style={{
-          fontSize: 16,
+          fontSize: 15,
           color: 'var(--text-2)',
-          maxWidth: 780,
-          margin: '0 auto 28px auto',
+          maxWidth: 720,
+          margin: '0 auto 24px auto',
           lineHeight: 1.65,
           fontWeight: 400
         }}>
           A unified, distraction-free preparation command center combining <strong>Smart AI Routine Scheduling</strong>, 
           science-backed <strong>5-Stage Spaced Repetition (SRS)</strong>, real-time <strong>Mock Error Diagnostics</strong>, 
-          bilingual vocabulary drills, and daily <strong>Gita reflections</strong> for unwavering focus.
+          bilingual vocabulary drills, and daily <strong>Gita reflections</strong>.
         </p>
 
         {/* Exam Badges Ticker Ribbon */}
@@ -423,7 +407,7 @@ export default function LoginPage() {
           alignItems: 'center',
           gap: 8,
           flexWrap: 'wrap',
-          maxWidth: 980,
+          maxWidth: 960,
           margin: '0 auto 32px auto'
         }}>
           {EXAM_BADGES.map((b, i) => (
@@ -440,258 +424,42 @@ export default function LoginPage() {
                 fontSize: 11,
                 fontWeight: 700,
                 color: 'var(--text)',
-                boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
-                transition: 'all 0.2s ease'
+                boxShadow: '0 2px 6px rgba(0,0,0,0.3)'
               }}
             >
               <span>{b.icon}</span> {b.name}
             </span>
           ))}
         </div>
-
-        {/* Metrics Grid */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-          gap: 12,
-          maxWidth: 900,
-          margin: '0 auto'
-        }}>
-          {METRICS.map((m, idx) => (
-            <div
-              key={idx}
-              style={{
-                background: 'linear-gradient(135deg, rgba(30, 30, 53, 0.7), rgba(26, 26, 46, 0.9))',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--radius)',
-                padding: '14px 16px',
-                textAlign: 'center',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.35)',
-                backdropFilter: 'blur(8px)',
-                position: 'relative',
-                overflow: 'hidden'
-              }}
-            >
-              <div style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: 2,
-                background: 'linear-gradient(90deg, transparent, var(--primary-light), transparent)'
-              }} />
-              <div style={{ fontSize: 22, fontWeight: 900, color: 'var(--primary-light)', letterSpacing: '-0.02em' }}>
-                {m.value}
-              </div>
-              <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)', marginTop: 2 }}>
-                {m.label}
-              </div>
-              <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 4 }}>
-                {m.sub}
-              </div>
-            </div>
-          ))}
-        </div>
       </div>
 
-      {/* ── MAIN 2-COLUMN SECTION: INTERACTIVE MODULE SHOWCASE + AUTHENTICATION ──── */}
+      {/* ── CENTERED HERO LOGIN PORTAL ────────────────────────────── */}
       <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
-        gap: 28,
-        alignItems: 'start',
+        maxWidth: 480,
+        margin: '0 auto 56px auto',
         position: 'relative',
-        zIndex: 1,
-        marginBottom: 50
+        zIndex: 2
       }}>
-        {/* Left Column: Interactive Feature Showcase */}
-        <div>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: 14
-          }}>
-            <div style={{
-              fontSize: 18,
-              fontWeight: 900,
-              color: 'var(--text)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8
-            }}>
-              <Zap size={20} color="var(--primary-light)" />
-              <span>Core OS Capabilities</span>
-            </div>
-            <span style={{ fontSize: 11, color: 'var(--text-3)' }}>Click to preview module</span>
-          </div>
-
-          {/* Module Selector Pill Buttons */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-            gap: 8,
-            marginBottom: 16
-          }}>
-            {MODULE_TABS.map((mod) => {
-              const Icon = mod.icon;
-              const isActive = activeModuleTab === mod.id;
-              return (
-                <button
-                  key={mod.id}
-                  onClick={() => setActiveModuleTab(mod.id)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    padding: '8px 12px',
-                    borderRadius: 'var(--radius)',
-                    background: isActive ? 'var(--primary)' : 'var(--surface-2)',
-                    border: `1px solid ${isActive ? 'var(--primary-light)' : 'var(--border)'}`,
-                    color: isActive ? '#ffffff' : 'var(--text-2)',
-                    fontSize: 12,
-                    fontWeight: 700,
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                    boxShadow: isActive ? '0 4px 14px rgba(99, 102, 241, 0.4)' : 'none'
-                  }}
-                >
-                  <Icon size={16} color={isActive ? '#ffffff' : mod.color} />
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {mod.badge}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Active Module Spotlight Card */}
-          <div style={{
-            background: 'linear-gradient(135deg, var(--card), var(--surface-2))',
-            border: '1px solid var(--border-accent)',
-            borderRadius: 'var(--radius-lg)',
-            padding: 20,
-            boxShadow: '0 12px 32px rgba(0,0,0,0.4)',
-            marginBottom: 20
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-              <div style={{
-                width: 44,
-                height: 44,
-                borderRadius: 'var(--radius)',
-                background: currentTab.bg,
-                color: currentTab.color,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-                boxShadow: `0 0 16px ${currentTab.bg}`
-              }}>
-                <CurrentIcon size={24} />
-              </div>
-              <div>
-                <span className="badge badge-primary" style={{ fontSize: 10, padding: '2px 8px', marginBottom: 4 }}>
-                  {currentTab.badge}
-                </span>
-                <h3 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', margin: 0 }}>
-                  {currentTab.title}
-                </h3>
-              </div>
-            </div>
-
-            <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--primary-light)', marginBottom: 8 }}>
-              {currentTab.tagline}
-            </p>
-            <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6, marginBottom: 16 }}>
-              {currentTab.desc}
-            </p>
-
-            {/* Bullet Highlights */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 18 }}>
-              {currentTab.highlights.map((h, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--text)' }}>
-                  <CheckCircle2 size={14} color="var(--success)" style={{ flexShrink: 0 }} />
-                  <span>{h}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Live Interactive UI Preview */}
-            <div style={{
-              background: 'var(--bg-2)',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius)',
-              padding: 14
-            }}>
-              <div style={{
-                fontSize: 11,
-                fontWeight: 800,
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                color: 'var(--text-3)',
-                marginBottom: 10,
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}>
-                <span>⚡ Live Simulation: {currentTab.preview.title}</span>
-                <span className="badge" style={{ fontSize: 9, background: 'var(--surface-3)', color: 'var(--text-2)' }}>
-                  Realtime Dexie Engine
-                </span>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {currentTab.preview.items.map((item, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      background: 'var(--surface-2)',
-                      borderLeft: `3px solid ${item.color}`,
-                      borderRadius: 'var(--radius-sm)',
-                      padding: '8px 12px',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      fontSize: 12
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontWeight: 700, color: 'var(--text)' }}>{item.title}</div>
-                      <div style={{ fontSize: 11, color: 'var(--text-3)' }}>{item.time}</div>
-                    </div>
-                    <span
-                      style={{
-                        fontSize: 10,
-                        fontWeight: 700,
-                        padding: '2px 8px',
-                        borderRadius: 'var(--radius-full)',
-                        background: 'rgba(255,255,255,0.06)',
-                        color: item.color
-                      }}
-                    >
-                      {item.type}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column: Secure Biometric & PIN Login Portal */}
+        {/* Glow ambient circle around login card */}
         <div style={{
-          background: 'linear-gradient(135deg, rgba(26, 26, 46, 0.95), rgba(30, 30, 53, 0.9))',
+          position: 'absolute',
+          inset: -12,
+          background: 'radial-gradient(ellipse at center, rgba(99, 102, 241, 0.25), rgba(139, 92, 246, 0.1), transparent 70%)',
+          filter: 'blur(30px)',
+          zIndex: -1,
+          borderRadius: 'var(--radius-xl)'
+        }} />
+
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(26, 26, 46, 0.95), rgba(30, 30, 53, 0.92))',
           borderRadius: 'var(--radius-xl)',
           border: '1px solid var(--border-accent)',
-          padding: '30px 26px',
-          boxShadow: '0 24px 60px rgba(0, 0, 0, 0.6), 0 0 30px rgba(99, 102, 241, 0.15)',
-          backdropFilter: 'blur(16px)',
-          position: 'sticky',
-          top: 24
+          padding: '32px 28px',
+          boxShadow: '0 24px 60px rgba(0, 0, 0, 0.6), 0 0 30px rgba(99, 102, 241, 0.2)',
+          backdropFilter: 'blur(20px)'
         }}>
-          {/* Top Lock Badge */}
-          <div style={{ textAlign: 'center', marginBottom: 20 }}>
+          {/* Top Header */}
+          <div style={{ textAlign: 'center', marginBottom: 22 }}>
             <div style={{
               width: 64,
               height: 64,
@@ -712,7 +480,7 @@ export default function LoginPage() {
               Command Center Login
             </h2>
             <p style={{ fontSize: 12, color: 'var(--text-2)', margin: 0, lineHeight: 1.5 }}>
-              Hardware-authenticated via WebAuthn Biometrics, Windows Hello, Face ID, or PIN.
+              Hardware-authenticated via WebAuthn Biometrics, Face ID, or PIN.
             </p>
           </div>
 
@@ -994,7 +762,284 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* ── SECTION 3: COMPARISON MATRIX (TRADITIONAL VS PREPARATION OS) ── */}
+      {/* ── METRICS STRIP ─────────────────────────────────────────── */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+        gap: 14,
+        maxWidth: 1060,
+        margin: '0 auto 60px auto',
+        position: 'relative',
+        zIndex: 1
+      }}>
+        {METRICS.map((m, idx) => (
+          <div
+            key={idx}
+            style={{
+              background: 'linear-gradient(135deg, rgba(30, 30, 53, 0.7), rgba(26, 26, 46, 0.9))',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius)',
+              padding: '16px 18px',
+              textAlign: 'center',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.35)',
+              backdropFilter: 'blur(8px)',
+              position: 'relative',
+              overflow: 'hidden'
+            }}
+          >
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: 2,
+              background: 'linear-gradient(90deg, transparent, var(--primary-light), transparent)'
+            }} />
+            <div style={{ fontSize: 24, fontWeight: 900, color: 'var(--primary-light)', letterSpacing: '-0.02em' }}>
+              {m.value}
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)', marginTop: 2 }}>
+              {m.label}
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 4 }}>
+              {m.sub}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── SECTION 2: 6-CARD FULL WIDTH CAPABILITIES GRID ───────── */}
+      <div style={{ marginBottom: 60, position: 'relative', zIndex: 1 }}>
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <span className="badge badge-primary" style={{ fontSize: 11, padding: '3px 12px', marginBottom: 8 }}>
+            ⚡ CORE ARCHITECTURE
+          </span>
+          <h2 style={{ fontSize: 26, fontWeight: 900, color: 'var(--text)', margin: '0 0 8px 0' }}>
+            Engineered to Deliver Guaranteed Preparation Mastery
+          </h2>
+          <p style={{ fontSize: 14, color: 'var(--text-2)', maxWidth: 640, margin: '0 auto' }}>
+            Every module is designed to eliminate cognitive fatigue and enforce flawless spaced retention.
+          </p>
+        </div>
+
+        {/* 6 Grid Cards */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+          gap: 18
+        }}>
+          {ALL_FEATURES.map((feat) => {
+            const Icon = feat.icon;
+            return (
+              <div
+                key={feat.id}
+                style={{
+                  background: 'linear-gradient(135deg, var(--card), var(--surface-2))',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-lg)',
+                  padding: '22px 20px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 12,
+                  boxShadow: '0 6px 20px rgba(0,0,0,0.3)',
+                  transition: 'transform 0.2s ease, border-color 0.2s ease',
+                  position: 'relative'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 'var(--radius)',
+                    background: feat.bg,
+                    color: feat.color,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0
+                  }}>
+                    <Icon size={22} />
+                  </div>
+                  <span
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 800,
+                      padding: '2px 8px',
+                      borderRadius: 'var(--radius-full)',
+                      background: 'rgba(255,255,255,0.06)',
+                      color: feat.color,
+                      border: `1px solid ${feat.bg}`
+                    }}
+                  >
+                    {feat.badge}
+                  </span>
+                </div>
+
+                <div>
+                  <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)', marginBottom: 4 }}>
+                    {feat.title}
+                  </h3>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--primary-light)', marginBottom: 8 }}>
+                    {feat.tagline}
+                  </div>
+                  <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.55, margin: 0 }}>
+                    {feat.desc}
+                  </p>
+                </div>
+
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 'auto', paddingTop: 8 }}>
+                  {feat.chips.map((chip, idx) => (
+                    <span
+                      key={idx}
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 700,
+                        padding: '2px 6px',
+                        borderRadius: 'var(--radius-sm)',
+                        background: 'var(--surface-3)',
+                        color: 'var(--text-3)'
+                      }}
+                    >
+                      ✓ {chip}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── SECTION 3: INTERACTIVE SIMULATION & MODULE DEEP DIVE ───── */}
+      <div style={{
+        background: 'linear-gradient(135deg, var(--card), var(--surface-2))',
+        border: '1px solid var(--border-accent)',
+        borderRadius: 'var(--radius-xl)',
+        padding: '32px 26px',
+        marginBottom: 50,
+        boxShadow: '0 16px 40px rgba(0,0,0,0.4)',
+        position: 'relative',
+        zIndex: 1
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 12,
+          marginBottom: 20
+        }}>
+          <div>
+            <span className="badge badge-primary" style={{ fontSize: 10, padding: '2px 8px', marginBottom: 4 }}>
+              ⚡ LIVE ENGINE SIMULATION
+            </span>
+            <h3 style={{ fontSize: 20, fontWeight: 900, color: 'var(--text)', margin: 0 }}>
+              Test Drive Preparation OS Modules
+            </h3>
+          </div>
+          <span style={{ fontSize: 12, color: 'var(--text-3)' }}>Click any module below to inspect its data flow</span>
+        </div>
+
+        {/* Tab Buttons */}
+        <div style={{
+          display: 'flex',
+          gap: 8,
+          flexWrap: 'wrap',
+          marginBottom: 20
+        }}>
+          {ALL_FEATURES.map((feat) => {
+            const Icon = feat.icon;
+            const isActive = activePreviewTab === feat.id;
+            return (
+              <button
+                key={feat.id}
+                onClick={() => setActivePreviewTab(feat.id)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '7px 14px',
+                  borderRadius: 'var(--radius)',
+                  background: isActive ? 'var(--primary)' : 'var(--surface-3)',
+                  border: `1px solid ${isActive ? 'var(--primary-light)' : 'var(--border)'}`,
+                  color: isActive ? '#ffffff' : 'var(--text-2)',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  boxShadow: isActive ? '0 4px 14px rgba(99, 102, 241, 0.4)' : 'none'
+                }}
+              >
+                <Icon size={14} color={isActive ? '#ffffff' : feat.color} />
+                <span>{feat.badge}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Simulation Output Card */}
+        <div style={{
+          background: 'var(--bg-2)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius)',
+          padding: 18
+        }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 14
+          }}>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)' }}>
+                {currentPreview.title}
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--primary-light)' }}>
+                {currentPreview.subtitle}
+              </div>
+            </div>
+            <span className="badge" style={{ fontSize: 10, background: 'var(--surface-3)', color: 'var(--text-2)' }}>
+              Realtime Dexie Engine
+            </span>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 10 }}>
+            {currentPreview.items.map((item, idx) => (
+              <div
+                key={idx}
+                style={{
+                  background: 'var(--surface-2)',
+                  borderLeft: `3px solid ${item.color}`,
+                  borderRadius: 'var(--radius-sm)',
+                  padding: '10px 14px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 4
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600 }}>{item.time}</span>
+                  <span
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 700,
+                      padding: '2px 8px',
+                      borderRadius: 'var(--radius-full)',
+                      background: 'rgba(255,255,255,0.06)',
+                      color: item.color
+                    }}
+                  >
+                    {item.type}
+                  </span>
+                </div>
+                <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--text)' }}>{item.title}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── SECTION 4: COMPARISON MATRIX ───────────────────────────── */}
       <div style={{
         background: 'linear-gradient(135deg, var(--surface-2), var(--card))',
         border: '1px solid var(--border)',
@@ -1052,7 +1097,7 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* ── SECTION 4: BENGALI ASPIRANT QUOTE & FOOTER ─────────────── */}
+      {/* ── SECTION 5: BENGALI ASPIRANT QUOTE & FOOTER ─────────────── */}
       <div style={{
         textAlign: 'center',
         padding: '24px 20px',
