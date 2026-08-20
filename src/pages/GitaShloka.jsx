@@ -85,8 +85,8 @@ export default function GitaShloka() {
     chapter: '',
     verse: '',
     sanskritText: '',
-    transliteration: '',
     meaning: '',
+    realLifeApplication: '',  // NEW: replaces transliteration — how shloka applies in real life
     personalReflection: '',
     date: format(new Date(), 'yyyy-MM-dd')
   });
@@ -133,8 +133,8 @@ export default function GitaShloka() {
       chapter: '',
       verse: '',
       sanskritText: '',
-      transliteration: '',
       meaning: '',
+      realLifeApplication: '',
       personalReflection: '',
       date: format(new Date(), 'yyyy-MM-dd')
     });
@@ -152,8 +152,8 @@ export default function GitaShloka() {
       chapter: pop.chapter,
       verse: pop.verse,
       sanskritText: pop.sanskritText,
-      transliteration: pop.transliteration,
       meaning: pop.meaning,
+      realLifeApplication: formData.realLifeApplication, // keep user's own real-life text
       personalReflection: pop.personalReflection || formData.personalReflection,
     });
     setShowQuickPick(false);
@@ -169,8 +169,8 @@ export default function GitaShloka() {
       chapter: shloka.chapter || '',
       verse: shloka.verse || '',
       sanskritText: shloka.sanskritText || '',
-      transliteration: shloka.transliteration || '',
       meaning: shloka.meaning || '',
+      realLifeApplication: shloka.realLifeApplication || '',
       personalReflection: shloka.personalReflection || '',
       date: shloka.date || format(new Date(), 'yyyy-MM-dd')
     });
@@ -366,10 +366,28 @@ export default function GitaShloka() {
               {todayShloka.sanskritText}
             </div>
 
-            {/* Transliteration */}
-            {todayShloka.transliteration && (
-              <div style={{ fontSize: 14, color: 'var(--text-2)', marginBottom: 14, fontStyle: 'italic' }}>
-                🗣️ <em>{todayShloka.transliteration}</em>
+            {/* Real Life Application */}
+            {todayShloka.realLifeApplication && (
+              <div style={{
+                background: 'rgba(16, 185, 129, 0.06)',
+                border: '1px solid rgba(16, 185, 129, 0.2)',
+                borderLeft: '3px solid var(--success)',
+                borderRadius: 'var(--radius)',
+                padding: '12px 16px',
+                marginBottom: 14,
+              }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--success)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  🌍 বাস্তব জীবনে প্রয়োগ (Real Life Application)
+                </div>
+                <div style={{
+                  fontSize: 14,
+                  color: 'var(--text)',
+                  lineHeight: 1.6,
+                  fontFamily: "'Noto Sans Bengali', 'Hind Siliguri', 'Segoe UI', sans-serif",
+                  whiteSpace: 'pre-wrap'
+                }}>
+                  {todayShloka.realLifeApplication}
+                </div>
               </div>
             )}
 
@@ -675,13 +693,22 @@ export default function GitaShloka() {
               </div>
 
               <div className="form-group">
-                <label className="form-label">উচ্চারণ ও লিপ্যন্তর (Transliteration - ঐচ্ছিক)</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="কৰ্মণ্যেবাধিকারস্তে মা ফলেষু কদাচন..."
-                  value={formData.transliteration}
-                  onChange={(e) => setFormData({ ...formData, transliteration: e.target.value })}
+                <label className="form-label" style={{ color: 'var(--success)', fontWeight: 700 }}>
+                  🌍 বাস্তব জীবনে কীভাবে প্রয়োগ করব (Real Life Application)
+                </label>
+                <textarea
+                  className="form-textarea"
+                  rows={3}
+                  placeholder="এই শ্লোকের শিক্ষা আমার বাস্তব জীবনে, পড়াশোনায় ও প্রস্তুতিতে কীভাবে কাজে লাগাব?
+যেমন: পরীক্ষার ভয় না পেয়ে প্রতিদিন নিষ্ঠার সাথে পড়াশোনা করব..."
+                  value={formData.realLifeApplication}
+                  onChange={(e) => setFormData({ ...formData, realLifeApplication: e.target.value })}
+                  style={{
+                    fontFamily: "'Noto Sans Bengali', 'Hind Siliguri', 'Segoe UI', sans-serif",
+                    fontSize: 14,
+                    borderColor: formData.realLifeApplication ? 'rgba(16,185,129,0.4)' : undefined,
+                    background: formData.realLifeApplication ? 'rgba(16,185,129,0.04)' : undefined,
+                  }}
                 />
               </div>
 
@@ -758,9 +785,21 @@ export default function GitaShloka() {
                 {viewingShloka.sanskritText}
               </div>
 
-              {viewingShloka.transliteration && (
-                <div style={{ fontSize: 13, fontStyle: 'italic', color: 'var(--text-2)' }}>
-                  🗣️ "{viewingShloka.transliteration}"
+              {viewingShloka.realLifeApplication && (
+                <div style={{
+                  background: 'rgba(16, 185, 129, 0.06)',
+                  border: '1px solid rgba(16, 185, 129, 0.2)',
+                  borderLeft: '3px solid var(--success)',
+                  borderRadius: 'var(--radius)',
+                  padding: '12px 16px',
+                }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--success)', marginBottom: 6, textTransform: 'uppercase' }}>
+                    🌍 বাস্তব জীবনে প্রয়োগ
+                  </div>
+                  <div style={{ fontSize: 14, color: 'var(--text)', lineHeight: 1.6, whiteSpace: 'pre-wrap',
+                    fontFamily: "'Noto Sans Bengali', 'Hind Siliguri', 'Segoe UI', sans-serif" }}>
+                    {viewingShloka.realLifeApplication}
+                  </div>
                 </div>
               )}
 
