@@ -1,5 +1,5 @@
 // src/pages/LoginPage.jsx
-// Premium High-Converting Promotional Landing & Centered Biometric/PIN Login Portal
+// Premium High-Converting Promotional Landing with Instant Pop-up Login Modal
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
@@ -9,7 +9,7 @@ import {
   Zap, Bell, Award, Flame, BookMarked, Lock, Key, AlertCircle,
   CheckCircle2, ShieldCheck, Target, TrendingUp, HelpCircle,
   Smartphone, Clock, Brain, Compass, Cpu, Layers, Star, ExternalLink,
-  ChevronRight, Eye, Shield
+  ChevronRight, Eye, Shield, X
 } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
 
@@ -203,6 +203,7 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPinInput, setShowPinInput] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const [activePreviewTab, setActivePreviewTab] = useState('planner');
 
   useEffect(() => {
@@ -217,6 +218,7 @@ export default function LoginPage() {
     setError('');
     try {
       await loginWithPasskey();
+      setShowLoginModal(false);
       navigate(from, { replace: true });
     } catch (err) {
       console.warn('[LoginPage] Passkey login error:', err);
@@ -237,6 +239,7 @@ export default function LoginPage() {
     setError('');
     try {
       await registerPasskey('Primary Device Passkey');
+      setShowLoginModal(false);
       navigate(from, { replace: true });
     } catch (err) {
       setError(err.message || 'Failed to register biometric passkey.');
@@ -257,6 +260,7 @@ export default function LoginPage() {
     setError('');
     try {
       await loginWithPinFallback(pin);
+      setShowLoginModal(false);
       navigate(from, { replace: true });
     } catch (err) {
       setError(err.message || 'Incorrect PIN. Please try again.');
@@ -338,23 +342,35 @@ export default function LoginPage() {
           </span>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--success)' }}>
-            <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--success)', boxShadow: '0 0 8px var(--success)' }} />
-            System Online • 100% Offline Capable
-          </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button
+            onClick={() => setShowLoginModal(true)}
+            className="btn btn-xs btn-primary"
+            style={{
+              fontSize: 12,
+              fontWeight: 800,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              borderRadius: 'var(--radius-full)',
+              padding: '6px 14px',
+              boxShadow: '0 2px 10px rgba(99, 102, 241, 0.4)'
+            }}
+          >
+            <Lock size={12} /> Log In
+          </button>
           <Link
             to="/"
             className="btn btn-xs btn-ghost"
-            style={{ fontSize: 11, display: 'flex', alignItems: 'center', gap: 4, color: 'var(--primary-light)' }}
+            style={{ fontSize: 11, display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-2)' }}
           >
-            <Eye size={12} /> Explore Public Mode
+            <Eye size={12} /> Public Mode
           </Link>
         </div>
       </div>
 
-      {/* ── HERO BANNER ──────────────────────────────────────────── */}
-      <div style={{ textAlign: 'center', marginBottom: 36, position: 'relative', zIndex: 1 }}>
+      {/* ── HERO BANNER & VALUE PROPOSITION ──────────────────────── */}
+      <div style={{ textAlign: 'center', marginBottom: 48, position: 'relative', zIndex: 1 }}>
         <div style={{
           display: 'inline-flex',
           alignItems: 'center',
@@ -373,12 +389,12 @@ export default function LoginPage() {
         </div>
 
         <h1 style={{
-          fontSize: 'clamp(30px, 4.2vw, 50px)',
+          fontSize: 'clamp(32px, 4.5vw, 54px)',
           fontWeight: 900,
           letterSpacing: '-0.03em',
-          lineHeight: 1.18,
-          margin: '0 auto 16px auto',
-          maxWidth: 920,
+          lineHeight: 1.15,
+          margin: '0 auto 18px auto',
+          maxWidth: 950,
           background: 'linear-gradient(135deg, #ffffff 10%, #e2e8f0 45%, #818cf8 80%, #c084fc 100%)',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
@@ -388,16 +404,16 @@ export default function LoginPage() {
         </h1>
 
         <p style={{
-          fontSize: 15,
+          fontSize: 16,
           color: 'var(--text-2)',
-          maxWidth: 720,
-          margin: '0 auto 24px auto',
+          maxWidth: 740,
+          margin: '0 auto 28px auto',
           lineHeight: 1.65,
           fontWeight: 400
         }}>
           A unified, distraction-free preparation command center combining <strong>Smart AI Routine Scheduling</strong>, 
           science-backed <strong>5-Stage Spaced Repetition (SRS)</strong>, real-time <strong>Mock Error Diagnostics</strong>, 
-          bilingual vocabulary drills, and daily <strong>Gita reflections</strong>.
+          bilingual vocabulary drills, and daily <strong>Gita reflections</strong> for unwavering focus.
         </p>
 
         {/* Exam Badges Ticker Ribbon */}
@@ -419,7 +435,7 @@ export default function LoginPage() {
                 gap: 6,
                 background: 'var(--surface-2)',
                 border: '1px solid var(--border)',
-                padding: '5px 12px',
+                padding: '6px 14px',
                 borderRadius: 'var(--radius-full)',
                 fontSize: 11,
                 fontWeight: 700,
@@ -431,334 +447,54 @@ export default function LoginPage() {
             </span>
           ))}
         </div>
-      </div>
 
-      {/* ── CENTERED HERO LOGIN PORTAL ────────────────────────────── */}
-      <div style={{
-        maxWidth: 480,
-        margin: '0 auto 56px auto',
-        position: 'relative',
-        zIndex: 2
-      }}>
-        {/* Glow ambient circle around login card */}
+        {/* ── PRIMARY CALL TO ACTION BUTTONS ───────────────────────── */}
         <div style={{
-          position: 'absolute',
-          inset: -12,
-          background: 'radial-gradient(ellipse at center, rgba(99, 102, 241, 0.25), rgba(139, 92, 246, 0.1), transparent 70%)',
-          filter: 'blur(30px)',
-          zIndex: -1,
-          borderRadius: 'var(--radius-xl)'
-        }} />
-
-        <div style={{
-          background: 'linear-gradient(135deg, rgba(26, 26, 46, 0.95), rgba(30, 30, 53, 0.92))',
-          borderRadius: 'var(--radius-xl)',
-          border: '1px solid var(--border-accent)',
-          padding: '32px 28px',
-          boxShadow: '0 24px 60px rgba(0, 0, 0, 0.6), 0 0 30px rgba(99, 102, 241, 0.2)',
-          backdropFilter: 'blur(20px)'
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: 14,
+          flexWrap: 'wrap',
+          marginBottom: 10
         }}>
-          {/* Top Header */}
-          <div style={{ textAlign: 'center', marginBottom: 22 }}>
-            <div style={{
-              width: 64,
-              height: 64,
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(139, 92, 246, 0.2))',
-              border: '1px solid var(--border-accent)',
-              display: 'flex',
+          <button
+            onClick={() => setShowLoginModal(true)}
+            className="btn btn-primary"
+            style={{
+              padding: '15px 32px',
+              fontSize: 16,
+              fontWeight: 800,
+              borderRadius: 'var(--radius-full)',
+              boxShadow: '0 8px 30px rgba(99, 102, 241, 0.55)',
+              display: 'inline-flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 14px auto',
-              color: 'var(--primary-light)',
-              boxShadow: '0 0 25px rgba(99, 102, 241, 0.35)'
-            }}>
-              <Fingerprint size={36} />
-            </div>
+              gap: 10,
+              letterSpacing: '0.02em',
+              transition: 'all 0.2s ease',
+              cursor: 'pointer'
+            }}
+          >
+            <Fingerprint size={24} /> Log In to Command Center
+          </button>
 
-            <h2 style={{ fontSize: 22, fontWeight: 900, margin: '0 0 6px 0', color: 'var(--text)', letterSpacing: '-0.02em' }}>
-              Command Center Login
-            </h2>
-            <p style={{ fontSize: 12, color: 'var(--text-2)', margin: 0, lineHeight: 1.5 }}>
-              Hardware-authenticated via WebAuthn Biometrics, Face ID, or PIN.
-            </p>
-          </div>
-
-          {error && (
-            <div style={{
-              background: 'var(--danger-glass)',
-              border: '1px solid var(--danger)',
-              color: 'var(--danger)',
-              borderRadius: 'var(--radius)',
-              padding: '12px 14px',
-              fontSize: 12,
-              marginBottom: 18,
-              display: 'flex',
+          <Link
+            to="/"
+            className="btn btn-ghost"
+            style={{
+              padding: '15px 26px',
+              fontSize: 15,
+              fontWeight: 700,
+              borderRadius: 'var(--radius-full)',
+              border: '1px solid var(--border)',
+              background: 'var(--surface-2)',
+              display: 'inline-flex',
               alignItems: 'center',
               gap: 8,
-              lineHeight: 1.4
-            }}>
-              <ShieldAlert size={18} style={{ flexShrink: 0 }} />
-              <div>{error}</div>
-            </div>
-          )}
-
-          {/* ── BIOMETRIC / PASSKEY PRIMARY LOGIN BUTTON ──────────── */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 18 }}>
-            {isBiometricSupported ? (
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={handleBiometricLogin}
-                disabled={loading}
-                style={{
-                  width: '100%',
-                  padding: '14px 20px',
-                  fontSize: 15,
-                  fontWeight: 800,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 10,
-                  borderRadius: 'var(--radius)',
-                  boxShadow: '0 6px 20px rgba(99, 102, 241, 0.45)',
-                  letterSpacing: '0.02em'
-                }}
-              >
-                <Fingerprint size={22} />
-                {loading ? 'Authenticating...' : 'Instant Biometric Login'}
-              </button>
-            ) : (
-              <div style={{
-                background: 'var(--surface-2)',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--radius)',
-                padding: '12px 14px',
-                fontSize: 12,
-                color: 'var(--text-3)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8
-              }}>
-                <AlertCircle size={16} />
-                Biometric passkeys not supported on this browser. Use PIN below.
-              </div>
-            )}
-
-            {/* First-time Biometric Setup Option */}
-            {isBiometricSupported && !hasPasskeys && (
-              <button
-                type="button"
-                className="btn btn-ghost"
-                onClick={handleRegisterBiometrics}
-                disabled={loading}
-                style={{
-                  fontSize: 12,
-                  color: 'var(--primary-light)',
-                  border: '1px dashed var(--border-accent)',
-                  padding: '10px 14px',
-                  borderRadius: 'var(--radius)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 6
-                }}
-              >
-                <Sparkles size={14} /> Register new device biometric passkey
-              </button>
-            )}
-          </div>
-
-          {/* ── DIVIDER / OR ──────────────────────────────────────── */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            margin: '16px 0',
-            color: 'var(--text-3)',
-            fontSize: 11,
-            fontWeight: 700
-          }}>
-            <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-            <span style={{ padding: '0 12px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>or verify with PIN</span>
-            <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-          </div>
-
-          {/* ── PIN FALLBACK TOGGLE / FORM ────────────────────────── */}
-          {!showPinInput ? (
-            <button
-              type="button"
-              className="btn btn-ghost"
-              onClick={() => setShowPinInput(true)}
-              style={{
-                width: '100%',
-                padding: '12px',
-                fontSize: 13,
-                fontWeight: 700,
-                border: '1px solid var(--border)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                background: 'var(--surface-2)',
-                borderRadius: 'var(--radius)'
-              }}
-            >
-              <KeyRound size={16} /> Enter PIN Manually
-            </button>
-          ) : (
-            <form onSubmit={handlePinSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--text-2)' }}>Master Security PIN</span>
-                <button
-                  type="button"
-                  onClick={() => setShowPinInput(false)}
-                  style={{ background: 'none', border: 'none', color: 'var(--primary-light)', fontSize: 11, cursor: 'pointer', fontWeight: 600 }}
-                >
-                  Collapse PIN
-                </button>
-              </div>
-
-              <div>
-                <input
-                  type="password"
-                  className="form-input"
-                  value={pin}
-                  onChange={(e) => { setPin(e.target.value); setError(''); }}
-                  placeholder="••••"
-                  autoFocus
-                  style={{
-                    fontSize: 26,
-                    textAlign: 'center',
-                    letterSpacing: '0.35em',
-                    padding: '12px',
-                    fontWeight: 900,
-                    borderRadius: 'var(--radius)',
-                    background: 'var(--surface-3)',
-                    border: '1px solid var(--border-accent)'
-                  }}
-                />
-              </div>
-
-              {/* Numeric Keypad */}
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(3, 1fr)',
-                gap: 8,
-                margin: '2px 0'
-              }}>
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
-                  <button
-                    key={num}
-                    type="button"
-                    className="btn btn-ghost"
-                    onClick={() => handleKeyPress(num)}
-                    style={{
-                      fontSize: 18,
-                      fontWeight: 800,
-                      height: 44,
-                      borderRadius: 'var(--radius)',
-                      background: 'var(--surface-2)',
-                      border: '1px solid var(--border)',
-                      transition: 'all 0.15s ease'
-                    }}
-                  >
-                    {num}
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  className="btn btn-ghost"
-                  onClick={handleBackspace}
-                  style={{
-                    fontSize: 14,
-                    fontWeight: 700,
-                    height: 44,
-                    borderRadius: 'var(--radius)',
-                    background: 'var(--surface-2)',
-                    border: '1px solid var(--border)'
-                  }}
-                >
-                  ⌫
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-ghost"
-                  onClick={() => handleKeyPress(0)}
-                  style={{
-                    fontSize: 18,
-                    fontWeight: 800,
-                    height: 44,
-                    borderRadius: 'var(--radius)',
-                    background: 'var(--surface-2)',
-                    border: '1px solid var(--border)'
-                  }}
-                >
-                  0
-                </button>
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  disabled={loading}
-                  style={{
-                    fontSize: 14,
-                    fontWeight: 800,
-                    height: 44,
-                    borderRadius: 'var(--radius)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                >
-                  {loading ? '...' : <ArrowRight size={18} />}
-                </button>
-              </div>
-
-              <button
-                type="submit"
-                className="btn btn-primary"
-                disabled={loading}
-                style={{
-                  width: '100%',
-                  justifyContent: 'center',
-                  height: 44,
-                  fontSize: 14,
-                  fontWeight: 800,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  marginTop: 4,
-                  borderRadius: 'var(--radius)'
-                }}
-              >
-                <KeyRound size={16} /> {loading ? 'Verifying PIN...' : 'Log In to Workspace'}
-              </button>
-            </form>
-          )}
-
-          {/* Public Visitor Link */}
-          <div style={{
-            marginTop: 20,
-            paddingTop: 16,
-            borderTop: '1px solid var(--border)',
-            textAlign: 'center'
-          }}>
-            <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 8 }}>
-              Looking to preview the preparation syllabus & structure?
-            </div>
-            <Link
-              to="/"
-              style={{
-                fontSize: 12,
-                fontWeight: 700,
-                color: 'var(--primary-light)',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 4
-              }}
-            >
-              Browse in Public View-Only Mode <ChevronRight size={14} />
-            </Link>
-          </div>
+              boxShadow: '0 4px 14px rgba(0,0,0,0.3)'
+            }}
+          >
+            <Eye size={18} color="var(--primary-light)" /> Explore in Public Mode
+          </Link>
         </div>
       </div>
 
@@ -1045,7 +781,7 @@ export default function LoginPage() {
         border: '1px solid var(--border)',
         borderRadius: 'var(--radius-xl)',
         padding: '36px 28px',
-        marginBottom: 44,
+        marginBottom: 50,
         boxShadow: '0 16px 40px rgba(0,0,0,0.4)',
         position: 'relative',
         zIndex: 1
@@ -1097,6 +833,26 @@ export default function LoginPage() {
         </div>
       </div>
 
+      {/* ── BOTTOM CALL TO ACTION ─────────────────────────────────── */}
+      <div style={{ textAlign: 'center', marginBottom: 40, position: 'relative', zIndex: 1 }}>
+        <button
+          onClick={() => setShowLoginModal(true)}
+          className="btn btn-primary"
+          style={{
+            padding: '14px 30px',
+            fontSize: 15,
+            fontWeight: 800,
+            borderRadius: 'var(--radius-full)',
+            boxShadow: '0 6px 24px rgba(99, 102, 241, 0.45)',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 10
+          }}
+        >
+          <Fingerprint size={20} /> Access Full Workspace Now
+        </button>
+      </div>
+
       {/* ── SECTION 5: BENGALI ASPIRANT QUOTE & FOOTER ─────────────── */}
       <div style={{
         textAlign: 'center',
@@ -1118,6 +874,365 @@ export default function LoginPage() {
           Preparation OS • Engineered with React 19, Dexie IndexedDB, WebAuthn FIDO2 & Spaced Repetition Algorithms.
         </div>
       </div>
+
+      {/* ── POP-UP MODAL: COMMAND CENTER LOGIN PORTAL ──────────────── */}
+      {showLoginModal && (
+        <div
+          className="modal-overlay"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.75)',
+            backdropFilter: 'blur(12px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: 16,
+            animation: 'fadeIn 0.2s ease-out'
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowLoginModal(false);
+          }}
+        >
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(26, 26, 46, 0.98), rgba(30, 30, 53, 0.96))',
+            borderRadius: 'var(--radius-xl)',
+            border: '1px solid var(--border-accent)',
+            padding: '32px 28px',
+            maxWidth: 460,
+            width: '100%',
+            boxShadow: '0 24px 70px rgba(0, 0, 0, 0.8), 0 0 40px rgba(99, 102, 241, 0.3)',
+            position: 'relative'
+          }}>
+            {/* Close Button */}
+            <button
+              onClick={() => setShowLoginModal(false)}
+              style={{
+                position: 'absolute',
+                top: 18,
+                right: 18,
+                background: 'var(--surface-3)',
+                border: '1px solid var(--border)',
+                color: 'var(--text-2)',
+                borderRadius: '50%',
+                width: 32,
+                height: 32,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+              title="Close Login Modal"
+            >
+              <X size={16} />
+            </button>
+
+            {/* Modal Header */}
+            <div style={{ textAlign: 'center', marginBottom: 22 }}>
+              <div style={{
+                width: 64,
+                height: 64,
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(139, 92, 246, 0.2))',
+                border: '1px solid var(--border-accent)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 14px auto',
+                color: 'var(--primary-light)',
+                boxShadow: '0 0 25px rgba(99, 102, 241, 0.35)'
+              }}>
+                <Fingerprint size={36} />
+              </div>
+
+              <h2 style={{ fontSize: 22, fontWeight: 900, margin: '0 0 6px 0', color: 'var(--text)', letterSpacing: '-0.02em' }}>
+                Command Center Login
+              </h2>
+              <p style={{ fontSize: 12, color: 'var(--text-2)', margin: 0, lineHeight: 1.5 }}>
+                Hardware-authenticated via WebAuthn Biometrics, Face ID, or PIN.
+              </p>
+            </div>
+
+            {error && (
+              <div style={{
+                background: 'var(--danger-glass)',
+                border: '1px solid var(--danger)',
+                color: 'var(--danger)',
+                borderRadius: 'var(--radius)',
+                padding: '12px 14px',
+                fontSize: 12,
+                marginBottom: 18,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                lineHeight: 1.4
+              }}>
+                <ShieldAlert size={18} style={{ flexShrink: 0 }} />
+                <div>{error}</div>
+              </div>
+            )}
+
+            {/* ── BIOMETRIC / PASSKEY PRIMARY LOGIN BUTTON ──────────── */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 18 }}>
+              {isBiometricSupported ? (
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={handleBiometricLogin}
+                  disabled={loading}
+                  style={{
+                    width: '100%',
+                    padding: '14px 20px',
+                    fontSize: 15,
+                    fontWeight: 800,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 10,
+                    borderRadius: 'var(--radius)',
+                    boxShadow: '0 6px 20px rgba(99, 102, 241, 0.45)',
+                    letterSpacing: '0.02em'
+                  }}
+                >
+                  <Fingerprint size={22} />
+                  {loading ? 'Authenticating...' : 'Instant Biometric Login'}
+                </button>
+              ) : (
+                <div style={{
+                  background: 'var(--surface-2)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius)',
+                  padding: '12px 14px',
+                  fontSize: 12,
+                  color: 'var(--text-3)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8
+                }}>
+                  <AlertCircle size={16} />
+                  Biometric passkeys not supported on this browser. Use PIN below.
+                </div>
+              )}
+
+              {/* First-time Biometric Setup Option */}
+              {isBiometricSupported && !hasPasskeys && (
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={handleRegisterBiometrics}
+                  disabled={loading}
+                  style={{
+                    fontSize: 12,
+                    color: 'var(--primary-light)',
+                    border: '1px dashed var(--border-accent)',
+                    padding: '10px 14px',
+                    borderRadius: 'var(--radius)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 6
+                  }}
+                >
+                  <Sparkles size={14} /> Register new device biometric passkey
+                </button>
+              )}
+            </div>
+
+            {/* ── DIVIDER / OR ──────────────────────────────────────── */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              margin: '16px 0',
+              color: 'var(--text-3)',
+              fontSize: 11,
+              fontWeight: 700
+            }}>
+              <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+              <span style={{ padding: '0 12px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>or verify with PIN</span>
+              <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+            </div>
+
+            {/* ── PIN FALLBACK TOGGLE / FORM ────────────────────────── */}
+            {!showPinInput ? (
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => setShowPinInput(true)}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  fontSize: 13,
+                  fontWeight: 700,
+                  border: '1px solid var(--border)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  background: 'var(--surface-2)',
+                  borderRadius: 'var(--radius)'
+                }}
+              >
+                <KeyRound size={16} /> Enter PIN Manually
+              </button>
+            ) : (
+              <form onSubmit={handlePinSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--text-2)' }}>Master Security PIN</span>
+                  <button
+                    type="button"
+                    onClick={() => setShowPinInput(false)}
+                    style={{ background: 'none', border: 'none', color: 'var(--primary-light)', fontSize: 11, cursor: 'pointer', fontWeight: 600 }}
+                  >
+                    Collapse PIN
+                  </button>
+                </div>
+
+                <div>
+                  <input
+                    type="password"
+                    className="form-input"
+                    value={pin}
+                    onChange={(e) => { setPin(e.target.value); setError(''); }}
+                    placeholder="••••"
+                    autoFocus
+                    style={{
+                      fontSize: 26,
+                      textAlign: 'center',
+                      letterSpacing: '0.35em',
+                      padding: '12px',
+                      fontWeight: 900,
+                      borderRadius: 'var(--radius)',
+                      background: 'var(--surface-3)',
+                      border: '1px solid var(--border-accent)'
+                    }}
+                  />
+                </div>
+
+                {/* Numeric Keypad */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(3, 1fr)',
+                  gap: 8,
+                  margin: '2px 0'
+                }}>
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+                    <button
+                      key={num}
+                      type="button"
+                      className="btn btn-ghost"
+                      onClick={() => handleKeyPress(num)}
+                      style={{
+                        fontSize: 18,
+                        fontWeight: 800,
+                        height: 44,
+                        borderRadius: 'var(--radius)',
+                        background: 'var(--surface-2)',
+                        border: '1px solid var(--border)',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      {num}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    onClick={handleBackspace}
+                    style={{
+                      fontSize: 14,
+                      fontWeight: 700,
+                      height: 44,
+                      borderRadius: 'var(--radius)',
+                      background: 'var(--surface-2)',
+                      border: '1px solid var(--border)'
+                    }}
+                  >
+                    ⌫
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    onClick={() => handleKeyPress(0)}
+                    style={{
+                      fontSize: 18,
+                      fontWeight: 800,
+                      height: 44,
+                      borderRadius: 'var(--radius)',
+                      background: 'var(--surface-2)',
+                      border: '1px solid var(--border)'
+                    }}
+                  >
+                    0
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={loading}
+                    style={{
+                      fontSize: 14,
+                      fontWeight: 800,
+                      height: 44,
+                      borderRadius: 'var(--radius)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    {loading ? '...' : <ArrowRight size={18} />}
+                  </button>
+                </div>
+
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={loading}
+                  style={{
+                    width: '100%',
+                    justifyContent: 'center',
+                    height: 44,
+                    fontSize: 14,
+                    fontWeight: 800,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    marginTop: 4,
+                    borderRadius: 'var(--radius)'
+                  }}
+                >
+                  <KeyRound size={16} /> {loading ? 'Verifying PIN...' : 'Log In to Workspace'}
+                </button>
+              </form>
+            )}
+
+            {/* Public Visitor Link */}
+            <div style={{
+              marginTop: 20,
+              paddingTop: 16,
+              borderTop: '1px solid var(--border)',
+              textAlign: 'center'
+            }}>
+              <button
+                onClick={() => { setShowLoginModal(false); navigate('/'); }}
+                style={{
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: 'var(--primary-light)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                Browse in Public View-Only Mode <ChevronRight size={14} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
