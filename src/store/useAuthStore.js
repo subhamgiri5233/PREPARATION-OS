@@ -87,16 +87,16 @@ export const useAuthStore = create((set, get) => ({
         });
         return { success: true };
       }
-      return { success: false, error: 'Authentication failed' };
+      throw new Error(res?.error || 'Biometric authentication failed');
     } catch (err) {
-      return { success: false, error: err.message || 'Passkey authentication failed' };
+      throw err;
     }
   },
 
   /**
-   * LAYER 1: Login using PIN
+   * LAYER 1: Login using PIN (Application Access / View-Only)
    */
-  loginWithPin: async (pin) => {
+  loginWithPinFallback: async (pin) => {
     try {
       const res = await loginWithPin(pin);
       if (res && res.token) {
@@ -114,10 +114,14 @@ export const useAuthStore = create((set, get) => ({
         });
         return { success: true };
       }
-      return { success: false, error: 'Invalid PIN' };
+      throw new Error(res?.error || 'Invalid PIN. Please try again.');
     } catch (err) {
-      return { success: false, error: err.message || 'Login failed' };
+      throw err;
     }
+  },
+
+  loginWithPin: async (pin) => {
+    return get().loginWithPinFallback(pin);
   },
 
   /**
@@ -136,12 +140,16 @@ export const useAuthStore = create((set, get) => ({
         return { success: true };
       }
       set({ pinError: 'Invalid PIN' });
-      return { success: false, error: 'Invalid PIN' };
+      throw new Error('Invalid PIN');
     } catch (err) {
       const msg = err.message || 'Verification failed';
       set({ pinError: msg });
-      return { success: false, error: msg };
+      throw err;
     }
+  },
+
+  login: async (pin) => {
+    return get().unlockEditMode(pin);
   },
 
   /**
@@ -152,11 +160,19 @@ export const useAuthStore = create((set, get) => ({
     set({ isEditMode: false, showPinModal: false, pinError: '' });
   },
 
+  disableEditMode: () => {
+    setEditModeAuthorized(false);
+    set({ isEditMode: false, showPinModal: false, pinError: '' });
+  },
+
+  requestEditMode: () => set({ showPinModal: true, pinError: '' }),
+  cancelEditMode: () => set({ showPinModal: false, pinError: '' }),
+
   toggleEditMode: () => {
     const { isEditMode } = get();
     if (isEditMode) {
       setEditModeAuthorized(false);
-      set({ isEditMode: false });
+      set({ isEditMode: false, showPinModal: false });
     } else {
       set({ showPinModal: true, pinError: '' });
     }
@@ -193,9 +209,9 @@ export const useAuthStore = create((set, get) => ({
         set({ hasPasskeys: true });
         return { success: true };
       }
-      return { success: false, error: 'Registration could not be completed' };
+      throw new Error(res?.error || 'Registration could not be completed');
     } catch (err) {
-      return { success: false, error: err.message || 'Passkey registration failed' };
+      throw err;
     }
   }
 }));

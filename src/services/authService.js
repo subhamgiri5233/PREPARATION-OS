@@ -6,9 +6,8 @@ const API_BASE =
   'https://preparation-os.onrender.com/api';
 
 const IS_DEV =
-  typeof import.meta !== 'undefined'
-    ? import.meta.env?.DEV === true
-    : (typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production');
+  (typeof import.meta !== 'undefined' && !!import.meta.env?.DEV) ||
+  (typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production');
 
 async function authFetch(path, options = {}) {
   try {
