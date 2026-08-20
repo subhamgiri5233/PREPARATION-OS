@@ -4,11 +4,13 @@ import { authenticateWithPasskey, registerPasskeyCredential, checkBiometricSuppo
 import { setEditModeAuthorized } from '../services/mutationGuard.js';
 
 const initialToken = typeof localStorage !== 'undefined' ? localStorage.getItem('prepos_auth_token') : null;
+const initialGuest = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('prepos_guest_mode') === 'true' : false;
 
 export const useAuthStore = create((set, get) => ({
   // ── LAYER 1: APP LOGIN AUTHENTICATION ────────────────────────────────
   isAppAuthenticated: !!initialToken,
   isAuthenticated: !!initialToken, // Optimistic instant shell if token exists
+  isGuestMode: initialGuest,
   token: initialToken,
   isCheckingSession: !initialToken ? false : true,
   isChecking: !initialToken ? false : true,
@@ -180,6 +182,14 @@ export const useAuthStore = create((set, get) => ({
 
   openLoginModal: () => set({ showPinModal: true, pinError: '' }),
   closePinModal: () => set({ showPinModal: false, pinError: '' }),
+
+  enterGuestMode: () => {
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.setItem('prepos_guest_mode', 'true');
+    }
+    setEditModeAuthorized(false);
+    set({ isGuestMode: true, isEditMode: false });
+  },
 
   /**
    * Full App Logout

@@ -196,6 +196,7 @@ export default function LoginPage() {
     loginWithPasskey,
     registerPasskey,
     loginWithPinFallback,
+    enterGuestMode,
     checkAuth
   } = useAuthStore();
 
@@ -211,6 +212,12 @@ export default function LoginPage() {
   }, []);
 
   const from = location.state?.from?.pathname || '/';
+
+  const handleExploreGuest = (e) => {
+    if (e) e.preventDefault();
+    enterGuestMode();
+    navigate('/');
+  };
 
   // Biometric / Passkey Login Handler
   const handleBiometricLogin = async () => {
@@ -359,13 +366,13 @@ export default function LoginPage() {
           >
             <Lock size={12} /> Log In
           </button>
-          <Link
-            to="/"
+          <button
+            onClick={handleExploreGuest}
             className="btn btn-xs btn-ghost"
-            style={{ fontSize: 11, display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-2)' }}
+            style={{ fontSize: 11, display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-2)', cursor: 'pointer' }}
           >
             <Eye size={12} /> Public Mode
-          </Link>
+          </button>
         </div>
       </div>
 
@@ -477,8 +484,8 @@ export default function LoginPage() {
             <Fingerprint size={24} /> Log In to Command Center
           </button>
 
-          <Link
-            to="/"
+          <button
+            onClick={handleExploreGuest}
             className="btn btn-ghost"
             style={{
               padding: '15px 26px',
@@ -490,11 +497,12 @@ export default function LoginPage() {
               display: 'inline-flex',
               alignItems: 'center',
               gap: 8,
-              boxShadow: '0 4px 14px rgba(0,0,0,0.3)'
+              boxShadow: '0 4px 14px rgba(0,0,0,0.3)',
+              cursor: 'pointer'
             }}
           >
             <Eye size={18} color="var(--primary-light)" /> Explore in Public Mode
-          </Link>
+          </button>
         </div>
       </div>
 
@@ -1214,7 +1222,7 @@ export default function LoginPage() {
               textAlign: 'center'
             }}>
               <button
-                onClick={() => { setShowLoginModal(false); navigate('/'); }}
+                onClick={(e) => { setShowLoginModal(false); handleExploreGuest(e); }}
                 style={{
                   fontSize: 12,
                   fontWeight: 700,
