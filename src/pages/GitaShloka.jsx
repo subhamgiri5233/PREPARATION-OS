@@ -1,12 +1,14 @@
 // src/pages/GitaShloka.jsx
-// Redesigned: clean form order, studyApplication field, scrollable view modal,
-// distinct visual sections, Bengali typography, full mobile responsiveness.
+// Daily Bhagavad Gita Shloka & Spiritual Meditation Portal
+// Features: Harmonic 136.1Hz Om (ॐ) Synthesizer, Sacred Chimes, Bengali Translation,
+// Exam Focus Reflections, and Complete Mobile Responsiveness.
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { format } from 'date-fns';
 import {
   BookOpen, Plus, Star, Search, Edit3, Trash2, CheckCircle,
-  Flame, X, Sparkles, Eye, Calendar
+  Flame, X, Sparkles, Eye, Calendar, Volume2, VolumeX, Play,
+  Pause, Bell, Sun, Music, Shield, RefreshCw
 } from 'lucide-react';
 import {
   getAllGitaShlokas,
@@ -21,6 +23,130 @@ import {
 import { requireEditPermission, canEdit } from '../services/mutationGuard.js';
 
 const BENGALI_FONT = "'Noto Sans Bengali', 'Hind Siliguri', 'Kalpurush', 'Segoe UI', sans-serif";
+
+// ─── Web Audio API Cosmic 136.1Hz Om (ॐ) Sound Engine ────────────────────────
+class OmSoundEngine {
+  constructor() {
+    this.ctx = null;
+    this.oscillators = [];
+    this.masterGain = null;
+    this.isPlaying = false;
+  }
+
+  init() {
+    if (!this.ctx) {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) {
+        this.ctx = new AudioCtx();
+      }
+    }
+    if (this.ctx && this.ctx.state === 'suspended') {
+      this.ctx.resume();
+    }
+  }
+
+  // Play a single rich resonant ॐ temple bell chime (5.5s decay)
+  playOmChime(volume = 0.5) {
+    try {
+      this.init();
+      if (!this.ctx) return;
+      const now = this.ctx.currentTime;
+
+      // Authentic Om harmonic overtones (136.1Hz base frequency of the cosmos / Earth year vibration)
+      const frequencies = [136.1, 272.2, 408.3, 544.4, 680.5, 816.6];
+      const gains = [0.45, 0.28, 0.16, 0.09, 0.05, 0.02];
+
+      frequencies.forEach((freq, idx) => {
+        const osc = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+
+        osc.type = idx === 0 ? 'sine' : idx % 2 === 0 ? 'triangle' : 'sine';
+        osc.frequency.setValueAtTime(freq, now);
+        osc.detune.setValueAtTime((Math.random() - 0.5) * 6, now);
+
+        g.gain.setValueAtTime(0.001, now);
+        g.gain.linearRampToValueAtTime(gains[idx] * volume, now + 0.2);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + 5.5);
+
+        osc.connect(g);
+        g.connect(this.ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + 6.0);
+      });
+    } catch (e) {
+      console.warn('[OmSoundEngine] playOmChime error:', e);
+    }
+  }
+
+  // Continuous Meditative Om Drone (ধ্যান ধ্বনি) with gentle breathing LFO
+  startContinuousDrone(volume = 0.35) {
+    try {
+      this.init();
+      if (!this.ctx || this.isPlaying) return;
+      this.isPlaying = true;
+      const now = this.ctx.currentTime;
+
+      this.masterGain = this.ctx.createGain();
+      this.masterGain.gain.setValueAtTime(0.001, now);
+      this.masterGain.gain.linearRampToValueAtTime(volume, now + 2.5);
+      this.masterGain.connect(this.ctx.destination);
+
+      // Low frequency LFO for gentle breath-like pulsating Om vibration (~6.5s breathing rhythm)
+      const lfo = this.ctx.createOscillator();
+      const lfoGain = this.ctx.createGain();
+      lfo.frequency.setValueAtTime(0.15, now);
+      lfoGain.gain.setValueAtTime(volume * 0.35, now);
+      lfo.connect(this.masterGain.gain);
+      lfo.start(now);
+      this.oscillators.push(lfo);
+
+      // Multi-harmonic Om resonance (136.1Hz fundamental, 204.15Hz perfect fifth, 272.2Hz octave)
+      const frequencies = [136.1, 136.1 * 1.5, 272.2, 408.3];
+      frequencies.forEach((freq, idx) => {
+        const osc = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+
+        osc.type = idx === 0 ? 'sine' : 'triangle';
+        osc.frequency.setValueAtTime(freq, now);
+        osc.detune.setValueAtTime(idx * 2 - 3, now);
+
+        const subGain = [0.35, 0.22, 0.15, 0.08][idx] || 0.1;
+        g.gain.setValueAtTime(subGain, now);
+
+        osc.connect(g);
+        g.connect(this.masterGain);
+
+        osc.start(now);
+        this.oscillators.push(osc);
+      });
+    } catch (e) {
+      console.warn('[OmSoundEngine] startContinuousDrone error:', e);
+    }
+  }
+
+  stopContinuousDrone() {
+    try {
+      if (!this.isPlaying || !this.ctx) return;
+      const now = this.ctx.currentTime;
+      if (this.masterGain) {
+        this.masterGain.gain.linearRampToValueAtTime(0.0001, now + 1.2);
+      }
+      setTimeout(() => {
+        this.oscillators.forEach((o) => {
+          try { o.stop(); o.disconnect(); } catch (_) {}
+        });
+        this.oscillators = [];
+        this.isPlaying = false;
+      }, 1300);
+    } catch (e) {
+      console.warn('[OmSoundEngine] stopContinuousDrone error:', e);
+      this.isPlaying = false;
+    }
+  }
+}
+
+const omAudioEngine = new OmSoundEngine();
 
 // ─── Popular Shlokas (Quick Pick presets) ────────────────────────────────────
 export const popularBengaliShlokas = [
@@ -143,6 +269,33 @@ export default function GitaShloka() {
   const [formData, setFormData] = useState(emptyForm());
   const [formError, setFormError] = useState('');
 
+  // ── Om (ॐ) Sound State ──────────────────────────────────────────────────────
+  const [isOmPlaying, setIsOmPlaying] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      // Cleanup sound when navigating away from Gita page
+      omAudioEngine.stopContinuousDrone();
+    };
+  }, []);
+
+  const toggleOmDrone = () => {
+    if (isOmPlaying) {
+      omAudioEngine.stopContinuousDrone();
+      setIsOmPlaying(false);
+      showToast('ওঁ ধ্যান ধ্বনি বিরতি দেওয়া হয়েছে ⏸');
+    } else {
+      omAudioEngine.startContinuousDrone(0.4);
+      setIsOmPlaying(true);
+      showToast('🕉️ পবিত্র ওঁ ধ্যান ধ্বনি শুরু হয়েছে (136.1Hz Cosmic Resonance)');
+    }
+  };
+
+  const playChimeBell = () => {
+    omAudioEngine.playOmChime(0.6);
+    showToast('🔔 পবিত্র ওঁ ঘণ্টা ধ্বনি বাজানো হয়েছে');
+  };
+
   const loadData = async () => {
     setLoading(true);
     try {
@@ -168,6 +321,7 @@ export default function GitaShloka() {
 
   const handleOpenAdd = () => {
     if (!canEdit()) { requireEditPermission('add gita shloka'); return; }
+    playChimeBell();
     setEditingShloka(null);
     setFormData(emptyForm());
     setFormError('');
@@ -195,13 +349,13 @@ export default function GitaShloka() {
 
   const handleSelectPopular = (pop) => {
     if (!canEdit()) { requireEditPermission('select popular shloka'); return; }
+    playChimeBell();
     setFormData((prev) => ({
       ...prev,
       chapter:            pop.chapter,
       verse:              pop.verse,
       sanskritText:       pop.sanskritText,
       meaning:            pop.meaning,
-      // Keep user's own application/reflection — don't overwrite with presets
       realLifeApplication: prev.realLifeApplication,
       studyApplication:    prev.studyApplication,
       personalReflection:  pop.personalReflection || prev.personalReflection,
@@ -224,6 +378,7 @@ export default function GitaShloka() {
         await addGitaShloka(formData);
         showToast('আজকের শ্লোক সফলভাবে সংরক্ষিত হয়েছে ✓');
       }
+      playChimeBell();
       setShowModal(false);
       loadData();
     } catch (err) {
@@ -259,7 +414,21 @@ export default function GitaShloka() {
   }
 
   return (
-    <div>
+    <div style={{ position: 'relative' }}>
+      {/* Ambient Divine Saffron Aura */}
+      <div style={{
+        position: 'absolute',
+        top: -60,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: '90%',
+        height: 280,
+        background: 'radial-gradient(ellipse at center, rgba(245, 158, 11, 0.18) 0%, rgba(234, 88, 12, 0.08) 50%, transparent 100%)',
+        filter: 'blur(50px)',
+        zIndex: 0,
+        pointerEvents: 'none'
+      }} />
+
       {/* Toast */}
       {toastMessage && (
         <div style={{
@@ -274,18 +443,134 @@ export default function GitaShloka() {
       )}
 
       {/* Header */}
-      <div className="page-header">
+      <div className="page-header" style={{ position: 'relative', zIndex: 1 }}>
         <div className="page-header-left">
-          <h1 className="page-title">দৈনিক গীতা শ্লোক (Daily Gita Shloka)</h1>
-          <p className="page-subtitle">বাংলা অর্থ, বাস্তব প্রয়োগ ও আত্মিক অনুপ্রেরণা সহ দৈনিক গীতা পাঠ</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{
+              fontSize: 28,
+              fontWeight: 900,
+              color: '#f59e0b',
+              textShadow: '0 0 15px rgba(245, 158, 11, 0.6)'
+            }}>
+              ॐ
+            </span>
+            <h1 className="page-title" style={{ fontFamily: BENGALI_FONT }}>
+              দৈনিক গীতা শ্লোক (Daily Gita Shloka)
+            </h1>
+          </div>
+          <p className="page-subtitle" style={{ fontFamily: BENGALI_FONT }}>
+            বাংলা অর্থ, বাস্তব প্রয়োগ ও আত্মিক অনুপ্রেরণা সহ দৈনিক গীতা পাঠ ও প্রশান্তি
+          </p>
         </div>
-        <button className="btn btn-primary" onClick={handleOpenAdd}>
-          <Plus size={16} /> আজকের শ্লোক যোগ করুন
-        </button>
+
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button
+            className={`btn ${isOmPlaying ? 'btn-warning' : 'btn-ghost'}`}
+            onClick={toggleOmDrone}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              boxShadow: isOmPlaying ? '0 0 16px rgba(245, 158, 11, 0.5)' : 'none',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            {isOmPlaying ? <Pause size={16} /> : <Play size={16} />}
+            <span>{isOmPlaying ? 'ওঁ ধ্বনি থামান' : '🕉️ ওঁ ধ্যান ধ্বনি'}</span>
+          </button>
+          <button className="btn btn-primary" onClick={handleOpenAdd}>
+            <Plus size={16} /> আজকের শ্লোক যোগ করুন
+          </button>
+        </div>
+      </div>
+
+      {/* ── SACRED OM (ॐ) MEDITATION SOUND CARD ─────────────────────── */}
+      <div
+        className="card mb-24"
+        style={{
+          background: isOmPlaying
+            ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.16), rgba(234, 88, 12, 0.1))'
+            : 'linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(26, 26, 46, 0.6))',
+          border: `1px solid ${isOmPlaying ? 'rgba(245, 158, 11, 0.6)' : 'rgba(245, 158, 11, 0.25)'}`,
+          borderRadius: 'var(--radius-xl)',
+          padding: '18px 22px',
+          boxShadow: isOmPlaying ? '0 8px 30px rgba(245, 158, 11, 0.25)' : 'var(--shadow)',
+          position: 'relative',
+          zIndex: 1,
+          transition: 'all 0.3s ease'
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div
+              onClick={playChimeBell}
+              style={{
+                width: 50,
+                height: 50,
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(234, 88, 12, 0.15))',
+                border: '1px solid rgba(245, 158, 11, 0.45)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 26,
+                fontWeight: 900,
+                color: '#f59e0b',
+                cursor: 'pointer',
+                boxShadow: isOmPlaying ? '0 0 25px rgba(245, 158, 11, 0.6)' : '0 0 12px rgba(245, 158, 11, 0.25)',
+                transition: 'all 0.2s ease',
+                flexShrink: 0
+              }}
+              title="ক্লিক করে পবিত্র ওঁ ঘণ্টা ধ্বনি শুনুন"
+            >
+              ॐ
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <h3 style={{ fontSize: 16, fontWeight: 800, color: '#f59e0b', margin: 0, fontFamily: BENGALI_FONT }}>
+                  পবিত্র ওঁ ধ্যান ও চিত্তশুদ্ধি ধ্বনি (Om Meditation Resonance)
+                </h3>
+                {isOmPlaying && (
+                  <span className="badge badge-warning" style={{ fontSize: 10, padding: '2px 8px' }}>
+                    ● ধ্বনি সক্রিয় (136.1Hz)
+                  </span>
+                )}
+              </div>
+              <p style={{ fontSize: 12, color: 'var(--text-2)', margin: '3px 0 0 0', fontFamily: BENGALI_FONT }}>
+                “ওঁ তৎ সৎ” — গীতা শ্লোক পাঠ ও গভীর অধ্যয়নের পূর্বে মনকে স্থির, শান্ত ও একাগ্র করতে পবিত্র ওঁ ধ্বনি শুনুন।
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <button
+              onClick={playChimeBell}
+              className="btn btn-ghost btn-sm"
+              style={{
+                border: '1px solid rgba(245, 158, 11, 0.3)',
+                color: '#fbbf24',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6
+              }}
+              title="একবার ঘণ্টা ধ্বনি বাজান"
+            >
+              <Bell size={14} /> <span>ঘণ্টা ধ্বনি</span>
+            </button>
+            <button
+              onClick={toggleOmDrone}
+              className={`btn btn-sm ${isOmPlaying ? 'btn-warning' : 'btn-primary'}`}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700 }}
+            >
+              {isOmPlaying ? <Pause size={14} /> : <Play size={14} />}
+              <span>{isOmPlaying ? 'থামান' : 'ধ্যান ধ্বনি চালান'}</span>
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Stats */}
-      <div className="grid-4 mb-24">
+      <div className="grid-4 mb-24" style={{ position: 'relative', zIndex: 1 }}>
         {[
           { icon: '📖', value: stats.totalShlokas, label: 'মোট শ্লোক' },
           { icon: '📅', value: stats.thisMonth, label: 'এই মাসে' },
@@ -304,8 +589,9 @@ export default function GitaShloka() {
 
       {/* Today's Shloka Card */}
       <div className="card mb-24" style={{
-        background: 'linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.04))',
-        border: '1px solid var(--border-accent)', borderRadius: 'var(--radius-xl)', padding: 24
+        background: 'linear-gradient(135deg, rgba(99,102,241,0.08), rgba(245,158,11,0.04))',
+        border: '1px solid var(--border-accent)', borderRadius: 'var(--radius-xl)', padding: 24,
+        position: 'relative', zIndex: 1
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -319,6 +605,9 @@ export default function GitaShloka() {
           </div>
           {todayShloka ? (
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button className="btn btn-ghost btn-sm" onClick={playChimeBell} title="পবিত্র ঘণ্টা ধ্বনি">
+                <Bell size={14} color="#f59e0b" />
+              </button>
               <button className="btn btn-ghost btn-sm" onClick={() => handleToggleFavorite(todayShloka.id || todayShloka._id)} title="পছন্দের তালিকা">
                 <Star size={15} fill={todayShloka.favorite ? 'var(--warning)' : 'none'} color={todayShloka.favorite ? 'var(--warning)' : 'var(--text-2)'} />
               </button>
@@ -389,9 +678,9 @@ export default function GitaShloka() {
       </div>
 
       {/* History & Search */}
-      <div className="card">
+      <div className="card" style={{ position: 'relative', zIndex: 1 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 10 }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>পূর্ববর্তী শ্লোক সংগ্রহ</h2>
+          <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0, fontFamily: BENGALI_FONT }}>পূর্ববর্তী শ্লোক সংগ্রহ</h2>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
           <div style={{ position: 'relative', flex: '1 1 180px', minWidth: 0 }}>
@@ -438,7 +727,7 @@ export default function GitaShloka() {
                     <button className="btn btn-icon btn-ghost btn-sm" onClick={() => handleToggleFavorite(shloka.id || shloka._id)}>
                       <Star size={13} fill={shloka.favorite ? 'var(--warning)' : 'none'} color={shloka.favorite ? 'var(--warning)' : 'var(--text-3)'} />
                     </button>
-                    <button className="btn btn-icon btn-ghost btn-sm" onClick={() => setViewingShloka(shloka)}>
+                    <button className="btn btn-icon btn-ghost btn-sm" onClick={() => { playChimeBell(); setViewingShloka(shloka); }}>
                       <Eye size={13} />
                     </button>
                     <button className="btn btn-icon btn-ghost btn-sm" onClick={() => handleOpenEdit(shloka)}>
@@ -449,243 +738,84 @@ export default function GitaShloka() {
                     </button>
                   </div>
                 </div>
-                <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', fontFamily: BENGALI_FONT, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                <div style={{
+                  fontSize: 14, color: 'var(--text)', lineHeight: 1.6,
+                  fontFamily: BENGALI_FONT, marginBottom: 6,
+                  display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'
+                }}>
                   {shloka.sanskritText}
                 </div>
                 {shloka.meaning && (
-                  <div style={{ fontSize: 12, color: 'var(--text-2)', marginTop: 4, fontFamily: BENGALI_FONT, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical' }}>
+                  <div style={{
+                    fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5,
+                    fontFamily: BENGALI_FONT,
+                    display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'
+                  }}>
                     {shloka.meaning}
                   </div>
                 )}
-                {/* Show indicator dots for which optional sections are filled */}
-                <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
-                  {shloka.realLifeApplication && <span style={{ fontSize: 10, background: 'rgba(16,185,129,0.15)', color: '#10b981', padding: '2px 7px', borderRadius: 999, fontWeight: 600 }}>🌍 বাস্তব প্রয়োগ</span>}
-                  {shloka.studyApplication && <span style={{ fontSize: 10, background: 'rgba(59,130,246,0.15)', color: '#60a5fa', padding: '2px 7px', borderRadius: 999, fontWeight: 600 }}>📚 পড়াশোনা</span>}
-                  {shloka.personalReflection && <span style={{ fontSize: 10, background: 'rgba(245,158,11,0.12)', color: 'var(--warning)', padding: '2px 7px', borderRadius: 999, fontWeight: 600 }}>🧘 উপলব্ধি</span>}
-                </div>
               </div>
             ))}
           </div>
         )}
       </div>
 
-      {/* ── ADD / EDIT MODAL ─────────────────────────────────────────────── */}
-      {showModal && (
-        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setShowModal(false)}>
-          <div className="modal" style={{ maxWidth: 660, width: '95vw', maxHeight: '92vh', display: 'flex', flexDirection: 'column' }}>
-            {/* Fixed header */}
-            <div className="modal-header" style={{ flexShrink: 0 }}>
-              <h2 className="modal-title" style={{ fontFamily: BENGALI_FONT }}>
-                {editingShloka ? '✏️ শ্লোক সম্পাদনা করুন' : '➕ আজকের গীতা শ্লোক যোগ করুন'}
-              </h2>
-              <button className="modal-close" onClick={() => setShowModal(false)} aria-label="বন্ধ করুন">
-                <X size={14} />
-              </button>
-            </div>
-
-            {/* Scrollable body */}
-            <div style={{ overflowY: 'auto', flex: 1, padding: '0 4px' }}>
-
-              {/* Quick Pick banner */}
-              {!editingShloka && (
-                <div style={{
-                  background: 'rgba(99,102,241,0.08)', border: '1px solid var(--border-accent)',
-                  borderRadius: 'var(--radius)', padding: '10px 14px', marginBottom: 16,
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap'
-                }}>
-                  <span style={{ fontSize: 12, color: 'var(--text)', fontFamily: BENGALI_FONT }}>
-                    💡 জনপ্রিয় গীতা শ্লোক সরাসরি নির্বাচন করতে চান?
-                  </span>
-                  <button type="button" className="btn btn-xs btn-primary" onClick={() => setShowQuickPick(!showQuickPick)}>
-                    <Sparkles size={12} /> {showQuickPick ? 'বন্ধ করুন' : 'শ্লোক নির্বাচন'}
-                  </button>
-                </div>
-              )}
-
-              {/* Quick Pick list */}
-              {showQuickPick && (
-                <div style={{
-                  background: 'var(--surface-3)', border: '1px solid var(--border)',
-                  borderRadius: 'var(--radius)', padding: 12, marginBottom: 16,
-                  maxHeight: 200, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6
-                }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: 4 }}>
-                    নির্বাচন করুন:
-                  </div>
-                  {popularBengaliShlokas.map((pop) => (
-                    <div key={`${pop.chapter}-${pop.verse}`} onClick={() => handleSelectPopular(pop)} style={{
-                      padding: '8px 12px', borderRadius: 6, background: 'var(--surface-2)',
-                      border: '1px solid var(--border)', cursor: 'pointer', fontSize: 12,
-                      transition: 'var(--transition)', fontFamily: BENGALI_FONT,
-                    }}>
-                      <div style={{ fontWeight: 700, color: 'var(--primary-light)' }}>
-                        অধ্যায় {pop.chapter} • শ্লোক {pop.verse}
-                      </div>
-                      <div style={{ color: 'var(--text)', marginTop: 2 }}>{pop.sanskritText.split('\n')[0]}</div>
-                      <div style={{ color: 'var(--text-3)', fontSize: 11, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pop.meaning}</div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-                {formError && (
-                  <div style={{ background: 'var(--danger-glass)', color: 'var(--danger)', padding: '8px 12px', borderRadius: 'var(--radius)', fontSize: 13 }}>
-                    ⚠️ {formError}
-                  </div>
-                )}
-
-                {/* 1 + 2: Chapter & Verse — two cols on desktop, stacked on mobile */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12 }}>
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <SectionLabel title="অধ্যায় নং" sub="Chapter Number" />
-                    <input type="number" className="form-input" placeholder="যেমন: 2"
-                      min="1" max="18" value={formData.chapter} onChange={set('chapter')} />
-                  </div>
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <SectionLabel title="শ্লোক নং" sub="Verse Number" />
-                    <input type="text" className="form-input" placeholder="যেমন: 47"
-                      value={formData.verse} onChange={set('verse')} />
-                  </div>
-                </div>
-
-                {/* 3: Original Shloka */}
-                <div className="form-group" style={{ margin: 0 }}>
-                  <SectionLabel emoji="🕉️" title="মূল শ্লোক" sub="বাংলা বা দেবনাগরী হরফে লিখুন" required />
-                  <textarea className="form-textarea" rows={3} required
-                    placeholder="এখানে শ্লোকটি লিখুন..."
-                    value={formData.sanskritText} onChange={set('sanskritText')}
-                    style={{ fontFamily: BENGALI_FONT, fontSize: 16, lineHeight: 1.7 }} />
-                </div>
-
-                {/* 4: Bengali Meaning */}
-                <div className="form-group" style={{ margin: 0 }}>
-                  <SectionLabel emoji="📜" title="বাংলা ভাবার্থ ও অনুবাদ" sub="Bengali Meaning" required />
-                  <textarea className="form-textarea" rows={3} required
-                    placeholder="শ্লোকটির সহজ বাংলা অর্থ নিজের ভাষায় লিখুন..."
-                    value={formData.meaning} onChange={set('meaning')}
-                    style={{ fontFamily: BENGALI_FONT, fontSize: 14, lineHeight: 1.7 }} />
-                </div>
-
-                {/* 5: Real Life Application */}
-                <div className="form-group" style={{ margin: 0 }}>
-                  <SectionLabel emoji="🌍" title="বাস্তব জীবনে কীভাবে প্রয়োগ করব"
-                    sub="দৈনন্দিন জীবন, আচরণ, সিদ্ধান্ত — পড়াশোনার বাইরে" color="#10b981" />
-                  <textarea className="form-textarea" rows={3}
-                    placeholder="বাস্তব জীবনে এই শিক্ষাটি কীভাবে প্রয়োগ করবেন..."
-                    value={formData.realLifeApplication} onChange={set('realLifeApplication')}
-                    style={{
-                      fontFamily: BENGALI_FONT, fontSize: 14, lineHeight: 1.7,
-                      borderColor: formData.realLifeApplication ? 'rgba(16,185,129,0.5)' : undefined,
-                      background: formData.realLifeApplication ? 'rgba(16,185,129,0.03)' : undefined,
-                    }} />
-                  <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 4, fontFamily: BENGALI_FONT }}>
-                    উদাহরণ: সিদ্ধান্ত নেওয়ার সময় ফলের চিন্তা না করে নিজের কাজে মনোযোগ রাখা।
-                  </div>
-                </div>
-
-                {/* 6: Study Application */}
-                <div className="form-group" style={{ margin: 0 }}>
-                  <SectionLabel emoji="📚" title="পড়াশোনায় কীভাবে সাহায্য করবে"
-                    sub="একাগ্রতা, শৃঙ্খলা, পরীক্ষার প্রস্তুতি, মনোবল" color="#60a5fa" />
-                  <textarea className="form-textarea" rows={3}
-                    placeholder="পড়াশোনা, মনোযোগ বা পরীক্ষার প্রস্তুতিতে এটি কীভাবে সাহায্য করবে..."
-                    value={formData.studyApplication} onChange={set('studyApplication')}
-                    style={{
-                      fontFamily: BENGALI_FONT, fontSize: 14, lineHeight: 1.7,
-                      borderColor: formData.studyApplication ? 'rgba(59,130,246,0.5)' : undefined,
-                      background: formData.studyApplication ? 'rgba(59,130,246,0.03)' : undefined,
-                    }} />
-                  <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 4, fontFamily: BENGALI_FONT }}>
-                    উদাহরণ: পরীক্ষার ফল নিয়ে অতিরিক্ত চিন্তা না করে প্রতিদিনের পড়াশোনায় মনোযোগ দেওয়া।
-                  </div>
-                </div>
-
-                {/* 7: Personal Reflection */}
-                <div className="form-group" style={{ margin: 0 }}>
-                  <SectionLabel emoji="🧘" title="ব্যক্তিগত উপলব্ধি ও চিন্তন"
-                    sub="Personal Reflection" color="var(--warning)" />
-                  <textarea className="form-textarea" rows={2}
-                    placeholder="আজ এই শ্লোক থেকে আমি কী শিখলাম?..."
-                    value={formData.personalReflection} onChange={set('personalReflection')}
-                    style={{
-                      fontFamily: BENGALI_FONT, fontSize: 14, lineHeight: 1.7,
-                      borderColor: formData.personalReflection ? 'rgba(245,158,11,0.4)' : undefined,
-                      background: formData.personalReflection ? 'rgba(245,158,11,0.03)' : undefined,
-                    }} />
-                </div>
-
-                {/* Action buttons */}
-                <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', paddingBottom: 4, flexWrap: 'wrap' }}>
-                  <button type="button" className="btn btn-ghost" onClick={() => setShowModal(false)}>
-                    বাতিল
-                  </button>
-                  <button type="submit" className="btn btn-primary">
-                    {editingShloka ? '✓ পরিবর্তন সংরক্ষণ করুন' : '✓ শ্লোক সংরক্ষণ করুন'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── VIEW DETAIL MODAL ────────────────────────────────────────────── */}
+      {/* View Modal */}
       {viewingShloka && (
         <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setViewingShloka(null)}>
-          <div className="modal" style={{ maxWidth: 640, width: '95vw', maxHeight: '92vh', display: 'flex', flexDirection: 'column' }}>
-            {/* Fixed header */}
+          <div className="modal" style={{ maxWidth: 540, maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
             <div className="modal-header" style={{ flexShrink: 0 }}>
-              <h2 className="modal-title" style={{ fontFamily: BENGALI_FONT }}>
-                {(viewingShloka.chapter || viewingShloka.verse)
-                  ? `অধ্যায় ${viewingShloka.chapter || '?'} • শ্লোক ${viewingShloka.verse || '?'}`
-                  : '🕉️ গীতা শ্লোক'}
-              </h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 20 }}>ॐ</span>
+                <h2 className="modal-title" style={{ fontFamily: BENGALI_FONT }}>
+                  {(viewingShloka.chapter || viewingShloka.verse) ? `অধ্যায় ${viewingShloka.chapter || '?'} • শ্লোক ${viewingShloka.verse || '?'}` : 'গীতা শ্লোক'}
+                </h2>
+              </div>
               <button className="modal-close" onClick={() => setViewingShloka(null)} aria-label="বন্ধ করুন">
-                <X size={14} />
+                <X size={16} />
               </button>
             </div>
 
-            {/* Scrollable content */}
-            <div style={{ overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {/* Date */}
-              <div style={{ fontSize: 12, color: 'var(--text-3)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                <Calendar size={12} /> তারিখ: {viewingShloka.date}
-              </div>
-
-              {/* 1. Original Shloka */}
+            <div style={{ overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14, flex: 1 }}>
+              {/* Sanskrit Text */}
               <div style={{
-                fontSize: 19, fontWeight: 600, lineHeight: 1.8, color: 'var(--primary-light)',
-                background: 'var(--surface-2)', padding: '16px 20px', borderRadius: 'var(--radius)',
-                fontFamily: BENGALI_FONT, whiteSpace: 'pre-wrap', borderLeft: '4px solid var(--primary)',
+                fontSize: 18, fontWeight: 600, lineHeight: 1.8, color: 'var(--primary-light)',
+                fontFamily: BENGALI_FONT, padding: '16px 18px',
+                background: 'var(--surface-2)', borderRadius: 'var(--radius)',
+                borderLeft: '4px solid var(--primary)', whiteSpace: 'pre-wrap'
               }}>
                 {viewingShloka.sanskritText}
               </div>
 
-              {/* 2. Bengali Meaning */}
-              <ViewSection emoji="📜" label="বাংলা ভাবার্থ ও অনুবাদ" text={viewingShloka.meaning}
-                borderColor="var(--primary)" bgColor="rgba(99,102,241,0.05)" textColor="var(--primary-light)" />
+              {viewingShloka.meaning && (
+                <ViewSection emoji="📜" label="বাংলা ভাবার্থ ও অনুবাদ" text={viewingShloka.meaning}
+                  borderColor="var(--primary)" bgColor="rgba(99,102,241,0.05)" textColor="var(--primary-light)" />
+              )}
+              {viewingShloka.realLifeApplication && (
+                <ViewSection emoji="🌍" label="বাস্তব জীবনে প্রয়োগ" text={viewingShloka.realLifeApplication}
+                  borderColor="#10b981" bgColor="rgba(16,185,129,0.05)" textColor="#10b981" />
+              )}
+              {viewingShloka.studyApplication && (
+                <ViewSection emoji="📚" label="পড়াশোনায় সাহায্য" text={viewingShloka.studyApplication}
+                  borderColor="#3b82f6" bgColor="rgba(59,130,246,0.05)" textColor="#60a5fa" />
+              )}
+              {viewingShloka.personalReflection && (
+                <ViewSection emoji="🧘" label="ব্যক্তিগত উপলব্ধি" text={viewingShloka.personalReflection}
+                  borderColor="var(--warning)" bgColor="rgba(245,158,11,0.05)" textColor="var(--warning)" />
+              )}
+            </div>
 
-              {/* 3. Real Life Application */}
-              <ViewSection emoji="🌍" label="বাস্তব জীবনে কীভাবে প্রয়োগ করব" text={viewingShloka.realLifeApplication}
-                borderColor="#10b981" bgColor="rgba(16,185,129,0.05)" textColor="#10b981" />
-
-              {/* 4. Study Application */}
-              <ViewSection emoji="📚" label="পড়াশোনায় কীভাবে সাহায্য করবে" text={viewingShloka.studyApplication}
-                borderColor="#3b82f6" bgColor="rgba(59,130,246,0.05)" textColor="#60a5fa" />
-
-              {/* 5. Personal Reflection */}
-              <ViewSection emoji="🧘" label="ব্যক্তিগত উপলব্ধি ও চিন্তন" text={viewingShloka.personalReflection}
-                borderColor="var(--warning)" bgColor="rgba(245,158,11,0.05)" textColor="var(--warning)" />
-
-              {/* Actions */}
-              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', paddingTop: 4, paddingBottom: 2, flexWrap: 'wrap' }}>
-                <button className="btn btn-ghost btn-sm" style={{ color: 'var(--danger)' }}
-                  onClick={() => { handleDelete(viewingShloka.id || viewingShloka._id); }}>
-                  <Trash2 size={13} /> মুছুন
-                </button>
-                <button className="btn btn-ghost btn-sm"
-                  onClick={() => { handleOpenEdit(viewingShloka); setViewingShloka(null); }}>
+            <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={() => { playChimeBell(); handleToggleFavorite(viewingShloka.id || viewingShloka._id); }}
+                style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+              >
+                <Star size={14} fill={viewingShloka.favorite ? 'var(--warning)' : 'none'} color={viewingShloka.favorite ? 'var(--warning)' : 'var(--text-2)'} />
+                <span>{viewingShloka.favorite ? 'পছন্দের তালিকাভুক্ত' : 'পছন্দ করুন'}</span>
+              </button>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button className="btn btn-ghost btn-sm" onClick={() => { handleOpenEdit(viewingShloka); setViewingShloka(null); }}>
                   <Edit3 size={13} /> সম্পাদনা
                 </button>
                 <button className="btn btn-primary btn-sm" onClick={() => setViewingShloka(null)}>
@@ -693,6 +823,152 @@ export default function GitaShloka() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add / Edit Modal */}
+      {showModal && (
+        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setShowModal(false)}>
+          <div className="modal" style={{ maxWidth: 540, maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+            <div className="modal-header" style={{ flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 20 }}>ॐ</span>
+                <h2 className="modal-title" style={{ fontFamily: BENGALI_FONT }}>
+                  {editingShloka ? 'শ্লোক সম্পাদনা করুন' : 'নতুন গীতা শ্লোক যোগ করুন'}
+                </h2>
+              </div>
+              <button className="modal-close" onClick={() => setShowModal(false)}><X size={16} /></button>
+            </div>
+
+            {/* Quick Pick Banner */}
+            <div style={{ padding: '10px 20px', background: 'var(--surface-2)', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+              <span style={{ fontSize: 12, color: 'var(--text-2)', fontFamily: BENGALI_FONT }}>
+                ✨ বিখ্যাত শ্লোক বেছে নিতে চান?
+              </span>
+              <button
+                type="button"
+                className="btn btn-xs btn-ghost"
+                style={{ color: 'var(--primary-light)', fontWeight: 600, fontFamily: BENGALI_FONT }}
+                onClick={() => setShowQuickPick(!showQuickPick)}
+              >
+                {showQuickPick ? 'বন্ধ করুন ▲' : 'বাছাই করুন ▼'}
+              </button>
+            </div>
+
+            {/* Quick Pick Dropdown list */}
+            {showQuickPick && (
+              <div style={{ padding: '10px 20px', background: 'var(--bg)', borderBottom: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 180, overflowY: 'auto', flexShrink: 0 }}>
+                {popularBengaliShlokas.map((pop, i) => (
+                  <div
+                    key={i}
+                    onClick={() => handleSelectPopular(pop)}
+                    style={{
+                      padding: '8px 10px', borderRadius: 'var(--radius-sm)', background: 'var(--surface-2)',
+                      cursor: 'pointer', fontSize: 12, transition: 'var(--transition)'
+                    }}
+                  >
+                    <span style={{ fontWeight: 700, color: 'var(--primary-light)' }}>অধ্যায় {pop.chapter}, শ্লোক {pop.verse}: </span>
+                    <span style={{ color: 'var(--text-2)', fontFamily: BENGALI_FONT }}>{pop.sanskritText.slice(0, 40)}...</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <form onSubmit={handleSave} style={{ overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14, flex: 1 }}>
+              {formError && (
+                <div style={{ padding: '8px 12px', background: 'var(--danger-glass)', border: '1px solid var(--danger)', color: 'var(--danger)', borderRadius: 'var(--radius-sm)', fontSize: 12 }}>
+                  {formError}
+                </div>
+              )}
+
+              {/* Chapter and Verse */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div className="form-group">
+                  <SectionLabel title="অধ্যায়" required={false} />
+                  <input type="number" min="1" max="18" className="form-input" placeholder="যেমন: 2" value={formData.chapter} onChange={set('chapter')} />
+                </div>
+                <div className="form-group">
+                  <SectionLabel title="শ্লোক নম্বর" required={false} />
+                  <input type="number" min="1" className="form-input" placeholder="যেমন: 47" value={formData.verse} onChange={set('verse')} />
+                </div>
+              </div>
+
+              {/* Sanskrit Text */}
+              <div className="form-group">
+                <SectionLabel emoji="📖" title="মূল শ্লোক (সংস্কৃত / বাংলা হরফে)" sub="গীতার মূল শ্লোকটি লিখুন বা পেস্ট করুন" required={true} />
+                <textarea
+                  className="form-input"
+                  rows="3"
+                  placeholder="যেমন: কর্মণ্যেবাধিকারস্তে মা ফলেষু কদাচন..."
+                  value={formData.sanskritText}
+                  onChange={set('sanskritText')}
+                  style={{ fontFamily: BENGALI_FONT, fontSize: 14 }}
+                  required
+                />
+              </div>
+
+              {/* Bengali Meaning */}
+              <div className="form-group">
+                <SectionLabel emoji="📜" title="বাংলা ভাবার্থ ও অনুবাদ" sub="শ্লোকটির বাংলা সরল অর্থ" required={false} />
+                <textarea
+                  className="form-input"
+                  rows="3"
+                  placeholder="শ্লোকের বাংলা অর্থ লিখুন..."
+                  value={formData.meaning}
+                  onChange={set('meaning')}
+                  style={{ fontFamily: BENGALI_FONT, fontSize: 13 }}
+                />
+              </div>
+
+              {/* Real Life Application */}
+              <div className="form-group">
+                <SectionLabel emoji="🌍" title="বাস্তব জীবনে কীভাবে প্রয়োগ করব" sub="দৈনন্দিন জীবনে এই শ্লোকের শিক্ষা" required={false} />
+                <textarea
+                  className="form-input"
+                  rows="2"
+                  placeholder="যেমন: ফলাফলের চিন্তা না করে কাজে মনোযোগ দেওয়া..."
+                  value={formData.realLifeApplication}
+                  onChange={set('realLifeApplication')}
+                  style={{ fontFamily: BENGALI_FONT, fontSize: 13 }}
+                />
+              </div>
+
+              {/* Study Application */}
+              <div className="form-group">
+                <SectionLabel emoji="📚" title="পড়াশোনায় কীভাবে সাহায্য করবে" sub="পরীক্ষার প্রস্তুতি ও অধ্যবসায়ে এই শ্লোকের ভূমিকা" required={false} />
+                <textarea
+                  className="form-input"
+                  rows="2"
+                  placeholder="যেমন: কঠিন সাবজেক্ট পড়ার সময় ভয় না পেয়ে নিষ্ঠার সাথে চেষ্টা করা..."
+                  value={formData.studyApplication}
+                  onChange={set('studyApplication')}
+                  style={{ fontFamily: BENGALI_FONT, fontSize: 13 }}
+                />
+              </div>
+
+              {/* Personal Reflection */}
+              <div className="form-group">
+                <SectionLabel emoji="🧘" title="ব্যক্তিগত উপলব্ধি ও চিন্তন" sub="আপনার নিজের মনের চিন্তা বা অনুভূতি" required={false} />
+                <textarea
+                  className="form-input"
+                  rows="2"
+                  placeholder="আপনার নিজস্ব উপলব্ধি লিখুন..."
+                  value={formData.personalReflection}
+                  onChange={set('personalReflection')}
+                  style={{ fontFamily: BENGALI_FONT, fontSize: 13 }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', paddingTop: 8 }}>
+                <button type="button" className="btn btn-ghost" onClick={() => setShowModal(false)}>
+                  বাতিল
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  {editingShloka ? 'আপডেট করুন' : 'সংরক্ষণ করুন'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

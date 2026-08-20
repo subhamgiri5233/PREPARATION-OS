@@ -5,7 +5,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 
 export default function ProtectedRoute({ children }) {
   const location = useLocation();
-  const { isAuthenticated, isGuestMode, isCheckingSession, isChecking, checkAuth } = useAuthStore();
+  const { isAuthenticated, isCheckingSession, isChecking, checkAuth } = useAuthStore();
   const stillChecking = isChecking || isCheckingSession;
 
   useEffect(() => {
@@ -32,7 +32,7 @@ export default function ProtectedRoute({ children }) {
     );
   }
 
-  if (!isAuthenticated && !isGuestMode) {
+  if (!isAuthenticated) {
     // Preserve the attempted URL as ?returnTo so login can redirect back
     return (
       <Navigate

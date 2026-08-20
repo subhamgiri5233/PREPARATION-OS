@@ -196,7 +196,6 @@ export default function LoginPage() {
     loginWithPasskey,
     registerPasskey,
     loginWithPinFallback,
-    enterGuestMode,
     checkAuth
   } = useAuthStore();
 
@@ -212,12 +211,6 @@ export default function LoginPage() {
   }, []);
 
   const from = location.state?.from?.pathname || '/';
-
-  const handleExploreGuest = (e) => {
-    if (e) e.preventDefault();
-    enterGuestMode();
-    navigate('/');
-  };
 
   // Biometric / Passkey Login Handler
   const handleBiometricLogin = async () => {
@@ -366,13 +359,6 @@ export default function LoginPage() {
           >
             <Lock size={12} /> Log In
           </button>
-          <button
-            onClick={handleExploreGuest}
-            className="btn btn-xs btn-ghost"
-            style={{ fontSize: 11, display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-2)', cursor: 'pointer' }}
-          >
-            <Eye size={12} /> Public Mode
-          </button>
         </div>
       </div>
 
@@ -455,7 +441,7 @@ export default function LoginPage() {
           ))}
         </div>
 
-        {/* ── PRIMARY CALL TO ACTION BUTTONS ───────────────────────── */}
+        {/* ── PRIMARY CALL TO ACTION BUTTON ───────────────────────── */}
         <div style={{
           display: 'flex',
           justifyContent: 'center',
@@ -468,7 +454,7 @@ export default function LoginPage() {
             onClick={() => setShowLoginModal(true)}
             className="btn btn-primary"
             style={{
-              padding: '15px 32px',
+              padding: '16px 36px',
               fontSize: 16,
               fontWeight: 800,
               borderRadius: 'var(--radius-full)',
@@ -482,26 +468,6 @@ export default function LoginPage() {
             }}
           >
             <Fingerprint size={24} /> Log In to Command Center
-          </button>
-
-          <button
-            onClick={handleExploreGuest}
-            className="btn btn-ghost"
-            style={{
-              padding: '15px 26px',
-              fontSize: 15,
-              fontWeight: 700,
-              borderRadius: 'var(--radius-full)',
-              border: '1px solid var(--border)',
-              background: 'var(--surface-2)',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 8,
-              boxShadow: '0 4px 14px rgba(0,0,0,0.3)',
-              cursor: 'pointer'
-            }}
-          >
-            <Eye size={18} color="var(--primary-light)" /> Explore in Public Mode
           </button>
         </div>
       </div>
@@ -1213,31 +1179,6 @@ export default function LoginPage() {
                 </button>
               </form>
             )}
-
-            {/* Public Visitor Link */}
-            <div style={{
-              marginTop: 20,
-              paddingTop: 16,
-              borderTop: '1px solid var(--border)',
-              textAlign: 'center'
-            }}>
-              <button
-                onClick={(e) => { setShowLoginModal(false); handleExploreGuest(e); }}
-                style={{
-                  fontSize: 12,
-                  fontWeight: 700,
-                  color: 'var(--primary-light)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer'
-                }}
-              >
-                Browse in Public View-Only Mode <ChevronRight size={14} />
-              </button>
-            </div>
           </div>
         </div>
       )}

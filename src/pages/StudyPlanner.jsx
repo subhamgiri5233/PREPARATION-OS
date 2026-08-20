@@ -466,37 +466,6 @@ export default function StudyPlanner() {
         <button className="btn btn-ghost btn-sm" onClick={() => setCurrentDate(new Date())}>Today</button>
       </div>
 
-      {/* Privacy Mode Banner for Public Visitors */}
-      {!isAuthenticated && (
-        <div style={{
-          background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(139, 92, 246, 0.08))',
-          border: '1px solid var(--border-accent)',
-          padding: '12px 18px',
-          borderRadius: 'var(--radius)',
-          marginBottom: 16,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 12,
-          flexWrap: 'wrap'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <ShieldCheck size={20} color="var(--primary-light)" />
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
-                🔒 Public Visitor Mode
-              </div>
-              <div style={{ fontSize: 12, color: 'var(--text-2)' }}>
-                General time routine is shown, but specific task topics and private notes are protected.
-              </div>
-            </div>
-          </div>
-          <button className="btn btn-sm btn-primary" onClick={openLoginModal}>
-            <Lock size={12} /> Unlock Workspace
-          </button>
-        </div>
-      )}
-
       {/* Missed Tasks Banner */}
       {missedTasks.length > 0 && (
         <div style={{ background: 'var(--danger-glass)', border: '1px solid var(--danger)', padding: 14, borderRadius: 'var(--radius)', marginBottom: 16 }}>
