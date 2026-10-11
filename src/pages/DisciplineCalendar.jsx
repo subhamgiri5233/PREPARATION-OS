@@ -136,20 +136,7 @@ function RuleCircle({ status, ruleId, dateKey, onUpdate, rules, colIndex = 0 }) 
   const cfg = RULE_STATUS_CONFIG[status] || RULE_STATUS_CONFIG[null];
   const rule = rules.find(r => r.id === ruleId);
 
-  const handleCycleClick = (e) => {
-    e.stopPropagation();
-    const cycle = {
-      null: 'completed',
-      'completed': 'pd',
-      'pd': 'not_completed',
-      'not_completed': 'nt',
-      'nt': null
-    };
-    const next = cycle[status ?? null] ?? null;
-    onUpdate(dateKey, ruleId, next);
-  };
-
-  const handleContextMenu = (e) => {
+  const handleClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
     setOpen(o => !o);
@@ -157,11 +144,19 @@ function RuleCircle({ status, ruleId, dateKey, onUpdate, rules, colIndex = 0 }) 
 
   useEffect(() => {
     if (!open) return;
-    function handleClick(e) {
+    const parentCell = ref.current?.closest('.cal-cell-mobile');
+    if (parentCell) parentCell.style.zIndex = '9999';
+
+    function handleClickOutside(e) {
       if (ref.current && !ref.current.contains(e.target)) setOpen(false);
     }
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      if (parentCell) parentCell.style.zIndex = '';
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
   }, [open]);
 
   const handleSelect = (val) => {
@@ -179,9 +174,8 @@ function RuleCircle({ status, ruleId, dateKey, onUpdate, rules, colIndex = 0 }) 
     <div ref={ref} style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <button
         type="button"
-        onClick={handleCycleClick}
-        onContextMenu={handleContextMenu}
-        title={`${ruleId}: ${rule?.label || ''} (${cfg.label})\nClick: Cycle status | Right-click: Menu`}
+        onClick={handleClick}
+        title={`${ruleId}: ${rule?.label || ''} (${cfg.label}) — Click to select status`}
         style={{
           width: 24, height: 24, borderRadius: '50%',
           background: cfg.bg, border: `2px solid ${cfg.border}`,
@@ -208,11 +202,11 @@ function RuleCircle({ status, ruleId, dateKey, onUpdate, rules, colIndex = 0 }) 
             {ruleId}: {rule?.label}
           </div>
           {[
-            { val: null, icon: <Circle size={12} color="var(--text-muted)" />, label: 'Unset / Clear' },
             { val: 'completed', icon: <CheckCircle2 size={12} color="var(--success)" />, label: '✓ Completed' },
             { val: 'pd', icon: <span style={{ fontSize: 9, fontWeight: 900, color: '#f59e0b', width: 14, textAlign: 'center' }}>PD</span>, label: '⚡ PD (Partially Done)' },
             { val: 'not_completed', icon: <XCircle size={12} color="var(--danger)" />, label: '✕ Not Completed' },
             { val: 'nt', icon: <Minus size={12} color="#94a3b8" />, label: '— NT (Not Tried)' },
+            { val: null, icon: <Circle size={12} color="var(--text-muted)" />, label: '○ Unset / Clear' },
           ].map(opt => (
             <button
               key={String(opt.val)}
@@ -965,7 +959,28 @@ function DayDetailPanel({ dateKey, rules, onClose, onDataChange, onPromptWDAmoun
                     <p style={{ fontSize: 11, color: 'var(--text-2)', margin: 0, lineHeight: 1.4 }}>{rule.description}</p>
                   </div>
                   <div style={{ flexShrink: 0, textAlign: 'right' }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: cfg?.color || 'var(--text-muted)' }}>{cfg?.label || 'Unset'}</span>
+                    <select
+                      value={status || ''}
+                      onChange={e => handleRuleUpdate(dateKey, rule.id, e.target.value ? e.target.value : null)}
+                      style={{
+                        background: cfg?.bg || 'var(--surface-3)',
+                        border: `1px solid ${cfg?.border || 'var(--border)'}`,
+                        color: cfg?.color || 'var(--text-muted)',
+                        fontSize: 11,
+                        fontWeight: 700,
+                        borderRadius: 'var(--radius-sm)',
+                        padding: '4px 8px',
+                        cursor: 'pointer',
+                        outline: 'none',
+                        fontFamily: 'var(--font)',
+                      }}
+                    >
+                      <option value="">Unset / Clear</option>
+                      <option value="completed">✓ Completed</option>
+                      <option value="pd">⚡ PD (Partially Done)</option>
+                      <option value="not_completed">✕ Not Completed</option>
+                      <option value="nt">— NT (Not Tried)</option>
+                    </select>
                   </div>
                 </div>
               );
