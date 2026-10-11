@@ -250,7 +250,7 @@ export default function Expenses() {
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div className="loan-banner-actions" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <button
                     onClick={() => handleMarkRepaid(loan.dateKey, loan.id)}
                     className="btn btn-sm btn-success"
@@ -273,13 +273,10 @@ export default function Expenses() {
       )}
 
       {/* Top Bar: Month Navigator & Financial Totals */}
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        gap: 12, marginBottom: 16, flexWrap: 'wrap'
-      }}>
+      <div className="cal-header-bar">
         {/* Navigation Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <button onClick={prevMonth} style={{ width: 34, height: 34, borderRadius: 'var(--radius)', background: 'var(--surface)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-2)', cursor: 'pointer' }}>
+        <div className="cal-nav-group">
+          <button onClick={prevMonth} style={{ width: 36, height: 36, borderRadius: 'var(--radius)', background: 'var(--surface)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-2)', cursor: 'pointer', flexShrink: 0 }}>
             <ChevronLeft size={16} />
           </button>
 
@@ -308,17 +305,17 @@ export default function Expenses() {
             </select>
           </div>
 
-          <button onClick={nextMonth} style={{ width: 34, height: 34, borderRadius: 'var(--radius)', background: 'var(--surface)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-2)', cursor: 'pointer' }}>
+          <button onClick={nextMonth} style={{ width: 36, height: 36, borderRadius: 'var(--radius)', background: 'var(--surface)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-2)', cursor: 'pointer', flexShrink: 0 }}>
             <ChevronRight size={16} />
           </button>
-          <button onClick={goToToday} className="btn btn-ghost btn-sm">Today</button>
+          <button onClick={goToToday} className="btn btn-ghost btn-sm" style={{ padding: '6px 12px' }}>Today</button>
         </div>
 
         {/* Financial Highlights */}
         {stats && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <div className="cal-stats-group">
             {/* Month Total */}
-            <div style={{
+            <div className="cal-stat-card" style={{
               background: 'var(--surface)', border: '1px solid var(--border)',
               borderRadius: 'var(--radius)', padding: '6px 14px',
               display: 'flex', alignItems: 'center', gap: 8
@@ -331,7 +328,7 @@ export default function Expenses() {
             </div>
 
             {/* All-Time Total */}
-            <div style={{
+            <div className="cal-stat-card" style={{
               background: 'var(--surface)', border: '1px solid var(--border-accent)',
               borderRadius: 'var(--radius)', padding: '6px 14px',
               display: 'flex', alignItems: 'center', gap: 8
@@ -346,36 +343,46 @@ export default function Expenses() {
         )}
       </div>
 
-      {/* Weekday headers */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6, marginBottom: 6 }}>
-        {DAY_LABELS.map(d => (
-          <div key={d} style={{ textAlign: 'center', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', padding: '4px 0', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-            {d}
-          </div>
-        ))}
+      {/* Mobile Swipe Hint */}
+      <div className="cal-mobile-swipe-hint">
+        <span>👈👉 Swipe horizontally to view full week</span>
+        <span style={{ fontWeight: 700, color: 'var(--primary-light)' }}>7 Days View</span>
       </div>
 
-      {/* Calendar Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 8 }}>
-        {cells.map((cell, idx) => {
-          if (!cell) {
-            return (
-              <div
-                key={`empty-${idx}`}
-                style={{
-                  minHeight: 105,
-                  borderRadius: 'var(--radius-md)',
-                  background: 'transparent',
-                }}
-              />
-            );
-          }
+      {/* Responsive Calendar Container with smooth horizontal swipe */}
+      <div className="cal-responsive-scroll">
+        <div className="cal-grid-inner">
+          {/* Weekday headers */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6, marginBottom: 6 }}>
+            {DAY_LABELS.map(d => (
+              <div key={d} style={{ textAlign: 'center', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', padding: '4px 0', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                {d}
+              </div>
+            ))}
+          </div>
+
+          {/* Calendar Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 8 }}>
+            {cells.map((cell, idx) => {
+              if (!cell) {
+                return (
+                  <div
+                    key={`empty-${idx}`}
+                    style={{
+                      minHeight: 105,
+                      borderRadius: 'var(--radius-md)',
+                      background: 'transparent',
+                    }}
+                  />
+                );
+              }
 
           const hasExpenses = cell.totalAmount > 0;
 
           return (
             <div
               key={cell.dateKey}
+              className="cal-cell-mobile"
               onClick={() => setSelectedDate(cell.dateKey)}
               style={{
                 minHeight: 105,
@@ -486,6 +493,8 @@ export default function Expenses() {
             </div>
           );
         })}
+          </div>
+        </div>
       </div>
 
       {/* Date Expense Details & Input Modal */}

@@ -1500,3 +1500,144 @@ tbody tr:hover {
   }
 }
 
+/* ─── Responsive Calendar System (Discipline & Expenses) ─────────────────────── */
+.cal-responsive-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-accent) transparent;
+}
+
+.cal-responsive-scroll::-webkit-scrollbar {
+  height: 6px;
+}
+
+.cal-responsive-scroll::-webkit-scrollbar-thumb {
+  background: var(--border-accent);
+  border-radius: 999px;
+}
+
+.cal-grid-inner {
+  min-width: 720px;
+}
+
+.cal-mobile-swipe-hint {
+  display: none;
+}
+
+.cal-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.cal-nav-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cal-stats-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.cal-scrollable-tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 4px;
+  margin-bottom: 14px;
+}
+
+.cal-scrollable-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.cal-legend-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 4px;
+  font-size: 11px;
+}
+
+.cal-legend-bar::-webkit-scrollbar {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .cal-mobile-swipe-hint {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 12px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 11px;
+    color: var(--text-2);
+    margin-bottom: 10px;
+  }
+
+  .cal-header-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .cal-nav-group {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .cal-stats-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .cal-stat-card {
+    justify-content: center !important;
+    padding: 8px 10px !important;
+    text-align: center;
+    width: 100%;
+  }
+
+  .loan-banner-actions {
+    width: 100%;
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .loan-banner-actions button {
+    flex: 1;
+    justify-content: center;
+    padding: 8px 10px;
+  }
+
+  .cal-cell-mobile {
+    min-height: 96px !important;
+    padding: 6px 8px !important;
+  }
+}
+
+

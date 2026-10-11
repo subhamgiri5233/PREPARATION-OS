@@ -469,6 +469,7 @@ function DateCard({ cell, rules, onOpenDetail, onRuleUpdate, onSelectStatus, onP
 
   return (
     <div
+      className="cal-cell-mobile"
       onClick={(e) => {
         if (e.target.closest('[data-no-open]')) return;
         onOpenDetail(dateKey);
@@ -1411,12 +1412,9 @@ export default function DisciplineCalendar() {
       ) : (
         <>
           {/* Calendar Navigation & Month/All-Time Withdrawal Highlights */}
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            gap: 12, marginBottom: 16, flexWrap: 'wrap'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <button onClick={prevMonth} style={{ width: 34, height: 34, borderRadius: 'var(--radius)', background: 'var(--surface)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-2)', cursor: 'pointer' }}>
+          <div className="cal-header-bar">
+            <div className="cal-nav-group">
+              <button onClick={prevMonth} style={{ width: 36, height: 36, borderRadius: 'var(--radius)', background: 'var(--surface)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-2)', cursor: 'pointer', flexShrink: 0 }}>
                 <ChevronLeft size={16} />
               </button>
 
@@ -1445,18 +1443,18 @@ export default function DisciplineCalendar() {
                 </select>
               </div>
 
-              <button onClick={nextMonth} style={{ width: 34, height: 34, borderRadius: 'var(--radius)', background: 'var(--surface)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-2)', cursor: 'pointer' }}>
+              <button onClick={nextMonth} style={{ width: 36, height: 36, borderRadius: 'var(--radius)', background: 'var(--surface)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-2)', cursor: 'pointer', flexShrink: 0 }}>
                 <ChevronRight size={16} />
               </button>
-              <button onClick={goToToday} className="btn btn-primary btn-sm">Today</button>
+              <button onClick={goToToday} className="btn btn-primary btn-sm" style={{ padding: '6px 12px' }}>Today</button>
             </div>
 
             {/* Financial Highlights: This Month Total & All-Over Total */}
             {stats && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                <div style={{
+              <div className="cal-stats-group">
+                <div className="cal-stat-card" style={{
                   background: 'var(--surface)', border: '1px solid var(--border)',
-                  borderRadius: 'var(--radius)', padding: '5px 12px',
+                  borderRadius: 'var(--radius)', padding: '6px 12px',
                   display: 'flex', alignItems: 'center', gap: 8
                 }}>
                   <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--success)' }} />
@@ -1466,9 +1464,9 @@ export default function DisciplineCalendar() {
                   </span>
                 </div>
 
-                <div style={{
+                <div className="cal-stat-card" style={{
                   background: 'var(--surface)', border: '1px solid var(--border-accent)',
-                  borderRadius: 'var(--radius)', padding: '5px 12px',
+                  borderRadius: 'var(--radius)', padding: '6px 12px',
                   display: 'flex', alignItems: 'center', gap: 8
                 }}>
                   <Wallet size={13} color="var(--primary-light)" />
@@ -1481,69 +1479,81 @@ export default function DisciplineCalendar() {
             )}
           </div>
 
-          {/* Filter Tabs */}
-          <div className="tabs" style={{ marginBottom: 14 }}>
+          {/* Filter Tabs (Horizontal scroll on mobile) */}
+          <div className="cal-scrollable-tabs">
             {FILTER_OPTIONS.map(f => (
               <button
                 key={f.id}
                 className={`tab ${filter === f.id ? 'active' : ''}`}
                 onClick={() => setFilter(f.id)}
+                style={{ flexShrink: 0 }}
               >
                 {f.label}
               </button>
             ))}
           </div>
 
-          {/* Legend */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 12, flexWrap: 'wrap', fontSize: 11, color: 'var(--text-2)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          {/* Legend (Horizontal scroll on mobile) */}
+          <div className="cal-legend-bar" style={{ color: 'var(--text-2)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
               <Circle size={10} color="var(--text-muted)" /> <span>Unset</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
               <CheckCircle2 size={10} color="var(--success)" /> <span>Done</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
               <XCircle size={10} color="var(--danger)" /> <span>Missed</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
               <Minus size={10} color="#94a3b8" /> <span>NT (Not Tried)</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
               <span style={{ color: '#f59e0b', fontWeight: 700 }}>WR</span> <span>Requested</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
               <span style={{ color: '#10b981', fontWeight: 700 }}>WD (₹)</span> <span>Done (With Amount)</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
               <span style={{ color: 'var(--primary-light)', fontWeight: 800 }}>WR+WD</span> <span>Both Active</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
               <Star size={10} color="#f59e0b" fill="#f59e0b" /> <span>All 6 Rules Done</span>
             </div>
           </div>
 
-          {/* Day headers */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6, marginBottom: 6 }}>
-            {DAY_LABELS.map(d => (
-              <div key={d} style={{ textAlign: 'center', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', padding: '4px 0', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                {d}
-              </div>
-            ))}
+          {/* Mobile Swipe Hint */}
+          <div className="cal-mobile-swipe-hint">
+            <span>👈👉 Swipe horizontally to view full week</span>
+            <span style={{ fontWeight: 700, color: 'var(--primary-light)' }}>7 Days View</span>
           </div>
 
-          {/* Calendar Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6 }}>
-            {cells.map((cell, idx) => (
-              <DateCard
-                key={cell ? cell.dateKey : `empty-${idx}`}
-                cell={cell}
-                rules={rules}
-                onOpenDetail={setSelectedDate}
-                onRuleUpdate={handleRuleUpdate}
-                onSelectStatus={handleSelectWithdrawalStatus}
-                onPromptWDAmount={handleOpenWDAmountPrompt}
-              />
-            ))}
+          {/* Responsive Calendar Container with smooth horizontal swipe */}
+          <div className="cal-responsive-scroll">
+            <div className="cal-grid-inner">
+              {/* Day headers */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6, marginBottom: 6 }}>
+                {DAY_LABELS.map(d => (
+                  <div key={d} style={{ textAlign: 'center', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', padding: '4px 0', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    {d}
+                  </div>
+                ))}
+              </div>
+
+              {/* Calendar Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6 }}>
+                {cells.map((cell, idx) => (
+                  <DateCard
+                    key={cell ? cell.dateKey : `empty-${idx}`}
+                    cell={cell}
+                    rules={rules}
+                    onOpenDetail={setSelectedDate}
+                    onRuleUpdate={handleRuleUpdate}
+                    onSelectStatus={handleSelectWithdrawalStatus}
+                    onPromptWDAmount={handleOpenWDAmountPrompt}
+                  />
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* Quick stats bar: Dual Streaks & Financial Totals */}
