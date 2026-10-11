@@ -293,7 +293,7 @@ export default function TeachingSchedule() {
               </div>
               <div className="form-group">
                 <label className="form-label">Label</label>
-                <input className="form-input" value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} placeholder="e.g. Morning Teaching" />
+                <input className="form-input" value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} placeholder="Morning teaching" />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div className="form-group">

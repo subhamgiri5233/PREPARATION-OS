@@ -1279,7 +1279,7 @@ function TopicDetailModal({
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px', gap: 8 }}>
                   <input
                     type="text"
-                    placeholder="Resource title (e.g. Video Lecture 1, Class PDF)..."
+                    placeholder="Resource title"
                     className="form-input"
                     value={resTitle}
                     onChange={(e) => setResTitle(e.target.value)}
@@ -1592,7 +1592,7 @@ function AddEditTopicModal({ initialTopic, defaultContext = {}, currentAreaId, s
               className="form-input"
               value={resourceReference}
               onChange={(e) => setResourceReference(e.target.value)}
-              placeholder="Source reference (e.g. Chapter 3, Lecture 12)"
+              placeholder="Source reference"
             />
           </div>
 

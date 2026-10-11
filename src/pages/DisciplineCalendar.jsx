@@ -633,7 +633,7 @@ function WDAmountModal({ isOpen, dateKey, initialAmount, targetMode, onConfirm, 
                 autoFocus
                 value={amountVal}
                 onChange={e => setAmountVal(e.target.value)}
-                placeholder="5000"
+                placeholder="0.00"
                 style={{
                   width: '100%',
                   background: 'var(--surface-2)',
@@ -977,7 +977,7 @@ function DayDetailPanel({ dateKey, rules, onClose, onDataChange, onPromptWDAmoun
           <textarea
             value={notes}
             onChange={e => handleNotesChange(e.target.value)}
-            placeholder="Write reflections, thoughts, or observations for this day…"
+            placeholder="Daily notes & reflections…"
             rows={3}
             style={{
               width: '100%', background: 'var(--surface-2)', border: '1px solid var(--border)',
@@ -1001,7 +1001,7 @@ function DayDetailPanel({ dateKey, rules, onClose, onDataChange, onPromptWDAmoun
               value={newTask}
               onChange={e => setNewTask(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') addTask(); }}
-              placeholder="Add a specific task for this day…"
+              placeholder="Add task…"
               style={{
                 flex: 1, background: 'var(--surface-2)', border: '1px solid var(--border)',
                 borderRadius: 'var(--radius-sm)', padding: '8px 12px', color: 'var(--text)',
@@ -1374,7 +1374,7 @@ export default function DisciplineCalendar() {
             Discipline Calendar
           </h1>
           <p style={{ fontSize: 13, color: 'var(--text-2)', marginTop: 4 }}>
-            Track six daily discipline rules, WR/WD withdrawals (individual or both), and dual streak stacks
+            Daily discipline rules, streak stacks, and withdrawal logging
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
@@ -1458,7 +1458,7 @@ export default function DisciplineCalendar() {
                   display: 'flex', alignItems: 'center', gap: 8
                 }}>
                   <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--success)' }} />
-                  <span style={{ fontSize: 11, color: 'var(--text-3)' }}>{MONTH_NAMES[viewMonth]} WD Total:</span>
+                  <span style={{ fontSize: 11, color: 'var(--text-3)' }}>{MONTH_NAMES[viewMonth]} WD:</span>
                   <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--success)' }}>
                     {formatCurrency(stats.currentMonthWithdrawalTotal)}
                   </span>
@@ -1470,7 +1470,7 @@ export default function DisciplineCalendar() {
                   display: 'flex', alignItems: 'center', gap: 8
                 }}>
                   <Wallet size={13} color="var(--primary-light)" />
-                  <span style={{ fontSize: 11, color: 'var(--text-3)' }}>All-Time Total:</span>
+                  <span style={{ fontSize: 11, color: 'var(--text-3)' }}>All-Time:</span>
                   <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--primary-light)' }}>
                     {formatCurrency(stats.allTimeWithdrawalTotal)}
                   </span>
@@ -1505,13 +1505,13 @@ export default function DisciplineCalendar() {
               <XCircle size={10} color="var(--danger)" /> <span>Missed</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-              <Minus size={10} color="#94a3b8" /> <span>NT (Not Tried)</span>
+              <Minus size={10} color="#94a3b8" /> <span>NT</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
               <span style={{ color: '#f59e0b', fontWeight: 700 }}>WR</span> <span>Requested</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-              <span style={{ color: '#10b981', fontWeight: 700 }}>WD (₹)</span> <span>Done (With Amount)</span>
+              <span style={{ color: '#10b981', fontWeight: 700 }}>WD (₹)</span> <span>Withdrawn</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
               <span style={{ color: 'var(--primary-light)', fontWeight: 800 }}>WR+WD</span> <span>Both Active</span>
@@ -1523,8 +1523,8 @@ export default function DisciplineCalendar() {
 
           {/* Mobile Swipe Hint */}
           <div className="cal-mobile-swipe-hint">
-            <span>👈👉 Swipe horizontally to view full week</span>
-            <span style={{ fontWeight: 700, color: 'var(--primary-light)' }}>7 Days View</span>
+            <span>Swipe horizontally to view full week</span>
+            <span style={{ fontWeight: 700, color: 'var(--primary-light)' }}>7 Days</span>
           </div>
 
           {/* Responsive Calendar Container with smooth horizontal swipe */}

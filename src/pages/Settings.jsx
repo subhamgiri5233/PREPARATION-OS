@@ -219,7 +219,7 @@ export default function Settings() {
                   const val = e.target.value === '' ? null : Math.max(1, parseInt(e.target.value, 10));
                   setF('vocabDailyTarget', val);
                 }}
-                placeholder="e.g. 10"
+                placeholder="10"
               />
             </div>
 
@@ -246,7 +246,7 @@ export default function Settings() {
                   const val = e.target.value === '' ? null : Math.max(1, parseInt(e.target.value, 10));
                   setF('gitaDailyTarget', val);
                 }}
-                placeholder="e.g. 2"
+                placeholder="2"
               />
             </div>
 

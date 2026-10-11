@@ -413,7 +413,7 @@ export default function Vocabulary() {
             <input
               type="text"
               className="form-input"
-              placeholder="Search any English word (e.g. resilient, candid)..."
+              placeholder="Search English word..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{
@@ -1144,7 +1144,7 @@ export default function Vocabulary() {
                   <input
                     type="text"
                     className="form-input"
-                    placeholder="Word (e.g. resilient)"
+                    placeholder="English word"
                     value={formData.word}
                     onChange={(e) => setFormData({ ...formData, word: e.target.value })}
                     required

@@ -76,7 +76,7 @@ export default function Expenses() {
     markLoanRepaid(dateKey, itemId, true);
     setPendingLoans(prev => prev.filter(loan => loan.id !== itemId));
     loadData();
-    setLoanNotice('Repaid! This loan has been cleared from daily follow-ups.');
+    setLoanNotice('Loan marked as repaid.');
     setTimeout(() => setLoanNotice(null), 3000);
   };
 
@@ -84,8 +84,8 @@ export default function Expenses() {
     recordLoanCheckNo(dateKey, itemId);
     setPendingLoans(prev => prev.filter(loan => loan.id !== itemId));
     loadData();
-    setLoanNotice('Recorded for today. This follow-up is hidden for today and will ask you again tomorrow.');
-    setTimeout(() => setLoanNotice(null), 3500);
+    setLoanNotice('Reminder snoozed until tomorrow.');
+    setTimeout(() => setLoanNotice(null), 3000);
   };
 
   useEffect(() => {
@@ -171,7 +171,7 @@ export default function Expenses() {
             Expenses Calendar
           </h1>
           <p className="page-subtitle">
-            Daily expense tracking, spend breakdown, and monthly budget logs
+            Track daily expenses & monthly budgets
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -211,31 +211,28 @@ export default function Expenses() {
       {pendingLoans.length > 0 && (
         <div style={{
           marginBottom: 20,
-          background: 'linear-gradient(135deg, rgba(249, 115, 22, 0.08) 0%, rgba(239, 68, 68, 0.04) 100%)',
-          border: '1px solid rgba(249, 115, 22, 0.35)',
+          background: 'linear-gradient(135deg, rgba(249, 115, 22, 0.07) 0%, rgba(239, 68, 68, 0.03) 100%)',
+          border: '1px solid rgba(249, 115, 22, 0.3)',
           borderRadius: 'var(--radius-lg)',
-          padding: '16px 20px',
+          padding: '14px 18px',
           boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <div style={{
-                width: 28, height: 28, borderRadius: 'var(--radius)',
-                background: 'rgba(249, 115, 22, 0.2)', color: '#f97316',
+                width: 26, height: 26, borderRadius: 'var(--radius)',
+                background: 'rgba(249, 115, 22, 0.18)', color: '#f97316',
                 display: 'flex', alignItems: 'center', justifyContent: 'center'
               }}>
-                <HandCoins size={16} />
+                <HandCoins size={15} />
               </div>
-              <span style={{ fontSize: 13, fontWeight: 800, color: '#f97316', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Daily Loan Repayment Check ({pendingLoans.length} Pending)
+              <span style={{ fontSize: 12, fontWeight: 800, color: '#f97316', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Pending Loans ({pendingLoans.length})
               </span>
             </div>
-            <span style={{ fontSize: 11, color: 'var(--text-3)' }}>
-              Follow-up runs daily until confirmed paid
-            </span>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {pendingLoans.map(loan => (
               <div
                 key={loan.id}
@@ -243,42 +240,38 @@ export default function Expenses() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  gap: 14,
-                  padding: '12px 16px',
+                  gap: 12,
+                  padding: '10px 14px',
                   background: 'var(--surface)',
                   border: '1px solid var(--border)',
                   borderRadius: 'var(--radius-md)',
                   flexWrap: 'wrap',
                 }}
               >
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>
-                    Did <strong style={{ color: '#f97316' }}>{loan.borrowerName || 'the borrower'}</strong> pay you back the loan of <span style={{ color: '#ef4444', fontWeight: 800 }}>{formatCurrency(loan.amount)}</span>?
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
+                    Loan to <strong style={{ color: '#f97316' }}>{loan.borrowerName || 'Borrower'}</strong>:{' '}
+                    <span style={{ color: '#ef4444', fontWeight: 800 }}>{formatCurrency(loan.amount)}</span>
                   </div>
                   <div style={{ fontSize: 11, color: 'var(--text-3)' }}>
-                    Loan given on: <strong>{formatDateDisplay(loan.dateKey)}</strong>
-                    {loan.lastCheckedResponse === 'no' && (
-                      <span style={{ marginLeft: 8, color: '#f59e0b' }}>
-                        • Previously checked: Still pending
-                      </span>
-                    )}
+                    Given on {formatDateDisplay(loan.dateKey)}
                   </div>
                 </div>
 
-                <div className="loan-banner-actions" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div className="loan-banner-actions" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <button
                     onClick={() => handleMarkRepaid(loan.dateKey, loan.id)}
                     className="btn btn-sm btn-success"
-                    style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700 }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, fontSize: 12, padding: '5px 12px' }}
                   >
-                    <CheckCircle2 size={13} /> Yes (Paid Back)
+                    <CheckCircle2 size={13} /> Repaid
                   </button>
                   <button
                     onClick={() => handleCheckNo(loan.dateKey, loan.id)}
                     className="btn btn-sm btn-ghost"
-                    style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-2)' }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-2)', fontSize: 12, padding: '5px 12px' }}
                   >
-                    <X size={13} /> No (Not Yet)
+                    Remind Tomorrow
                   </button>
                 </div>
               </div>
@@ -336,7 +329,7 @@ export default function Expenses() {
               display: 'flex', alignItems: 'center', gap: 8
             }}>
               <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444' }} />
-              <span style={{ fontSize: 12, color: 'var(--text-3)' }}>{MONTH_NAMES[viewMonth]} Total:</span>
+              <span style={{ fontSize: 12, color: 'var(--text-3)' }}>{MONTH_NAMES[viewMonth]}:</span>
               <span style={{ fontSize: 14, fontWeight: 800, color: '#ef4444' }}>
                 {formatCurrency(stats.currentMonthTotal)}
               </span>
@@ -349,7 +342,7 @@ export default function Expenses() {
               display: 'flex', alignItems: 'center', gap: 8
             }}>
               <Wallet size={14} color="var(--primary-light)" />
-              <span style={{ fontSize: 12, color: 'var(--text-3)' }}>All-Time Total:</span>
+              <span style={{ fontSize: 12, color: 'var(--text-3)' }}>All-Time:</span>
               <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--primary-light)' }}>
                 {formatCurrency(stats.allTimeTotal)}
               </span>
@@ -360,8 +353,8 @@ export default function Expenses() {
 
       {/* Mobile Swipe Hint */}
       <div className="cal-mobile-swipe-hint">
-        <span>👈👉 Swipe horizontally to view full week</span>
-        <span style={{ fontWeight: 700, color: 'var(--primary-light)' }}>7 Days View</span>
+        <span>Swipe horizontally to view full week</span>
+        <span style={{ fontWeight: 700, color: 'var(--primary-light)' }}>7 Days</span>
       </div>
 
       {/* Responsive Calendar Container with smooth horizontal swipe */}
@@ -614,7 +607,7 @@ function DayExpenseModal({ dateKey, onClose, onChanged }) {
       }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{
               width: 34, height: 34, borderRadius: 'var(--radius)',
               background: 'rgba(239, 68, 68, 0.15)', display: 'flex', alignItems: 'center',
@@ -624,11 +617,8 @@ function DayExpenseModal({ dateKey, onClose, onChanged }) {
             </div>
             <div>
               <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
-                Expenses for {formatDateDisplay(dateKey)}
+                {formatDateDisplay(dateKey)}
               </h3>
-              <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>
-                Log and review spending for this date
-              </div>
             </div>
           </div>
           <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 'var(--radius-sm)', background: 'transparent', border: 'none', color: 'var(--text-3)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -641,11 +631,11 @@ function DayExpenseModal({ dateKey, onClose, onChanged }) {
           background: 'var(--surface-2)', border: '1px solid var(--border)',
           borderRadius: 'var(--radius)', padding: '12px 16px',
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          marginBottom: 18,
+          marginBottom: 16,
         }}>
           <div>
             <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-              Total Spent on This Date
+              Daily Total
             </div>
             <div style={{ fontSize: 20, fontWeight: 800, color: '#ef4444', marginTop: 2 }}>
               {formatCurrency(record.totalAmount)}
@@ -666,11 +656,7 @@ function DayExpenseModal({ dateKey, onClose, onChanged }) {
         </div>
 
         {/* Add Expense Form */}
-        <form onSubmit={handleAdd} style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Plus size={14} color="#ef4444" /> Add Expense
-          </div>
-
+        <form onSubmit={handleAdd} style={{ marginBottom: 18 }}>
           {error && (
             <div style={{ padding: '6px 10px', background: 'var(--danger-glass)', border: '1px solid var(--danger)', color: 'var(--danger)', borderRadius: 'var(--radius-sm)', fontSize: 12, marginBottom: 10 }}>
               {error}
@@ -682,7 +668,7 @@ function DayExpenseModal({ dateKey, onClose, onChanged }) {
               {/* Amount */}
               <div>
                 <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-2)', display: 'block', marginBottom: 4 }}>
-                  Amount (₹) *
+                  Amount
                 </label>
                 <div style={{ position: 'relative' }}>
                   <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#ef4444', fontWeight: 800, fontSize: 14 }}>
@@ -696,7 +682,7 @@ function DayExpenseModal({ dateKey, onClose, onChanged }) {
                     className="form-input"
                     value={amount}
                     onChange={e => setAmount(e.target.value)}
-                    placeholder="Amount in ₹"
+                    placeholder="0.00"
                     autoFocus
                     style={{ width: '100%', paddingLeft: 26 }}
                     required
@@ -707,7 +693,7 @@ function DayExpenseModal({ dateKey, onClose, onChanged }) {
               {/* Category Dropdown Menu */}
               <div>
                 <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-2)', display: 'block', marginBottom: 4 }}>
-                  Category *
+                  Category
                 </label>
                 <select
                   className="form-input"
@@ -726,14 +712,14 @@ function DayExpenseModal({ dateKey, onClose, onChanged }) {
             {category === 'Giving Loan' && (
               <div style={{ animation: 'fadeIn 0.15s ease' }}>
                 <label style={{ fontSize: 11, fontWeight: 700, color: '#f97316', display: 'block', marginBottom: 4 }}>
-                  Who did you give the loan to? (Person's Name) *
+                  Borrower Name
                 </label>
                 <input
                   type="text"
                   className="form-input"
                   value={borrowerName}
                   onChange={e => setBorrowerName(e.target.value)}
-                  placeholder="Enter person's name (e.g. Rahul, Amit, Priya...)"
+                  placeholder="Recipient name"
                   autoFocus
                   style={{ width: '100%', borderColor: 'rgba(249, 115, 22, 0.4)' }}
                   required
@@ -745,14 +731,14 @@ function DayExpenseModal({ dateKey, onClose, onChanged }) {
             {category === 'Others' && (
               <div style={{ animation: 'fadeIn 0.15s ease' }}>
                 <label style={{ fontSize: 11, fontWeight: 700, color: '#ef4444', display: 'block', marginBottom: 4 }}>
-                  Specify Other Category Name *
+                  Category Name
                 </label>
                 <input
                   type="text"
                   className="form-input"
                   value={customCategory}
                   onChange={e => setCustomCategory(e.target.value)}
-                  placeholder="Enter category name (e.g. Gym, Medicine, Shopping...)"
+                  placeholder="Custom category"
                   autoFocus
                   style={{ width: '100%', borderColor: 'rgba(239, 68, 68, 0.4)' }}
                   required
@@ -763,25 +749,25 @@ function DayExpenseModal({ dateKey, onClose, onChanged }) {
             <button
               type="submit"
               className="btn btn-primary"
-              style={{ width: '100%', marginTop: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: '#ef4444', borderColor: '#ef4444' }}
+              style={{ width: '100%', marginTop: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: '#ef4444', borderColor: '#ef4444' }}
             >
-              <Plus size={14} /> Add Expense
+              Add Expense
             </button>
           </div>
         </form>
 
         {/* List of expenses for this date */}
         <div>
-          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-2)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
-            Logged Items ({record.items.length})
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
+            Expenses ({record.items.length})
           </div>
 
           {record.items.length === 0 ? (
             <div style={{
               textAlign: 'center', padding: '16px', background: 'var(--surface-2)',
-              borderRadius: 'var(--radius)', color: 'var(--text-3)', fontSize: 12
+              borderRadius: 'var(--radius)', color: 'var(--text-muted)', fontSize: 12
             }}>
-              No expenses recorded for this date yet.
+              No expenses logged for this date.
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -855,9 +841,9 @@ function DayExpenseModal({ dateKey, onClose, onChanged }) {
         </div>
 
         {/* Footer */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 20 }}>
-          <button className="btn btn-ghost" onClick={onClose} style={{ padding: '8px 20px' }}>
-            Done
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 18 }}>
+          <button className="btn btn-ghost" onClick={onClose} style={{ padding: '7px 18px' }}>
+            Close
           </button>
         </div>
       </div>
@@ -918,9 +904,6 @@ function CategorySummaryModal({ year, month, onClose }) {
               <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
                 Category Summary
               </h3>
-              <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>
-                Spending breakdown across all expense categories
-              </div>
             </div>
           </div>
           <button
@@ -948,7 +931,7 @@ function CategorySummaryModal({ year, month, onClose }) {
               transition: 'all 0.15s ease'
             }}
           >
-            {MONTH_NAMES[month]} {year}
+            This Month
           </button>
           <button
             type="button"
@@ -961,7 +944,7 @@ function CategorySummaryModal({ year, month, onClose }) {
               transition: 'all 0.15s ease'
             }}
           >
-            All-Time Total
+            All-Time
           </button>
         </div>
 
@@ -987,7 +970,7 @@ function CategorySummaryModal({ year, month, onClose }) {
             borderRadius: 'var(--radius)', padding: '12px 10px', textAlign: 'center'
           }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Logged Items
+              Entries
             </div>
             <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)', marginTop: 4 }}>
               {totalItems}
@@ -1014,8 +997,8 @@ function CategorySummaryModal({ year, month, onClose }) {
             fontSize: 11, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase',
             letterSpacing: '0.06em', marginBottom: 10
           }}>
-            <span>Category Breakdown</span>
-            <span>Spent / Share</span>
+            <span>Category</span>
+            <span>Amount</span>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -1048,7 +1031,7 @@ function CategorySummaryModal({ year, month, onClose }) {
                         {cat.label}
                       </span>
                       <span style={{ fontSize: 11, color: 'var(--text-3)' }}>
-                        ({count} {count === 1 ? 'item' : 'items'})
+                        • {count} {count === 1 ? 'entry' : 'entries'}
                       </span>
                     </div>
 
