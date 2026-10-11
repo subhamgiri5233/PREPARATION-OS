@@ -1373,9 +1373,6 @@ export default function DisciplineCalendar() {
             </div>
             Discipline Calendar
           </h1>
-          <p style={{ fontSize: 13, color: 'var(--text-2)', marginTop: 4 }}>
-            Daily discipline rules, streak stacks, and withdrawal logging
-          </p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button
@@ -1491,34 +1488,6 @@ export default function DisciplineCalendar() {
                 {f.label}
               </button>
             ))}
-          </div>
-
-          {/* Legend (Horizontal scroll on mobile) */}
-          <div className="cal-legend-bar" style={{ color: 'var(--text-2)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-              <Circle size={10} color="var(--text-muted)" /> <span>Unset</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-              <CheckCircle2 size={10} color="var(--success)" /> <span>Done</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-              <XCircle size={10} color="var(--danger)" /> <span>Missed</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-              <Minus size={10} color="#94a3b8" /> <span>NT</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-              <span style={{ color: '#f59e0b', fontWeight: 700 }}>WR</span> <span>Requested</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-              <span style={{ color: '#10b981', fontWeight: 700 }}>WD (₹)</span> <span>Withdrawn</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-              <span style={{ color: 'var(--primary-light)', fontWeight: 800 }}>WR+WD</span> <span>Both Active</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-              <Star size={10} color="#f59e0b" fill="#f59e0b" /> <span>All 6 Rules Done</span>
-            </div>
           </div>
 
           {/* Mobile Swipe Hint */}

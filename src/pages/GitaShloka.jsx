@@ -501,9 +501,6 @@ export default function GitaShloka() {
               দৈনিক গীতা শ্লোক (Daily Gita Shloka)
             </h1>
           </div>
-          <p className="page-subtitle" style={{ fontFamily: BENGALI_FONT }}>
-            বাংলা অর্থ, বাস্তব প্রয়োগ ও আত্মিক অনুপ্রেরণা সহ দৈনিক গীতা পাঠ ও প্রশান্তি
-          </p>
         </div>
 
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>

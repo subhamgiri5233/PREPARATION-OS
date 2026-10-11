@@ -170,9 +170,6 @@ export default function Expenses() {
             </div>
             Expenses Calendar
           </h1>
-          <p className="page-subtitle">
-            Track daily expenses & monthly budgets
-          </p>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button

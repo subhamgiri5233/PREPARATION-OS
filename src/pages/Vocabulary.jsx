@@ -377,7 +377,6 @@ export default function Vocabulary() {
       <div className="page-header">
         <div className="page-header-left">
           <h1 className="page-title">ইংরেজি ➔ বাংলা অভিধান ও শব্দকোষ (Vocabulary)</h1>
-          <p className="page-subtitle">বাংলা অর্থ, উচ্চারণ ও অনুশীলন সহ প্রতিদিনের শব্দভাণ্ডার বৃদ্ধি</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="btn btn-primary" onClick={handleOpenAddModal}>

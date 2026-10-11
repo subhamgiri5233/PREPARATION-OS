@@ -362,7 +362,6 @@ export default function StudySessions() {
       <div className="page-header" style={{ marginBottom: 16 }}>
         <div className="page-header-left">
           <h1 className="page-title">Study Sessions & Focus Timer</h1>
-          <p className="page-subtitle">Start sessions planned in your Study Planner, track focus time, and manage records</p>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {!activeSession && (
@@ -546,9 +545,6 @@ export default function StudySessions() {
               <Sparkles size={16} style={{ color: 'var(--primary-light)' }} />
               Scheduled Study Tasks for {format(selectedDate, 'MMMM d, yyyy')}
             </div>
-            <p style={{ fontSize: 12, color: 'var(--text-2)', marginTop: 2 }}>
-              Items planned in your Study Planner for this day appear here with full Edit, Delete, and 1-click timer execution.
-            </p>
           </div>
           <span className="badge badge-primary">{plannedDayTasks.length} Planned</span>
         </div>
