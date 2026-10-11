@@ -18,7 +18,7 @@ import {
   getRecord, saveRecord, updateRuleStatus, setDayWithdrawal,
   toggleDayWithdrawalType, updateNotes, updateTasks, resetDayRules,
   getMonthRecords, getAllRecords, isFullyCompleted, isPartiallyCompleted,
-  hasAnyData, computeStats, getRules, saveRules
+  hasAnyData, computeStats, getRules, saveRules, syncDisciplineWithDB
 } from '../services/disciplineCalendar';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -1308,6 +1308,7 @@ export default function DisciplineCalendar() {
 
   useEffect(() => {
     loadData();
+    syncDisciplineWithDB().then(() => loadData());
   }, [loadData]);
 
   useEffect(() => {

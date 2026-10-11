@@ -12,7 +12,7 @@ import {
   getMonthExpenses, getDayExpense, addExpenseItem, deleteExpenseItem,
   clearDayExpenses, getExpenseStats, formatCurrency, EXPENSE_CATEGORIES,
   getCategoryBadge, getPendingLoans, markLoanRepaid, recordLoanCheckNo,
-  onExpensesChange
+  onExpensesChange, syncExpensesWithDB
 } from '../services/expensesService';
 
 const MONTH_NAMES = [
@@ -89,6 +89,7 @@ export default function Expenses() {
 
   useEffect(() => {
     loadData();
+    syncExpensesWithDB().then(() => loadData());
     const unsubscribe = onExpensesChange(() => loadData());
     return unsubscribe;
   }, [viewYear, viewMonth]);

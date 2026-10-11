@@ -4,6 +4,8 @@
 // Withdrawal tracking (WR requested, WD completed with amount, and BOTH WR & WD on the same day),
 // tracking monthly and all-time total withdrawal amounts.
 
+import { apiFetch } from './api.js';
+
 const STORAGE_KEY = 'focusos_discipline_calendar';
 const RULES_KEY = 'focusos_discipline_rules';
 
@@ -55,16 +57,53 @@ export function formatDateKey(dateKey) {
 }
 
 // ─── Storage Helpers ──────────────────────────────────────────────────────────
-function loadAllRecords() {
+export function loadAllRecords() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     return raw ? JSON.parse(raw) : {};
   } catch { return {}; }
 }
 
+/**
+ * Sync discipline records with MongoDB Atlas API and merge with localStorage cache
+ */
+export async function syncDisciplineWithDB() {
+  try {
+    const remote = await apiFetch('/discipline');
+    if (remote && typeof remote === 'object') {
+      const local = loadAllRecords();
+      let localHasExtra = false;
+      const merged = { ...remote };
+      for (const [key, val] of Object.entries(local)) {
+        if (!merged[key]) {
+          merged[key] = val;
+          localHasExtra = true;
+        }
+      }
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+      } catch {}
+      if (localHasExtra) {
+        apiFetch('/discipline/sync', { method: 'POST', body: merged }).catch(() => {});
+      }
+      return merged;
+    }
+  } catch (err) {
+    console.warn('[disciplineCalendar] DB sync error, using local cache:', err?.message);
+  }
+  return loadAllRecords();
+}
+
 function saveAllRecords(records) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(records)); }
-  catch (e) { console.error('[DisciplineCalendar] Failed to save:', e); }
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+  } catch (e) {
+    console.error('[DisciplineCalendar] Failed to save:', e);
+  }
+  // Async background sync to MongoDB Atlas
+  apiFetch('/discipline/sync', { method: 'POST', body: records }).catch(err => {
+    console.warn('[disciplineCalendar] Background DB sync queued:', err?.message);
+  });
 }
 
 // ─── Default Record Factory ───────────────────────────────────────────────────

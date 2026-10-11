@@ -2,6 +2,8 @@
 // Dedicated service for Daily Expenses Calendar & Financial Spend Tracking
 // Completely isolated from Discipline Calendar (stored in separate localStorage key)
 
+import { apiFetch } from './api.js';
+
 const STORAGE_KEY = 'focusos_expenses_v1';
 const EVENT_NAME = 'focusos_expenses_changed';
 
@@ -47,7 +49,38 @@ export function getAllExpenses() {
 }
 
 /**
- * Save full expenses map
+ * Sync expenses with MongoDB Atlas API and merge with localStorage cache
+ */
+export async function syncExpensesWithDB() {
+  try {
+    const remote = await apiFetch('/expenses');
+    if (remote && typeof remote === 'object') {
+      const local = getAllExpenses();
+      let localHasExtra = false;
+      const merged = { ...remote };
+      for (const [key, val] of Object.entries(local)) {
+        if (!merged[key] || (val.items && val.items.length > (merged[key].items?.length || 0))) {
+          merged[key] = val;
+          localHasExtra = true;
+        }
+      }
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+        window.dispatchEvent(new CustomEvent(EVENT_NAME, { detail: merged }));
+      } catch {}
+      if (localHasExtra) {
+        apiFetch('/expenses/sync', { method: 'POST', body: merged }).catch(() => {});
+      }
+      return merged;
+    }
+  } catch (err) {
+    console.warn('[expensesService] DB sync fallback to local cache:', err?.message);
+  }
+  return getAllExpenses();
+}
+
+/**
+ * Save full expenses map to localStorage and MongoDB Atlas
  */
 function saveAllExpenses(data) {
   try {
@@ -56,6 +89,10 @@ function saveAllExpenses(data) {
   } catch (err) {
     console.error('[expensesService] Failed to save expenses:', err);
   }
+  // Async background sync to MongoDB Atlas
+  apiFetch('/expenses/sync', { method: 'POST', body: data }).catch(err => {
+    console.warn('[expensesService] Background DB sync queued:', err?.message);
+  });
 }
 
 /**
