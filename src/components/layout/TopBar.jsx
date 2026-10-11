@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { Menu, Bell, Zap, Search, X, BookOpen, GraduationCap, FileText, BookMarked, Lock, Unlock, LogIn, LogOut, Eye, Edit3 } from 'lucide-react';
+import { Menu, Bell, Zap, Search, X, BookOpen, GraduationCap, FileText, BookMarked } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
-import { useAuthStore } from '../../store/useAuthStore';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { searchGlobal } from '../../services/searchService';
@@ -28,7 +27,7 @@ export default function TopBar({ onMobileMenuOpen }) {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const title = PAGE_TITLES[location.pathname] || 'Preparation OS';
+  const title = PAGE_TITLES[location.pathname] || 'FocusOS';
   const today = format(new Date(), 'EEE, MMM d');
 
   const [showSearchModal, setShowSearchModal] = useState(false);
@@ -58,8 +57,6 @@ export default function TopBar({ onMobileMenuOpen }) {
     setSearchQuery('');
     navigate(path);
   };
-
-  const { isEditMode, toggleEditMode, logout } = useAuthStore();
 
   return (
     <>
@@ -95,109 +92,11 @@ export default function TopBar({ onMobileMenuOpen }) {
             <ActiveSessionIndicator />
           </div>
 
-          {/* Edit Mode vs View-Only Toggle Switch */}
-          {isEditMode ? (
-            <button
-              className="btn btn-xs topbar-mode-btn"
-              onClick={toggleEditMode}
-              title="Edit Mode is ON. Click to switch to View-Only Mode."
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 5,
-                background: 'rgba(34, 197, 94, 0.15)',
-                color: 'var(--success)',
-                border: '1px solid var(--success)',
-                borderRadius: 'var(--radius-full)',
-                padding: '4px 8px',
-                fontSize: 11,
-                fontWeight: 700,
-                cursor: 'pointer',
-                flexShrink: 0
-              }}
-            >
-              <Edit3 size={12} />
-              <span className="mode-label">Edit Mode</span>
-              <div style={{
-                width: 22,
-                height: 12,
-                borderRadius: 6,
-                background: 'var(--success)',
-                position: 'relative',
-                marginLeft: 1
-              }}>
-                <div style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: 4,
-                  background: '#fff',
-                  position: 'absolute',
-                  top: 2,
-                  right: 2,
-                  transition: 'all 0.2s ease'
-                }} />
-              </div>
-            </button>
-          ) : (
-            <button
-              className="btn btn-xs btn-ghost topbar-mode-btn"
-              onClick={toggleEditMode}
-              title="View-Only Mode. Click to enter Master PIN and turn ON Edit Mode."
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 5,
-                background: 'var(--surface-2)',
-                color: 'var(--text-2)',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--radius-full)',
-                padding: '4px 8px',
-                fontSize: 11,
-                fontWeight: 600,
-                cursor: 'pointer',
-                flexShrink: 0
-              }}
-            >
-              <Eye size={12} />
-              <span className="mode-label">View Only</span>
-              <div style={{
-                width: 22,
-                height: 12,
-                borderRadius: 6,
-                background: 'var(--surface-3)',
-                position: 'relative',
-                marginLeft: 1
-              }}>
-                <div style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: 4,
-                  background: 'var(--text-3)',
-                  position: 'absolute',
-                  top: 2,
-                  left: 2,
-                  transition: 'all 0.2s ease'
-                }} />
-              </div>
-            </button>
-          )}
-
           {/* Notifications */}
           <Link to="/notifications" className="topbar-btn" aria-label="Notifications">
             <Bell size={16} />
             {unreadCount > 0 && <span className="notification-dot" />}
           </Link>
-
-          {/* Logout */}
-          <button
-            className="topbar-btn"
-            onClick={logout}
-            title="Logout — return to login screen"
-            aria-label="Logout"
-            style={{ color: 'var(--danger)' }}
-          >
-            <LogOut size={16} />
-          </button>
         </div>
       </header>
 

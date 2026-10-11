@@ -14,6 +14,7 @@ const settingsSchema = new mongoose.Schema({
   studyReminderMinutes: { type: Number, default: 5 },
   theme: { type: String, default: 'dark' },
   vocabDailyTarget: { type: Number, default: 10 },
+  gitaDailyTarget: { type: Number, default: 1 },
   gitaReminderEnabled: { type: Boolean, default: true },
   userName: { type: String, default: 'Subham' },
 }, { timestamps: true });

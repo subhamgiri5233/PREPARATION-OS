@@ -1,4 +1,4 @@
-// src/components/InstallAppBanner.jsx
+﻿// src/components/InstallAppBanner.jsx
 // Prompts users on Mobile Chrome / Android / iOS / Desktop to Install the PWA on Home Screen
 
 import { useState, useEffect } from 'react';
@@ -20,7 +20,7 @@ export default function InstallAppBanner() {
     }
 
     // 2. Check if dismissed recently in this session
-    const dismissed = sessionStorage.getItem('prepos_install_dismissed');
+    const dismissed = sessionStorage.getItem('FocusOS_install_dismissed');
 
     // 3. Listen for Chrome's native beforeinstallprompt
     const handleBeforeInstallPrompt = (e) => {
@@ -67,7 +67,7 @@ export default function InstallAppBanner() {
   };
 
   const handleDismiss = () => {
-    sessionStorage.setItem('prepos_install_dismissed', 'true');
+    sessionStorage.setItem('FocusOS_install_dismissed', 'true');
     setShowBanner(false);
   };
 
@@ -76,7 +76,7 @@ export default function InstallAppBanner() {
     setNotifPermission(res);
     if (res === 'granted') {
       await sendNativeNotification({
-        title: '🎯 PrepOS Notifications Enabled!',
+        title: 'ðŸŽ¯ FocusOS Notifications Enabled!',
         body: 'You will receive real-time study reminders, revision alerts, and session updates.',
         url: '/'
       });
@@ -124,12 +124,12 @@ export default function InstallAppBanner() {
             boxShadow: '0 4px 12px rgba(99, 102, 241, 0.4)',
           }}
         >
-          📱
+          ðŸ“±
         </div>
 
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>Install PrepOS App</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>Install FocusOS App</span>
             <span className="badge badge-primary" style={{ fontSize: 9, padding: '1px 5px' }}>PWA</span>
           </div>
           <p style={{ fontSize: 11, color: 'var(--text-2)', marginTop: 2, lineHeight: 1.3 }}>
@@ -164,10 +164,10 @@ export default function InstallAppBanner() {
               <button className="modal-close" onClick={() => setShowIOSGuide(false)}><X size={16} /></button>
             </div>
             <div style={{ fontSize: 13, lineHeight: 1.6, color: 'var(--text-2)' }}>
-              <p style={{ marginBottom: 12 }}>To add Preparation OS to your iOS home screen:</p>
+              <p style={{ marginBottom: 12 }}>To add FocusOS to your iOS home screen:</p>
               <ol style={{ paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <li>Tap the <strong>Share</strong> button (📤 icon at the bottom of Safari).</li>
-                <li>Scroll down and select <strong>"Add to Home Screen"</strong> (➕).</li>
+                <li>Tap the <strong>Share</strong> button (ðŸ“¤ icon at the bottom of Safari).</li>
+                <li>Scroll down and select <strong>"Add to Home Screen"</strong> (âž•).</li>
                 <li>Tap <strong>Add</strong> in the top-right corner.</li>
               </ol>
             </div>

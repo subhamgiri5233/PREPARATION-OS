@@ -1,5 +1,5 @@
 // src/components/layout/Layout.jsx
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
@@ -8,16 +8,10 @@ import InstallAppBanner from '../InstallAppBanner';
 import LoginModal from '../LoginModal';
 import ViewOnlyModal from '../ViewOnlyModal';
 import { useAppStore } from '../../store/useAppStore';
-import { useAuthStore } from '../../store/useAuthStore';
 
 export default function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { sidebarOpen } = useAppStore();
-  const { isEditMode, checkAuth } = useAuthStore();
-
-  useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
 
   return (
     <div className="app-layout">

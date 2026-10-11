@@ -24,6 +24,11 @@ import { classifyTopicPerformance } from '../services/performanceEngine';
 import { compareMocks } from '../services/mockAnalysisEngine';
 import { calculateSyllabusProgress, calculateAreaProgress, calculateCourseProgress } from '../services/syllabusService';
 import { getNextUpcomingStudySession } from '../services/reminderScheduler';
+import {
+  getVocabDailyTarget,
+  getGitaDailyTarget,
+  onDailyTargetsChange
+} from '../services/dailyTargetService';
 
 const TODAY = format(new Date(), 'yyyy-MM-dd');
 
@@ -63,6 +68,8 @@ export default function Dashboard() {
   const [revisionsDue, setRevisionsDue] = useState([]);
   const [todayVocab, setTodayVocab] = useState([]);
   const [todayGita, setTodayGita] = useState(null);
+  const [vocabTarget, setVocabTarget] = useState(getVocabDailyTarget());
+  const [gitaTarget, setGitaTarget] = useState(getGitaDailyTarget());
   const [allMocks, setAllMocks] = useState([]);
   const [allErrors, setAllErrors] = useState([]);
   const [teachingSlots, setTeachingSlots] = useState([]);
@@ -154,6 +161,11 @@ export default function Dashboard() {
 
   useEffect(() => {
     loadData();
+    const unsub = onDailyTargetsChange((detail) => {
+      if (detail && detail.type === 'vocab') setVocabTarget(detail.target);
+      if (detail && detail.type === 'gita') setGitaTarget(detail.target);
+    });
+    return () => unsub();
   }, [loadData]);
 
   // Compute Next Upcoming Study Session for Dashboard Card
@@ -806,51 +818,52 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* MODULE 6: DAILY VOCABULARY — today-only count, resets at midnight */}
+          {/* MODULE 6: DAILY VOCABULARY — user's choice */}
           <div className="card">
             <div className="card-header" style={{ marginBottom: 12 }}>
               <div className="card-title">
                 <BookMarked size={16} /> Daily Vocabulary
-                {todayVocab.length >= 10 ? (
-                  <span className="badge badge-success">✅ Goal Done</span>
+                {vocabTarget ? (
+                  todayVocab.length >= vocabTarget ? (
+                    <span className="badge badge-success">✅ Goal Done</span>
+                  ) : (
+                    <span className="badge badge-warning">{todayVocab.length}/{vocabTarget} today</span>
+                  )
                 ) : (
-                  <span className="badge badge-warning">{todayVocab.length}/10 today</span>
+                  <span className="badge badge-primary">{todayVocab.length} words today</span>
                 )}
               </div>
               <Link to="/vocabulary" className="btn btn-sm btn-ghost">
-                Add Words <ChevronRight size={12} />
+                {vocabTarget ? `Words (${todayVocab.length}/${vocabTarget})` : 'Vocabulary'} <ChevronRight size={12} />
               </Link>
             </div>
 
-            {/* Progress bar — only counts TODAY's words */}
+            {/* Progress bar */}
             <div style={{ marginBottom: 10 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-3)', marginBottom: 4 }}>
-                <span>Today's Goal</span>
-                <span style={{ fontWeight: 700, color: todayVocab.length >= 10 ? 'var(--success)' : 'var(--text-2)' }}>
-                  {todayVocab.length} / 10 words
+                <span>{vocabTarget ? "Daily Target" : "Today's Words"}</span>
+                <span style={{ fontWeight: 700, color: vocabTarget && todayVocab.length >= vocabTarget ? 'var(--success)' : 'var(--text-2)' }}>
+                  {vocabTarget ? `${todayVocab.length} / ${vocabTarget} words` : `${todayVocab.length} words added`}
                 </span>
               </div>
-              <div style={{ height: 6, background: 'var(--surface-2)', borderRadius: 3, overflow: 'hidden' }}>
-                <div style={{
-                  height: '100%',
-                  width: `${Math.min(100, (todayVocab.length / 10) * 100)}%`,
-                  background: todayVocab.length >= 10
-                    ? 'linear-gradient(90deg, #22c55e, #4ade80)'
-                    : 'linear-gradient(90deg, var(--primary), var(--primary-light))',
-                  borderRadius: 3,
-                  transition: 'width 0.4s ease',
-                }} />
-              </div>
-              {todayVocab.length < 10 && (
-                <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 4 }}>
-                  {10 - todayVocab.length} word{10 - todayVocab.length !== 1 ? 's' : ''} remaining — resets tomorrow at midnight
+              {vocabTarget && (
+                <div style={{ height: 6, background: 'var(--surface-2)', borderRadius: 3, overflow: 'hidden' }}>
+                  <div style={{
+                    height: '100%',
+                    width: `${Math.min(100, (todayVocab.length / vocabTarget) * 100)}%`,
+                    background: todayVocab.length >= vocabTarget
+                      ? 'linear-gradient(90deg, #10b981, #34d399)'
+                      : 'linear-gradient(90deg, var(--primary), var(--primary-light))',
+                    borderRadius: 3,
+                    transition: 'width 0.4s ease',
+                  }} />
                 </div>
               )}
             </div>
 
             {todayVocab.length === 0 ? (
               <div style={{ textAlign: 'center', color: 'var(--text-3)', fontSize: 12, padding: '8px 0' }}>
-                No words added today yet. Start learning!
+                No words recorded today yet.
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -880,6 +893,11 @@ export default function Dashboard() {
             <div className="card-header" style={{ marginBottom: 10 }}>
               <div className="card-title">
                 📖 Today's Gita Shloka
+                {todayGita ? (
+                  <span className="badge badge-success">✓ 1 shloka today</span>
+                ) : (
+                  <span className="badge badge-primary">0 shlokas today</span>
+                )}
               </div>
               <Link to="/gita-shloka" className="btn btn-sm btn-ghost">
                 {todayGita ? 'View Shloka' : '+ Add Today\'s Shloka'} <ChevronRight size={12} />
@@ -912,7 +930,7 @@ export default function Dashboard() {
             ) : (
               <div style={{ textAlign: 'center', padding: '12px 0' }}>
                 <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 8 }}>
-                  No shloka added today.
+                  No shloka added today yet.
                 </div>
                 <Link to="/gita-shloka" className="btn btn-sm btn-primary">
                   + Add Today's Shloka

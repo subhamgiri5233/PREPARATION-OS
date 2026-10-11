@@ -29,6 +29,8 @@ const Notifications = lazy(() => import('./pages/Notifications'));
 const TeachingSchedule = lazy(() => import('./pages/TeachingSchedule'));
 const Settings = lazy(() => import('./pages/Settings'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
+const DisciplineCalendar = lazy(() => import('./pages/DisciplineCalendar'));
+const Expenses = lazy(() => import('./pages/Expenses'));
 const TestRunner = lazy(() => import('./pages/TestRunner'));
 
 // ─── Page Loading Fallback Skeleton ───────────────────────────────────────────
@@ -209,6 +211,11 @@ export default function App() {
               <Route path="/teaching" element={<TeachingSchedule />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/test-runner" element={<TestRunner />} />
+              <Route path="/discipline" element={<DisciplineCalendar />} />
+              <Route path="/discipline-calendar" element={<DisciplineCalendar />} />
+              <Route path="/calendar" element={<DisciplineCalendar />} />
+              <Route path="/expenses" element={<Expenses />} />
+              <Route path="/expenses-calendar" element={<Expenses />} />
             </Route>
           </Routes>
         </Suspense>

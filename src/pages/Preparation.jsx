@@ -1493,7 +1493,7 @@ function AddEditTopicModal({ initialTopic, defaultContext = {}, currentAreaId, s
               className="form-input"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Normalization (1NF to BCNF)"
+              placeholder="Topic name"
               required
             />
           </div>
@@ -1592,7 +1592,7 @@ function AddEditTopicModal({ initialTopic, defaultContext = {}, currentAreaId, s
               className="form-input"
               value={resourceReference}
               onChange={(e) => setResourceReference(e.target.value)}
-              placeholder="e.g. Adda247 MahaPack Chapter 3 / Video 12"
+              placeholder="Source reference (e.g. Chapter 3, Lecture 12)"
             />
           </div>
 
@@ -1651,7 +1651,7 @@ function AddChapterModal({ currentAreaId, subjectId, courses, onClose, onSave })
               className="form-input"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Relational Database Design, Process Management"
+              placeholder="Chapter or module title"
               required
             />
           </div>
@@ -1724,7 +1724,7 @@ function AddSubjectModal({ currentAreaId, courses, onClose, onSave }) {
               className="form-input"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Operating System, Reasoning"
+              placeholder="Subject title"
               required
             />
           </div>
@@ -1805,7 +1805,7 @@ function AddCourseModal({ currentAreaId, onClose, onSave }) {
               className="form-input"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Adda247 MahaPack, YourStudy Course"
+              placeholder="Course title"
               required
             />
           </div>
@@ -1818,7 +1818,7 @@ function AddCourseModal({ currentAreaId, onClose, onSave }) {
                 className="form-input"
                 value={provider}
                 onChange={(e) => setProvider(e.target.value)}
-                placeholder="e.g. Adda247, Testbook"
+                placeholder="Platform or provider"
               />
             </div>
             <div>
@@ -1935,7 +1935,7 @@ function BulkImportModal({ prepAreas, courses, subjects, chapters, topics, defau
               rows={8}
               value={importText}
               onChange={(e) => { setImportText(e.target.value); setPreview(null); }}
-              placeholder={`Paste valid JSON or CSV content here...\n\nExample JSON:\n{\n  "preparationArea": "Panchayat",\n  "course": "YourStudy",\n  "subjects": [\n    {\n      "name": "General Studies",\n      "chapters": [\n        { "name": "Polity", "topics": [{ "name": "73rd Amendment", "estimatedHours": 3 }] }\n      ]\n    }\n  ]\n}`}
+              placeholder="Paste formatted JSON or CSV syllabus payload..."
               style={{ fontFamily: 'monospace', fontSize: 12 }}
             />
           </div>

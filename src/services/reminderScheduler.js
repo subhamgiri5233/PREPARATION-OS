@@ -1,4 +1,4 @@
-// src/services/reminderScheduler.js
+﻿// src/services/reminderScheduler.js
 // Central Smart Pre-Study Reminder System & Idempotent Scheduler
 
 import { format, parseISO, addMinutes, isBefore, isAfter } from 'date-fns';
@@ -23,7 +23,7 @@ let _isChecking = false;
  * Format a 24-hour time string ("14:30") into a friendly 12-hour string ("2:30 PM")
  */
 export function formatTime12h(timeStr) {
-  if (!timeStr) return '—';
+  if (!timeStr) return 'â€”';
   // If full ISO string, parse it
   if (timeStr.includes('T')) {
     try {
@@ -77,7 +77,7 @@ export function checkTeachingConflict(dateStr, startTimeStr, durationMinutes, te
 
 /**
  * Checks and creates pre-study and missed session reminders for today.
- * Strictly idempotent — never creates duplicate notifications.
+ * Strictly idempotent â€” never creates duplicate notifications.
  */
 export async function checkPreStudyReminders() {
   if (_isChecking) return;
@@ -158,19 +158,19 @@ export async function checkPreStudyReminders() {
       const topicName = topic?.name || task.topicName || task.title || `Topic #${task.topicId}`;
       const subjectName = subject?.name || task.subjectName || 'Study Subject';
       const courseName = course?.name || 'Standard Course';
-      const areaName = area?.name || 'Preparation OS';
+      const areaName = area?.name || 'FocusOS';
 
-      // ── 1. PRE-STUDY REMINDER TRIGGER ────────────────────────────────────────
+      // â”€â”€ 1. PRE-STUDY REMINDER TRIGGER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
       const preStudyKey = `pre-study-reminder-${taskId}-${todayStr}`;
       
       // Active window: now >= reminderDate and now < taskStartDate
       if (now >= reminderDate && now < taskStartDate) {
         if (!notifKeys.has(preStudyKey)) {
           const isFirstSession = taskId === firstTaskId;
-          const title = '🔔 Upcoming Study Session';
+          const title = 'ðŸ”” Upcoming Study Session';
           const message = isFirstSession
-            ? `Your first study session today starts in ${leadMinutes} minutes.\n${subjectName} → ${topicName}\nStarts at: ${formattedStartTime} · Duration: ${durationMinutes} min`
-            : `Your ${subjectName} — ${topicName} session starts in ${leadMinutes} minutes. Start preparing now.\nStarts at: ${formattedStartTime} · Duration: ${durationMinutes} min`;
+            ? `Your first study session today starts in ${leadMinutes} minutes.\n${subjectName} â†’ ${topicName}\nStarts at: ${formattedStartTime} Â· Duration: ${durationMinutes} min`
+            : `Your ${subjectName} â€” ${topicName} session starts in ${leadMinutes} minutes. Start preparing now.\nStarts at: ${formattedStartTime} Â· Duration: ${durationMinutes} min`;
 
           const notifPayload = {
             type: 'study-reminder',
@@ -199,7 +199,7 @@ export async function checkPreStudyReminders() {
 
           // Native Push / OS Tray notification
           await sendNativeNotification({
-            title: `🔔 Upcoming: ${subjectName} → ${topicName}`,
+            title: `ðŸ”” Upcoming: ${subjectName} â†’ ${topicName}`,
             body: `Starts at ${formattedStartTime} (${leadMinutes} min remaining). Tap to start studying!`,
             url: '/sessions',
             tag: preStudyKey
@@ -207,14 +207,14 @@ export async function checkPreStudyReminders() {
         }
       }
 
-      // ── 2. MISSED STUDY SESSION TRIGGER ──────────────────────────────────────
+      // â”€â”€ 2. MISSED STUDY SESSION TRIGGER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
       const missedKey = `missed-study-${taskId}-${todayStr}`;
       const missedGraceDate = new Date(taskStartDate.getTime() + 5 * 60 * 1000); // 5 mins past scheduled start
 
       if (now >= missedGraceDate) {
         if (!notifKeys.has(missedKey)) {
-          const title = '⚠️ Missed Study Session';
-          const message = `Your scheduled session for ${subjectName} → ${topicName} started at ${formattedStartTime}.\n${areaName} · Duration: ${durationMinutes} min`;
+          const title = 'âš ï¸ Missed Study Session';
+          const message = `Your scheduled session for ${subjectName} â†’ ${topicName} started at ${formattedStartTime}.\n${areaName} Â· Duration: ${durationMinutes} min`;
 
           const missedPayload = {
             type: 'missed-session',
@@ -240,7 +240,7 @@ export async function checkPreStudyReminders() {
           notifKeys.add(missedKey);
 
           await sendNativeNotification({
-            title: `⚠️ Missed: ${subjectName} → ${topicName}`,
+            title: `âš ï¸ Missed: ${subjectName} â†’ ${topicName}`,
             body: `Scheduled start was ${formattedStartTime}. Tap to start or reschedule.`,
             url: '/sessions',
             tag: missedKey
@@ -330,7 +330,7 @@ export function getNextUpcomingStudySession(tasks, subjects, topics, areas, sett
     preparationAreaId: nextTask.preparationAreaId || topic?.preparationAreaId,
     topicName: topic?.name || nextTask.topicName || nextTask.title || `Topic #${nextTask.topicId}`,
     subjectName: subject?.name || nextTask.subjectName || 'Study Subject',
-    areaName: area?.name || 'Preparation OS',
+    areaName: area?.name || 'FocusOS',
     areaColor: area?.color || 'var(--primary)',
     startTime: formatTime12h(nextTask.startTime),
     rawStartTime: nextTask.startTime,

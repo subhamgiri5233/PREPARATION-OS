@@ -17,12 +17,19 @@ import {
   getRecentSearches, toggleVocabFavorite, markVocabLearned
 } from '../services/db';
 import { requireEditPermission, canEdit } from '../services/mutationGuard.js';
+import {
+  getVocabDailyTarget,
+  setVocabDailyTarget,
+  onDailyTargetsChange
+} from '../services/dailyTargetService.js';
 
 const TODAY = format(new Date(), 'yyyy-MM-dd');
-const DAILY_TARGET = 10;
 const BENGALI_FONT = "'Noto Sans Bengali', 'Hind Siliguri', 'Kalpurush', 'Segoe UI', sans-serif";
 
 export default function Vocabulary() {
+  const [dailyTarget, setDailyTarget] = useState(getVocabDailyTarget());
+  const [showTargetEdit, setShowTargetEdit] = useState(false);
+  const [customTargetVal, setCustomTargetVal] = useState('');
   // ─── Dictionary Search State ───────────────────────────────────────────────
   const [searchQuery, setSearchQuery] = useState('');
   const [dictResult, setDictResult] = useState(null);
@@ -59,7 +66,29 @@ export default function Vocabulary() {
   useEffect(() => {
     loadData();
     loadHistory();
+    const unsub = onDailyTargetsChange((detail) => {
+      if (detail && detail.type === 'vocab') {
+        setDailyTarget(detail.target);
+      }
+    });
+    return () => unsub();
   }, []);
+
+  const handleUpdateTarget = async (newVal) => {
+    if (newVal === null || newVal === '' || newVal === 'free') {
+      setDailyTarget(null);
+      await setVocabDailyTarget(null);
+      setCustomTargetVal('');
+      showToast('মুক্ত অনুশীলন মোড চালু হয়েছে — আপনার ইচ্ছামতো যত খুশি শব্দ যোগ করতে পারেন!');
+      return;
+    }
+    const num = Math.max(1, parseInt(newVal, 10));
+    if (isNaN(num)) return;
+    setDailyTarget(num);
+    await setVocabDailyTarget(num);
+    setCustomTargetVal('');
+    showToast(`আজকের ব্যক্তিগত লক্ষ্য: ${num}টি শব্দ নির্ধারণ করা হয়েছে!`);
+  };
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -327,7 +356,7 @@ export default function Vocabulary() {
   });
 
   const todayCount = todayWords.length;
-  const progressPercent = Math.min(100, Math.round((todayCount / DAILY_TARGET) * 100));
+  const progressPercent = Math.min(100, Math.round((todayCount / dailyTarget) * 100));
 
   return (
     <div>
@@ -348,7 +377,7 @@ export default function Vocabulary() {
       <div className="page-header">
         <div className="page-header-left">
           <h1 className="page-title">ইংরেজি ➔ বাংলা অভিধান ও শব্দকোষ (Vocabulary)</h1>
-          <p className="page-subtitle">প্রতিদিন ১০টি নতুন শব্দ শিক্ষা, বাংলা অর্থ, উচ্চারণ ও অনুশীলন</p>
+          <p className="page-subtitle">বাংলা অর্থ, উচ্চারণ ও অনুশীলন সহ প্রতিদিনের শব্দভাণ্ডার বৃদ্ধি</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="btn btn-primary" onClick={handleOpenAddModal}>
@@ -384,7 +413,7 @@ export default function Vocabulary() {
             <input
               type="text"
               className="form-input"
-              placeholder="যে কোনো ইংরেজি শব্দ লিখুন (যেমন: benevolent, abate, resilient, candid)..."
+              placeholder="Search any English word (e.g. resilient, candid)..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{
@@ -649,60 +678,103 @@ export default function Vocabulary() {
         )}
       </div>
 
-      {/* ─── SECTION 2: DAILY 10-WORD GOAL BANNER ─────────────────────────────── */}
+      {/* ─── SECTION 2: DAILY VOCABULARY UPDATES (USER'S PERSONAL CHOICE) ─────────────────────────────── */}
       <div className="card mb-24" style={{
-        background: todayCount >= DAILY_TARGET
-          ? 'linear-gradient(135deg, rgba(34, 197, 94, 0.12) 0%, rgba(20, 184, 166, 0.06) 100%)'
-          : 'linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(139, 92, 246, 0.04) 100%)',
-        border: todayCount >= DAILY_TARGET ? '1px solid rgba(34, 197, 94, 0.3)' : '1px solid var(--border-accent)',
+        background: dailyTarget && todayCount >= dailyTarget
+          ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(20, 184, 166, 0.06) 100%)'
+          : 'linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%)',
+        border: dailyTarget && todayCount >= dailyTarget ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid var(--border-accent)',
         borderRadius: 'var(--radius-xl)',
         padding: '20px 24px'
       }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-          <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
+          <div style={{ flex: 1, minWidth: 280 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-              <GraduationCap size={20} color={todayCount >= DAILY_TARGET ? 'var(--success)' : 'var(--primary)'} />
+              <GraduationCap size={22} color={dailyTarget && todayCount >= dailyTarget ? 'var(--success)' : 'var(--primary)'} />
               <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, fontFamily: BENGALI_FONT }}>
-                দৈনিক লক্ষ্য (Daily Vocabulary Target): ১০টি শব্দ / দিন
+                {dailyTarget
+                  ? `আজকের লক্ষ্য: ${dailyTarget}টি শব্দ`
+                  : 'দৈনিক শব্দ অনুশীলন (Daily Vocabulary)'}
               </h2>
             </div>
-            <div style={{ fontSize: 12, color: 'var(--text-3)', fontFamily: BENGALI_FONT }}>
-              আজকের তারিখ: {TODAY} • মধ্যরাতে স্বয়ংক্রিয়ভাবে নতুন দিনের কাউন্টার শুরু হয়
+            <p style={{ fontSize: 12, color: 'var(--text-3)', fontFamily: BENGALI_FONT, margin: '4px 0 12px 0' }}>
+              প্রতিদিনের নতুন শব্দ শিক্ষা ও রিভিশন ট্র্যাকার
+            </p>
+
+            {/* Direct Open Number Choice Input */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-2)' }}>
+                দৈনিক লক্ষ্য:
+              </span>
+              <input
+                type="number"
+                min={1}
+                max={500}
+                value={customTargetVal}
+                onChange={(e) => setCustomTargetVal(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleUpdateTarget(customTargetVal); }}
+                className="form-input form-input-sm"
+                style={{ width: 80, padding: '5px 10px', fontSize: 13, textAlign: 'center' }}
+                placeholder="লক্ষ্য"
+              />
+              <button
+                type="button"
+                onClick={() => handleUpdateTarget(customTargetVal)}
+                className="btn btn-sm btn-primary"
+                style={{ padding: '5px 12px', fontSize: 12 }}
+              >
+                সেট করুন
+              </button>
+              {dailyTarget && (
+                <button
+                  type="button"
+                  onClick={() => handleUpdateTarget('free')}
+                  className="btn btn-sm btn-ghost"
+                  style={{ padding: '5px 10px', fontSize: 12, color: 'var(--text-3)' }}
+                  title="Remove target limit"
+                >
+                  রিসেট
+                </button>
+              )}
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{
-                fontSize: 26,
-                fontWeight: 800,
-                color: todayCount >= DAILY_TARGET ? 'var(--success)' : 'var(--text)'
-              }}>
-                {todayCount} <span style={{ fontSize: 16, color: 'var(--text-3)', fontWeight: 500 }}>/ {DAILY_TARGET}</span>
-              </div>
-              <div style={{ fontSize: 11, color: 'var(--text-3)' }}>
-                {todayCount >= DAILY_TARGET
-                  ? '🎉 Daily target complete!'
-                  : `${DAILY_TARGET - todayCount} words remaining`}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Progress Bar */}
-        <div style={{ marginTop: 14 }}>
-          <div style={{ height: 8, background: 'var(--surface-3)', borderRadius: 4, overflow: 'hidden' }}>
+          <div style={{ textAlign: 'right' }}>
             <div style={{
-              height: '100%',
-              width: `${progressPercent}%`,
-              background: todayCount >= DAILY_TARGET
-                ? 'linear-gradient(90deg, #22c55e, #4ade80)'
-                : 'linear-gradient(90deg, var(--primary), var(--primary-light))',
-              borderRadius: 4,
-              transition: 'width 0.4s ease'
-            }} />
+              fontSize: 28,
+              fontWeight: 800,
+              color: dailyTarget && todayCount >= dailyTarget ? 'var(--success)' : 'var(--text)'
+            }}>
+              {todayCount} {dailyTarget ? <span style={{ fontSize: 16, color: 'var(--text-3)', fontWeight: 500 }}>/ {dailyTarget}</span> : <span style={{ fontSize: 13, color: 'var(--text-3)', fontWeight: 500 }}>শব্দ যুক্ত</span>}
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>
+              {dailyTarget ? (
+                todayCount >= dailyTarget
+                  ? '🎉 লক্ষ্য সম্পন্ন!'
+                  : `আজকের অগ্রগতি: ${todayCount}টি শব্দ`
+              ) : (
+                `আজ মোট ${todayCount}টি শব্দ যুক্ত হয়েছে`
+              )}
+            </div>
           </div>
         </div>
+
+        {/* Progress Bar (if target is set) */}
+        {dailyTarget && (
+          <div style={{ marginTop: 14 }}>
+            <div style={{ height: 8, background: 'var(--surface-3)', borderRadius: 4, overflow: 'hidden' }}>
+              <div style={{
+                height: '100%',
+                width: `${progressPercent}%`,
+                background: todayCount >= dailyTarget
+                  ? 'linear-gradient(90deg, #10b981, #34d399)'
+                  : 'linear-gradient(90deg, var(--primary), var(--primary-light))',
+                borderRadius: 4,
+                transition: 'width 0.4s ease'
+              }} />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ─── SECTION 3: MY VOCABULARY & TABS ─────────────────────────────────── */}
@@ -790,7 +862,7 @@ export default function Vocabulary() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {dailyHistory.map((day) => {
                   const isExpanded = expandedHistoryDate === day.date;
-                  const isDone = day.count >= DAILY_TARGET;
+                  const isDone = day.count >= dailyTarget;
                   return (
                     <div
                       key={day.date}
@@ -809,7 +881,7 @@ export default function Vocabulary() {
                           alignItems: 'center',
                           padding: '12px 16px',
                           cursor: 'pointer',
-                          background: isDone ? 'rgba(34,197,94,0.04)' : undefined
+                          background: isDone ? 'rgba(16,185,129,0.06)' : undefined
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -818,8 +890,8 @@ export default function Vocabulary() {
                           {day.date === TODAY && <span className="badge badge-primary">আজ (Today)</span>}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                          <span className={`badge ${isDone ? 'badge-success' : 'badge-warning'}`}>
-                            {day.count}/{DAILY_TARGET} শব্দ {isDone ? '✓' : ''}
+                          <span className={`badge ${dailyTarget && day.count >= dailyTarget ? 'badge-success' : 'badge-primary'}`}>
+                            {day.count}টি শব্দ
                           </span>
                           {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                         </div>
@@ -1072,7 +1144,7 @@ export default function Vocabulary() {
                   <input
                     type="text"
                     className="form-input"
-                    placeholder="যেমন: benevolent"
+                    placeholder="Word (e.g. resilient)"
                     value={formData.word}
                     onChange={(e) => setFormData({ ...formData, word: e.target.value })}
                     required
@@ -1101,7 +1173,7 @@ export default function Vocabulary() {
                 <input
                   type="text"
                   className="form-input"
-                  placeholder="যেমন: দয়ালু, পরোপকারী"
+                  placeholder="বাংলা অর্থ"
                   value={formData.bengaliMeaning}
                   onChange={(e) => setFormData({ ...formData, bengaliMeaning: e.target.value })}
                   style={{ fontFamily: BENGALI_FONT }}
@@ -1113,7 +1185,7 @@ export default function Vocabulary() {
                 <textarea
                   className="form-textarea"
                   rows={2}
-                  placeholder="e.g. Well meaning and kindly"
+                  placeholder="English definition..."
                   value={formData.meaning}
                   onChange={(e) => setFormData({ ...formData, meaning: e.target.value })}
                 />
@@ -1124,7 +1196,7 @@ export default function Vocabulary() {
                 <input
                   type="text"
                   className="form-input"
-                  placeholder="e.g. He was known for his benevolent nature."
+                  placeholder="Example sentence..."
                   value={formData.example}
                   onChange={(e) => setFormData({ ...formData, example: e.target.value })}
                 />
@@ -1136,7 +1208,7 @@ export default function Vocabulary() {
                   <input
                     type="text"
                     className="form-input"
-                    placeholder="kind, generous (কমা দিয়ে)"
+                    placeholder="Synonyms (comma separated)"
                     value={formData.synonyms}
                     onChange={(e) => setFormData({ ...formData, synonyms: e.target.value })}
                   />
@@ -1146,7 +1218,7 @@ export default function Vocabulary() {
                   <input
                     type="text"
                     className="form-input"
-                    placeholder="cruel, unkind (কমা দিয়ে)"
+                    placeholder="Antonyms (comma separated)"
                     value={formData.antonyms}
                     onChange={(e) => setFormData({ ...formData, antonyms: e.target.value })}
                   />

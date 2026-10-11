@@ -283,7 +283,7 @@ export default function AddMockWizard({ onClose, onSuccess, areas, subjects, top
                     </div>
                   </div>
                   <div className="form-group" style={{ marginBottom: 0 }}>
-                    <input type="text" className="form-input" placeholder="Notes / Q# / What went wrong..." value={err.notes} onChange={(e) => {
+                    <input type="text" className="form-input" placeholder="Question number or error notes..." value={err.notes} onChange={(e) => {
                         const newErrs = [...errors];
                         newErrs[idx].notes = e.target.value;
                         setErrors(newErrs);

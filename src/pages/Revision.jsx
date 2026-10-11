@@ -265,7 +265,7 @@ export default function Revision() {
                   rows="3" 
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="E.g., Forgot the 3NF definition again..."
+                  placeholder="Revision notes, recall gaps, or key points..."
                 />
               </div>
 

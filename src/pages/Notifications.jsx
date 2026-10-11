@@ -1,4 +1,4 @@
-// src/pages/Notifications.jsx
+﻿// src/pages/Notifications.jsx
 // Automatically marks notifications as read/seen on visit, supports single/all delete, and real push notification permission
 
 import { useEffect, useState } from 'react';
@@ -18,15 +18,15 @@ import { useAppStore } from '../store/useAppStore';
 import { requireEditPermission, canEdit } from '../services/mutationGuard.js';
 
 const NOTIF_ICONS = {
-  'study-reminder': '⏰',
-  'missed-session': '⚠️',
-  revision: '🔄',
-  session: '⏱️',
-  mock: '📝',
-  vocabulary: '📖',
-  deadline: '⚠️',
-  daily: '📊',
-  system: '🔔',
+  'study-reminder': 'â°',
+  'missed-session': 'âš ï¸',
+  revision: 'ðŸ”„',
+  session: 'â±ï¸',
+  mock: 'ðŸ“',
+  vocabulary: 'ðŸ“–',
+  deadline: 'âš ï¸',
+  daily: 'ðŸ“Š',
+  system: 'ðŸ””',
 };
 
 export default function Notifications() {
@@ -174,7 +174,7 @@ export default function Notifications() {
 
       if (result === 'granted') {
         await sendNativeNotification({
-          title: '🎯 PrepOS Notifications Active!',
+          title: 'ðŸŽ¯ FocusOS Notifications Active!',
           body: 'You will receive real-time study reminders, revision alerts, and session notices.',
           url: '/notifications',
         });
@@ -186,10 +186,10 @@ export default function Notifications() {
           idempotencyKey: 'notifications-enabled-' + Date.now(),
         });
         await loadNotifications();
-        alert('✅ Device push notifications have been successfully enabled!');
+        alert('âœ… Device push notifications have been successfully enabled!');
       } else if (result === 'denied') {
         alert(
-          '⚠️ Notification permission was blocked.\n\nPlease click the lock or site settings icon in your browser address bar and set Notifications to "Allow", then try again.'
+          'âš ï¸ Notification permission was blocked.\n\nPlease click the lock or site settings icon in your browser address bar and set Notifications to "Allow", then try again.'
         );
       }
     } catch (err) {
@@ -206,13 +206,13 @@ export default function Notifications() {
     }
 
     const sent = await sendNativeNotification({
-      title: '⚡ PrepOS Study Alert',
+      title: 'âš¡ FocusOS Study Alert',
       body: 'Great job staying consistent! Spaced repetition revision is ready.',
       url: '/revision',
     });
 
     if (sent) {
-      alert('🔔 Test notification sent to your device!');
+      alert('ðŸ”” Test notification sent to your device!');
     }
   };
 
@@ -224,7 +224,7 @@ export default function Notifications() {
         <div className="page-header-left">
           <h1 className="page-title">Notifications & Device Alerts</h1>
           <p className="page-subtitle">
-            {unreadCount > 0 ? `${unreadCount} unread notifications` : 'All notifications marked as seen ✓'}
+            {unreadCount > 0 ? `${unreadCount} unread notifications` : 'All notifications marked as seen âœ“'}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -238,7 +238,7 @@ export default function Notifications() {
             </button>
           ) : (
             <span className="badge badge-success" style={{ fontSize: 11, padding: '6px 10px' }}>
-              ✓ Alerts Enabled
+              âœ“ Alerts Enabled
             </span>
           )}
 
@@ -257,7 +257,7 @@ export default function Notifications() {
       {notifications.length === 0 ? (
         <div className="card">
           <div className="empty-state">
-            <div className="empty-icon">🔔</div>
+            <div className="empty-icon">ðŸ””</div>
             <div className="empty-title">No notifications</div>
             <div className="empty-desc">
               Notifications are generated for pre-study reminders, missed sessions, revision due, and vocabulary targets.
@@ -283,7 +283,7 @@ export default function Notifications() {
                 }}
               >
                 <div style={{ fontSize: 24, flexShrink: 0 }}>
-                  {NOTIF_ICONS[notif.type] || '🔔'}
+                  {NOTIF_ICONS[notif.type] || 'ðŸ””'}
                 </div>
 
                 <div style={{ flex: 1, minWidth: 0 }}>

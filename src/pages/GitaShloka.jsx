@@ -21,6 +21,11 @@ import {
   searchShlokas
 } from '../services/gitaService';
 import { requireEditPermission, canEdit } from '../services/mutationGuard.js';
+import {
+  getGitaDailyTarget,
+  setGitaDailyTarget,
+  onDailyTargetsChange
+} from '../services/dailyTargetService.js';
 
 const BENGALI_FONT = "'Noto Sans Bengali', 'Hind Siliguri', 'Kalpurush', 'Segoe UI', sans-serif";
 
@@ -252,6 +257,12 @@ function ViewSection({ emoji, label, text, borderColor, bgColor, textColor }) {
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function GitaShloka() {
   const [todayShloka, setTodayShloka] = useState(null);
+  const [todayShlokas, setTodayShlokas] = useState([]);
+  const [selectedTodayIdx, setSelectedTodayIdx] = useState(0);
+  const [dailyTarget, setDailyTarget] = useState(getGitaDailyTarget());
+  const [showTargetEdit, setShowTargetEdit] = useState(false);
+  const [customTargetVal, setCustomTargetVal] = useState('');
+
   const [shlokas, setShlokas] = useState([]);
   const [stats, setStats] = useState({ totalShlokas: 0, thisMonth: 0, favorites: 0, currentStreak: 0, longestStreak: 0 });
   const [loading, setLoading] = useState(true);
@@ -273,11 +284,33 @@ export default function GitaShloka() {
   const [isOmPlaying, setIsOmPlaying] = useState(false);
 
   useEffect(() => {
+    const unsub = onDailyTargetsChange((detail) => {
+      if (detail && detail.type === 'gita') {
+        setDailyTarget(detail.target);
+      }
+    });
     return () => {
+      unsub();
       // Cleanup sound when navigating away from Gita page
       omAudioEngine.stopContinuousDrone();
     };
   }, []);
+
+  const handleUpdateTarget = async (newVal) => {
+    if (newVal === null || newVal === '' || newVal === 'free') {
+      setDailyTarget(null);
+      await setGitaDailyTarget(null);
+      setCustomTargetVal('');
+      showToast('মুক্ত অনুশীলন মোড চালু হয়েছে — আপনার ইচ্ছামতো যেকোনো সংখ্যক শ্লোক পড়তে পারেন!');
+      return;
+    }
+    const num = Math.max(1, parseInt(newVal, 10));
+    if (isNaN(num)) return;
+    setDailyTarget(num);
+    await setGitaDailyTarget(num);
+    setCustomTargetVal('');
+    showToast(`আজকের ব্যক্তিগত গীতা লক্ষ্য: ${num}টি শ্লোক নির্ধারণ করা হয়েছে!`);
+  };
 
   const toggleOmDrone = () => {
     if (isOmPlaying) {
@@ -299,8 +332,18 @@ export default function GitaShloka() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const today = await getTodayGitaShloka();
-      setTodayShloka(today || null);
+      const allShlokas = await getAllGitaShlokas();
+      const todayStr = format(new Date(), 'yyyy-MM-dd');
+      const todaysAll = (allShlokas || []).filter((s) => s.date === todayStr);
+      setTodayShlokas(todaysAll);
+
+      if (todaysAll.length > 0) {
+        setTodayShloka(todaysAll[selectedTodayIdx] || todaysAll[0]);
+      } else {
+        const today = await getTodayGitaShloka();
+        setTodayShloka(today || null);
+      }
+
       const s = await getGitaStats();
       setStats(s);
       const list = await searchShlokas({ query: searchQuery, chapter: chapterFilter, favoritesOnly });
@@ -587,12 +630,100 @@ export default function GitaShloka() {
         ))}
       </div>
 
-      {/* Today's Shloka Card */}
+      {/* Today's Shloka Card & Daily Target */}
       <div className="card mb-24" style={{
-        background: 'linear-gradient(135deg, rgba(99,102,241,0.08), rgba(245,158,11,0.04))',
-        border: '1px solid var(--border-accent)', borderRadius: 'var(--radius-xl)', padding: 24,
-        position: 'relative', zIndex: 1
+        background: (todayShlokas.length >= dailyTarget)
+          ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(99, 102, 241, 0.05) 100%)'
+          : 'linear-gradient(135deg, rgba(99, 102, 241, 0.09) 0%, rgba(245, 158, 11, 0.04) 100%)',
+        border: (todayShlokas.length >= dailyTarget) ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid var(--border-accent)',
+        borderRadius: 'var(--radius-xl)',
+        padding: 24,
+        position: 'relative',
+        zIndex: 1
       }}>
+        {/* Daily Target Choice Widget */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          flexWrap: 'wrap',
+          gap: 16,
+          paddingBottom: 16,
+          marginBottom: 16,
+          borderBottom: '1px solid var(--border)'
+        }}>
+          <div style={{ flex: 1, minWidth: 280 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+              <span style={{ fontSize: 20 }}>🎯</span>
+              <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0, fontFamily: BENGALI_FONT }}>
+                {dailyTarget
+                  ? `আজকের লক্ষ্য: ${dailyTarget}টি শ্লোক`
+                  : 'দৈনিক গীতা শ্লোক অনুশীলন (Daily Gita Shlokas)'}
+              </h3>
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--text-3)', fontFamily: BENGALI_FONT, marginBottom: 12 }}>
+              প্রতিদিনের শ্লোক পাঠ ও মননশীল অনুশীলন
+            </div>
+
+            {/* Direct Open Number Choice Input */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-2)' }}>
+                দৈনিক লক্ষ্য:
+              </span>
+              <input
+                type="number"
+                min={1}
+                max={100}
+                value={customTargetVal}
+                onChange={(e) => setCustomTargetVal(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleUpdateTarget(customTargetVal); }}
+                className="form-input form-input-sm"
+                style={{ width: 80, padding: '5px 10px', fontSize: 13, textAlign: 'center' }}
+                placeholder="লক্ষ্য"
+              />
+              <button
+                type="button"
+                onClick={() => handleUpdateTarget(customTargetVal)}
+                className="btn btn-sm btn-primary"
+                style={{ padding: '5px 12px', fontSize: 12 }}
+              >
+                সেট করুন
+              </button>
+              {dailyTarget && (
+                <button
+                  type="button"
+                  onClick={() => handleUpdateTarget('free')}
+                  className="btn btn-sm btn-ghost"
+                  style={{ padding: '5px 10px', fontSize: 12, color: 'var(--text-3)' }}
+                  title="Remove target limit"
+                >
+                  রিসেট
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div style={{ textAlign: 'right' }}>
+            <div style={{
+              fontSize: 28,
+              fontWeight: 800,
+              color: dailyTarget && todayShlokas.length >= dailyTarget ? 'var(--success)' : 'var(--text)'
+            }}>
+              {todayShlokas.length} {dailyTarget ? <span style={{ fontSize: 16, color: 'var(--text-3)', fontWeight: 500 }}>/ {dailyTarget}</span> : <span style={{ fontSize: 13, color: 'var(--text-3)', fontWeight: 500 }}>শ্লোক অনুশীলিত</span>}
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>
+              {dailyTarget ? (
+                todayShlokas.length >= dailyTarget
+                  ? '🌟 লক্ষ্য সম্পন্ন!'
+                  : `আজকের অগ্রগতি: ${todayShlokas.length}টি শ্লোক`
+              ) : (
+                `আজ মোট ${todayShlokas.length}টি শ্লোক অনুশীলিত`
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Header with Title and Shloka switching if multiple */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span style={{ fontSize: 24 }}>📖</span>
@@ -603,27 +734,56 @@ export default function GitaShloka() {
               </span>
             )}
           </div>
-          {todayShloka ? (
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <button className="btn btn-ghost btn-sm" onClick={playChimeBell} title="পবিত্র ঘণ্টা ধ্বনি">
-                <Bell size={14} color="#f59e0b" />
-              </button>
-              <button className="btn btn-ghost btn-sm" onClick={() => handleToggleFavorite(todayShloka.id || todayShloka._id)} title="পছন্দের তালিকা">
-                <Star size={15} fill={todayShloka.favorite ? 'var(--warning)' : 'none'} color={todayShloka.favorite ? 'var(--warning)' : 'var(--text-2)'} />
-              </button>
-              <button className="btn btn-ghost btn-sm" onClick={() => handleOpenEdit(todayShloka)}>
-                <Edit3 size={14} /> সম্পাদনা
-              </button>
-              <button className="btn btn-ghost btn-sm" style={{ color: 'var(--danger)' }} onClick={() => handleDelete(todayShloka.id || todayShloka._id)}>
-                <Trash2 size={14} />
-              </button>
-            </div>
-          ) : (
+
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
             <button className="btn btn-primary btn-sm" onClick={handleOpenAdd}>
-              <Plus size={14} /> শ্লোক যোগ করুন
+              <Plus size={14} /> + শ্লোক যোগ করুন
             </button>
-          )}
+            {todayShloka && (
+              <>
+                <button className="btn btn-ghost btn-sm" onClick={playChimeBell} title="পবিত্র ঘণ্টা ধ্বনি">
+                  <Bell size={14} color="#f59e0b" />
+                </button>
+                <button className="btn btn-ghost btn-sm" onClick={() => handleToggleFavorite(todayShloka.id || todayShloka._id)} title="পছন্দের তালিকা">
+                  <Star size={15} fill={todayShloka.favorite ? 'var(--warning)' : 'none'} color={todayShloka.favorite ? 'var(--warning)' : 'var(--text-2)'} />
+                </button>
+                <button className="btn btn-ghost btn-sm" onClick={() => handleOpenEdit(todayShloka)}>
+                  <Edit3 size={14} /> সম্পাদনা
+                </button>
+                <button className="btn btn-ghost btn-sm" style={{ color: 'var(--danger)' }} onClick={() => handleDelete(todayShloka.id || todayShloka._id)}>
+                  <Trash2 size={14} />
+                </button>
+              </>
+            )}
+          </div>
         </div>
+
+        {/* Multi-shloka tabs if user entered more than 1 shloka today */}
+        {todayShlokas.length > 1 && (
+          <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 12, color: 'var(--text-3)', alignSelf: 'center', marginRight: 4 }}>আজকের শ্লোকসমূহ:</span>
+            {todayShlokas.map((s, idx) => (
+              <button
+                key={s.id || s._id || idx}
+                type="button"
+                onClick={() => {
+                  setSelectedTodayIdx(idx);
+                  setTodayShloka(s);
+                }}
+                className="btn btn-xs"
+                style={{
+                  background: (todayShloka && (todayShloka.id || todayShloka._id) === (s.id || s._id)) ? 'var(--primary)' : 'var(--surface-2)',
+                  color: (todayShloka && (todayShloka.id || todayShloka._id) === (s.id || s._id)) ? '#fff' : 'var(--text-2)',
+                  borderRadius: 'var(--radius-full)',
+                  padding: '4px 10px',
+                  fontWeight: 600
+                }}
+              >
+                শ্লোক {idx + 1} {s.chapter ? `(${s.chapter}:${s.verse})` : ''}
+              </button>
+            ))}
+          </div>
+        )}
 
         {todayShloka ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -886,11 +1046,11 @@ export default function GitaShloka() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div className="form-group">
                   <SectionLabel title="অধ্যায়" required={false} />
-                  <input type="number" min="1" max="18" className="form-input" placeholder="যেমন: 2" value={formData.chapter} onChange={set('chapter')} />
+                  <input type="number" min="1" max="18" className="form-input" placeholder="2" value={formData.chapter} onChange={set('chapter')} />
                 </div>
                 <div className="form-group">
                   <SectionLabel title="শ্লোক নম্বর" required={false} />
-                  <input type="number" min="1" className="form-input" placeholder="যেমন: 47" value={formData.verse} onChange={set('verse')} />
+                  <input type="number" min="1" className="form-input" placeholder="47" value={formData.verse} onChange={set('verse')} />
                 </div>
               </div>
 
@@ -900,7 +1060,7 @@ export default function GitaShloka() {
                 <textarea
                   className="form-input"
                   rows="3"
-                  placeholder="যেমন: কর্মণ্যেবাধিকারস্তে মা ফলেষু কদাচন..."
+                  placeholder="মূল সংস্কৃত বা বাংলা হরফে শ্লোক লিখুন..."
                   value={formData.sanskritText}
                   onChange={set('sanskritText')}
                   style={{ fontFamily: BENGALI_FONT, fontSize: 14 }}
@@ -914,7 +1074,7 @@ export default function GitaShloka() {
                 <textarea
                   className="form-input"
                   rows="3"
-                  placeholder="শ্লোকের বাংলা অর্থ লিখুন..."
+                  placeholder="শ্লোকের সরল বঙ্গানুবাদ লিখুন..."
                   value={formData.meaning}
                   onChange={set('meaning')}
                   style={{ fontFamily: BENGALI_FONT, fontSize: 13 }}
@@ -923,11 +1083,11 @@ export default function GitaShloka() {
 
               {/* Real Life Application */}
               <div className="form-group">
-                <SectionLabel emoji="🌍" title="বাস্তব জীবনে কীভাবে প্রয়োগ করব" sub="দৈনন্দিন জীবনে এই শ্লোকের শিক্ষা" required={false} />
+                <SectionLabel emoji="🌍" title="বাস্তব জীবনে প্রয়োগ" sub="দৈনন্দিন জীবনে এই শ্লোকের শিক্ষা" required={false} />
                 <textarea
                   className="form-input"
                   rows="2"
-                  placeholder="যেমন: ফলাফলের চিন্তা না করে কাজে মনোযোগ দেওয়া..."
+                  placeholder="বাস্তব জীবনে প্রয়োগ ও আচরণগত শিক্ষা..."
                   value={formData.realLifeApplication}
                   onChange={set('realLifeApplication')}
                   style={{ fontFamily: BENGALI_FONT, fontSize: 13 }}
@@ -936,11 +1096,11 @@ export default function GitaShloka() {
 
               {/* Study Application */}
               <div className="form-group">
-                <SectionLabel emoji="📚" title="পড়াশোনায় কীভাবে সাহায্য করবে" sub="পরীক্ষার প্রস্তুতি ও অধ্যবসায়ে এই শ্লোকের ভূমিকা" required={false} />
+                <SectionLabel emoji="📚" title="পড়াশোনা ও অধ্যবসায়ে ভূমিকা" sub="পরীক্ষার প্রস্তুতি ও অধ্যবসায়ে এই শ্লোকের ভূমিকা" required={false} />
                 <textarea
                   className="form-input"
                   rows="2"
-                  placeholder="যেমন: কঠিন সাবজেক্ট পড়ার সময় ভয় না পেয়ে নিষ্ঠার সাথে চেষ্টা করা..."
+                  placeholder="পড়াশোনা, একাগ্রতা ও অধ্যবসায়ে এই শ্লোকের ভূমিকা..."
                   value={formData.studyApplication}
                   onChange={set('studyApplication')}
                   style={{ fontFamily: BENGALI_FONT, fontSize: 13 }}
@@ -949,11 +1109,11 @@ export default function GitaShloka() {
 
               {/* Personal Reflection */}
               <div className="form-group">
-                <SectionLabel emoji="🧘" title="ব্যক্তিগত উপলব্ধি ও চিন্তন" sub="আপনার নিজের মনের চিন্তা বা অনুভূতি" required={false} />
+                <SectionLabel emoji="🧘" title="ব্যক্তিগত উপলব্ধি" sub="আপনার নিজস্ব অনুভূতি ও চিন্তন" required={false} />
                 <textarea
                   className="form-input"
                   rows="2"
-                  placeholder="আপনার নিজস্ব উপলব্ধি লিখুন..."
+                  placeholder="আপনার ব্যক্তিগত উপলব্ধি ও ভাবনা..."
                   value={formData.personalReflection}
                   onChange={set('personalReflection')}
                   style={{ fontFamily: BENGALI_FONT, fontSize: 13 }}

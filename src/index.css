@@ -1,55 +1,55 @@
 /* =========================================================
-   index.css  —  Preparation OS Global Design System
+   index.css  —  FocusOS Global Design System
    ========================================================= */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 /* ─── CSS Variables ──────────────────────────────────────── */
 :root {
-  /* Colors */
+  /* Colors — Modern Professional Royal Indigo & Slate Palette */
   --primary: #6366f1;
   --primary-light: #818cf8;
   --primary-dark: #4f46e5;
-  --primary-glass: rgba(99, 102, 241, 0.15);
+  --primary-glass: rgba(99, 102, 241, 0.14);
 
-  --success: #22c55e;
-  --success-light: #4ade80;
-  --success-glass: rgba(34, 197, 94, 0.15);
+  --success: #10b981;
+  --success-light: #34d399;
+  --success-glass: rgba(16, 185, 129, 0.12);
 
   --warning: #f59e0b;
   --warning-light: #fbbf24;
-  --warning-glass: rgba(245, 158, 11, 0.15);
+  --warning-glass: rgba(245, 158, 11, 0.12);
 
   --danger: #ef4444;
   --danger-light: #f87171;
-  --danger-glass: rgba(239, 68, 68, 0.15);
+  --danger-glass: rgba(239, 68, 68, 0.12);
 
-  --info: #3b82f6;
-  --info-light: #60a5fa;
-  --info-glass: rgba(59, 130, 246, 0.15);
+  --info: #0ea5e9;
+  --info-light: #38bdf8;
+  --info-glass: rgba(14, 165, 233, 0.12);
 
-  /* Backgrounds */
-  --bg: #0d0d14;
-  --bg-2: #12121c;
-  --surface: #1a1a2e;
-  --surface-2: #1e1e35;
-  --surface-3: #252540;
-  --card: #1a1a2e;
-  --card-hover: #1e1e35;
-  --border: rgba(255, 255, 255, 0.07);
-  --border-accent: rgba(99, 102, 241, 0.3);
+  /* Backgrounds — Ultra-clean Neutral Slate Obsidian (Professional Enterprise Theme) */
+  --bg: #0b0f19;
+  --bg-2: #111726;
+  --surface: #161e31;
+  --surface-2: #1c263c;
+  --surface-3: #24314c;
+  --card: #131b2b;
+  --card-hover: #182236;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-accent: rgba(99, 102, 241, 0.35);
 
-  /* Text */
-  --text: #f1f5f9;
-  --text-2: #94a3b8;
-  --text-3: #64748b;
-  --text-muted: #475569;
+  /* Text — Crisp High-Contrast Modern Slate */
+  --text: #f8fafc;
+  --text-2: #cbd5e1;
+  --text-3: #94a3b8;
+  --text-muted: #64748b;
 
   /* Shadows */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
-  --shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
-  --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.25);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35);
+  --shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.6);
+  --shadow-glow: 0 0 24px rgba(99, 102, 241, 0.28);
 
   /* Radius */
   --radius-sm: 6px;
@@ -101,7 +101,7 @@ ul, ol { list-style: none; }
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg-2); }
 ::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: var(--radius-full); }
-::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
+::-webkit-scrollbar-thumb:hover { background: var(--primary-light); }
 
 /* ─── Loading Spinner ────────────────────────────────────── */
 .spinner {
