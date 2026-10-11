@@ -20,6 +20,7 @@ export function formatCurrency(amount) {
  */
 export const EXPENSE_CATEGORIES = [
   { id: 'Personal Use', label: 'Personal Use', color: '#6366f1' },
+  { id: 'Mess Purpose', label: 'Mess Purpose', color: '#06b6d4' },
   { id: 'Loan Repayment', label: 'Loan Repayment', color: '#f59e0b' },
   { id: 'Credit Card Re Payment', label: 'Credit Card Re Payment', color: '#ef4444' },
   { id: 'Giving Loan', label: 'Giving Loan', color: '#f97316' },
@@ -389,6 +390,84 @@ export function getExpenseStats(year, month) {
     highestSpendDay,
     categoryTotals,
     daysInMonth,
+  };
+}
+
+/**
+ * Get comprehensive breakdown of all categories for month and all-time
+ */
+export function getCategoryBreakdown(year, month) {
+  const all = getAllExpenses();
+  const prefix = `${year}-${String(month + 1).padStart(2, '0')}`;
+
+  const categoryMap = {};
+  for (const cat of EXPENSE_CATEGORIES) {
+    categoryMap[cat.id] = {
+      id: cat.id,
+      label: cat.label,
+      color: cat.color,
+      monthAmount: 0,
+      monthCount: 0,
+      allTimeAmount: 0,
+      allTimeCount: 0,
+    };
+  }
+
+  let monthTotal = 0;
+  let allTimeTotal = 0;
+  let monthItemCount = 0;
+  let allTimeItemCount = 0;
+
+  for (const [dateKey, day] of Object.entries(all)) {
+    const isCurrentMonth = dateKey.startsWith(prefix);
+    if (Array.isArray(day.items)) {
+      for (const it of day.items) {
+        const amt = Number(it.amount) || 0;
+        const catKey = it.baseCategory || it.category || 'Others';
+
+        const matchedId = EXPENSE_CATEGORIES.some(c => c.id === catKey) ? catKey : 'Others';
+        if (!categoryMap[matchedId]) {
+          categoryMap[matchedId] = {
+            id: matchedId,
+            label: matchedId,
+            color: getCategoryBadge(matchedId).color,
+            monthAmount: 0,
+            monthCount: 0,
+            allTimeAmount: 0,
+            allTimeCount: 0,
+          };
+        }
+
+        categoryMap[matchedId].allTimeAmount += amt;
+        categoryMap[matchedId].allTimeCount += 1;
+        allTimeTotal += amt;
+        allTimeItemCount += 1;
+
+        if (isCurrentMonth) {
+          categoryMap[matchedId].monthAmount += amt;
+          categoryMap[matchedId].monthCount += 1;
+          monthTotal += amt;
+          monthItemCount += 1;
+        }
+      }
+    }
+  }
+
+  const list = Object.values(categoryMap).map(c => ({
+    ...c,
+    monthPercentage: monthTotal > 0 ? Math.round((c.monthAmount / monthTotal) * 100) : 0,
+    allTimePercentage: allTimeTotal > 0 ? Math.round((c.allTimeAmount / allTimeTotal) * 100) : 0,
+  }));
+
+  // Sort by monthAmount descending, then allTimeAmount
+  list.sort((a, b) => (b.monthAmount - a.monthAmount) || (b.allTimeAmount - a.allTimeAmount));
+
+  return {
+    categories: list,
+    monthTotal,
+    allTimeTotal,
+    monthItemCount,
+    allTimeItemCount,
   };
 }
 

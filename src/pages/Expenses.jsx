@@ -12,7 +12,7 @@ import {
   getMonthExpenses, getDayExpense, addExpenseItem, deleteExpenseItem,
   clearDayExpenses, getExpenseStats, formatCurrency, EXPENSE_CATEGORIES,
   getCategoryBadge, getPendingLoans, markLoanRepaid, recordLoanCheckNo,
-  onExpensesChange, syncExpensesWithDB
+  onExpensesChange, syncExpensesWithDB, getCategoryBreakdown
 } from '../services/expensesService';
 
 const MONTH_NAMES = [
@@ -61,6 +61,7 @@ export default function Expenses() {
 
   // Modal state
   const [selectedDate, setSelectedDate] = useState(null);
+  const [showCategorySummary, setShowCategorySummary] = useState(false);
 
   const loadData = () => {
     const data = getMonthExpenses(viewYear, viewMonth);
@@ -173,7 +174,21 @@ export default function Expenses() {
             Daily expense tracking, spend breakdown, and monthly budget logs
           </p>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button
+            onClick={() => setShowCategorySummary(true)}
+            className="btn btn-ghost btn-sm"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              fontWeight: 600,
+            }}
+          >
+            <PieChart size={14} color="#06b6d4" /> Category Summary
+          </button>
           <button onClick={() => setSelectedDate(todayKey)} className="btn btn-primary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <Plus size={14} /> Log Today's Expense
           </button>
@@ -505,6 +520,15 @@ export default function Expenses() {
           onChanged={loadData}
         />
       )}
+
+      {/* Category Spending Summary Modal */}
+      {showCategorySummary && (
+        <CategorySummaryModal
+          year={viewYear}
+          month={viewMonth}
+          onClose={() => setShowCategorySummary(false)}
+        />
+      )}
     </div>
   );
 }
@@ -834,6 +858,238 @@ function DayExpenseModal({ dateKey, onClose, onChanged }) {
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 20 }}>
           <button className="btn btn-ghost" onClick={onClose} style={{ padding: '8px 20px' }}>
             Done
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Category Summary Modal ──────────────────────────────────────────────────
+function CategorySummaryModal({ year, month, onClose }) {
+  const [scope, setScope] = useState('month'); // 'month' | 'all'
+  const breakdown = useMemo(() => getCategoryBreakdown(year, month), [year, month]);
+
+  const isMonth = scope === 'month';
+  const totalSpent = isMonth ? breakdown.monthTotal : breakdown.allTimeTotal;
+  const totalItems = isMonth ? breakdown.monthItemCount : breakdown.allTimeItemCount;
+
+  const sortedCategories = useMemo(() => {
+    return [...breakdown.categories].sort((a, b) => {
+      const amtA = isMonth ? a.monthAmount : a.allTimeAmount;
+      const amtB = isMonth ? b.monthAmount : b.allTimeAmount;
+      return amtB - amtA;
+    });
+  }, [breakdown, isMonth]);
+
+  const topCategory = useMemo(() => {
+    return sortedCategories.find(c => (isMonth ? c.monthAmount : c.allTimeAmount) > 0);
+  }, [sortedCategories, isMonth]);
+
+  return (
+    <div
+      style={{
+        position: 'fixed', inset: 0, background: 'rgba(8,15,13,0.85)', backdropFilter: 'blur(8px)',
+        zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
+        animation: 'fadeIn 0.15s ease'
+      }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div style={{
+        background: 'var(--surface)', border: '1px solid var(--border-accent)',
+        borderRadius: 'var(--radius-lg)', padding: 24, width: '100%', maxWidth: 540,
+        boxShadow: '0 24px 60px rgba(0,0,0,0.85)',
+        animation: 'modalScaleIn 0.2s cubic-bezier(0.16,1,0.3,1)',
+        maxHeight: '90vh',
+        overflowY: 'auto'
+      }}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{
+              width: 36, height: 36, borderRadius: 'var(--radius)',
+              background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(99, 102, 241, 0.15))',
+              border: '1px solid rgba(6, 182, 212, 0.35)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#06b6d4'
+            }}>
+              <PieChart size={18} />
+            </div>
+            <div>
+              <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
+                Category Summary
+              </h3>
+              <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>
+                Spending breakdown across all expense categories
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            style={{ width: 28, height: 28, borderRadius: 'var(--radius-sm)', background: 'transparent', border: 'none', color: 'var(--text-3)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Scope Toggle: This Month vs All-Time */}
+        <div style={{
+          display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6,
+          background: 'var(--surface-2)', padding: 4, borderRadius: 'var(--radius)',
+          marginBottom: 16
+        }}>
+          <button
+            type="button"
+            onClick={() => setScope('month')}
+            style={{
+              padding: '8px 12px', borderRadius: 'var(--radius-sm)', border: 'none',
+              background: isMonth ? 'var(--primary)' : 'transparent',
+              color: isMonth ? '#fff' : 'var(--text-2)',
+              fontSize: 12, fontWeight: 700, cursor: 'pointer',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            {MONTH_NAMES[month]} {year}
+          </button>
+          <button
+            type="button"
+            onClick={() => setScope('all')}
+            style={{
+              padding: '8px 12px', borderRadius: 'var(--radius-sm)', border: 'none',
+              background: !isMonth ? 'var(--primary)' : 'transparent',
+              color: !isMonth ? '#fff' : 'var(--text-2)',
+              fontSize: 12, fontWeight: 700, cursor: 'pointer',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            All-Time Total
+          </button>
+        </div>
+
+        {/* Overview Stats Cards */}
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10,
+          marginBottom: 20
+        }}>
+          <div style={{
+            background: 'var(--surface-2)', border: '1px solid var(--border)',
+            borderRadius: 'var(--radius)', padding: '12px 10px', textAlign: 'center'
+          }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Total Spent
+            </div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: '#ef4444', marginTop: 4 }}>
+              {formatCurrency(totalSpent)}
+            </div>
+          </div>
+
+          <div style={{
+            background: 'var(--surface-2)', border: '1px solid var(--border)',
+            borderRadius: 'var(--radius)', padding: '12px 10px', textAlign: 'center'
+          }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Logged Items
+            </div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)', marginTop: 4 }}>
+              {totalItems}
+            </div>
+          </div>
+
+          <div style={{
+            background: 'var(--surface-2)', border: '1px solid var(--border)',
+            borderRadius: 'var(--radius)', padding: '12px 10px', textAlign: 'center'
+          }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Top Category
+            </div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: topCategory ? topCategory.color : 'var(--text-muted)', marginTop: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {topCategory ? topCategory.label : 'None'}
+            </div>
+          </div>
+        </div>
+
+        {/* Category List */}
+        <div>
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            fontSize: 11, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase',
+            letterSpacing: '0.06em', marginBottom: 10
+          }}>
+            <span>Category Breakdown</span>
+            <span>Spent / Share</span>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {sortedCategories.map(cat => {
+              const amount = isMonth ? cat.monthAmount : cat.allTimeAmount;
+              const count = isMonth ? cat.monthCount : cat.allTimeCount;
+              const pct = totalSpent > 0 ? Math.round((amount / totalSpent) * 100) : 0;
+              const hasSpend = amount > 0;
+
+              return (
+                <div
+                  key={cat.id}
+                  style={{
+                    background: 'var(--surface-2)',
+                    border: hasSpend ? `1px solid ${cat.color}35` : '1px solid var(--border)',
+                    borderRadius: 'var(--radius)',
+                    padding: '12px 14px',
+                    opacity: hasSpend ? 1 : 0.6,
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{
+                        width: 10, height: 10, borderRadius: '50%',
+                        background: cat.color,
+                        boxShadow: hasSpend ? `0 0 8px ${cat.color}80` : 'none'
+                      }} />
+                      <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
+                        {cat.label}
+                      </span>
+                      <span style={{ fontSize: 11, color: 'var(--text-3)' }}>
+                        ({count} {count === 1 ? 'item' : 'items'})
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                      <span style={{ fontSize: 14, fontWeight: 800, color: '#ef4444' }}>
+                        {formatCurrency(amount)}
+                      </span>
+                      <span style={{
+                        fontSize: 11, fontWeight: 700,
+                        color: hasSpend ? cat.color : 'var(--text-muted)',
+                        minWidth: 32, textAlign: 'right'
+                      }}>
+                        {pct}%
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div style={{
+                    height: 5, width: '100%',
+                    background: 'rgba(255, 255, 255, 0.06)',
+                    borderRadius: 999, overflow: 'hidden'
+                  }}>
+                    <div style={{
+                      height: '100%',
+                      width: `${Math.min(100, Math.max(0, pct))}%`,
+                      background: cat.color,
+                      borderRadius: 999,
+                      transition: 'width 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
+                    }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 20 }}>
+          <button className="btn btn-ghost" onClick={onClose} style={{ padding: '8px 22px' }}>
+            Close
           </button>
         </div>
       </div>
