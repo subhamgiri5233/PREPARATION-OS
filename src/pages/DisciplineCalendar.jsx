@@ -30,9 +30,10 @@ const DAY_LABELS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 
 const RULE_STATUS_CONFIG = {
   null: { label: 'Unset', color: 'var(--text-muted)', bg: 'transparent', border: 'var(--border)' },
-  nt: { label: 'Not Tried', color: '#94a3b8', bg: 'rgba(148,163,184,0.15)', border: 'rgba(148,163,184,0.4)' },
   completed: { label: 'Completed', color: 'var(--success)', bg: 'var(--success-glass)', border: 'var(--success)' },
+  pd: { label: 'PD (Partially Done)', color: '#f59e0b', bg: 'rgba(245,158,11,0.18)', border: '#f59e0b' },
   not_completed: { label: 'Not Completed', color: 'var(--danger)', bg: 'var(--danger-glass)', border: 'var(--danger)' },
+  nt: { label: 'Not Tried', color: '#94a3b8', bg: 'rgba(148,163,184,0.15)', border: 'rgba(148,163,184,0.4)' },
 };
 
 const WITHDRAWAL_CONFIG = {
@@ -120,6 +121,7 @@ function buildCalendarGrid(year, month, monthData, filter) {
 
 function RuleStatusIcon({ status, size = 11 }) {
   if (status === 'completed') return <CheckCircle2 size={size} color="var(--success)" />;
+  if (status === 'pd') return <span style={{ fontSize: 9, fontWeight: 900, color: '#f59e0b', lineHeight: 1, letterSpacing: '-0.04em' }}>PD</span>;
   if (status === 'not_completed') return <XCircle size={size} color="var(--danger)" />;
   if (status === 'nt') return <Minus size={size} color="#94a3b8" />;
   return <Circle size={size} color="var(--text-muted)" />;
@@ -138,7 +140,8 @@ function RuleCircle({ status, ruleId, dateKey, onUpdate, rules, colIndex = 0 }) 
     e.stopPropagation();
     const cycle = {
       null: 'completed',
-      'completed': 'not_completed',
+      'completed': 'pd',
+      'pd': 'not_completed',
       'not_completed': 'nt',
       'nt': null
     };
@@ -207,6 +210,7 @@ function RuleCircle({ status, ruleId, dateKey, onUpdate, rules, colIndex = 0 }) 
           {[
             { val: null, icon: <Circle size={12} color="var(--text-muted)" />, label: 'Unset / Clear' },
             { val: 'completed', icon: <CheckCircle2 size={12} color="var(--success)" />, label: '✓ Completed' },
+            { val: 'pd', icon: <span style={{ fontSize: 9, fontWeight: 900, color: '#f59e0b', width: 14, textAlign: 'center' }}>PD</span>, label: '⚡ PD (Partially Done)' },
             { val: 'not_completed', icon: <XCircle size={12} color="var(--danger)" />, label: '✕ Not Completed' },
             { val: 'nt', icon: <Minus size={12} color="#94a3b8" />, label: '— NT (Not Tried)' },
           ].map(opt => (

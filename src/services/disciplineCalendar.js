@@ -15,6 +15,7 @@ export const RULE_STATUS = {
   NOT_TRIED: 'nt',
   COMPLETED: 'completed',
   NOT_COMPLETED: 'not_completed',
+  PARTIALLY_DONE: 'pd',
 };
 
 export const WITHDRAWAL_STATUS = {
@@ -120,7 +121,7 @@ function makeDefaultRecord(dateKey) {
 }
 
 // ─── Validation ───────────────────────────────────────────────────────────────
-const VALID_RULE_STATUSES = new Set([null, 'nt', 'completed', 'not_completed']);
+const VALID_RULE_STATUSES = new Set([null, 'nt', 'completed', 'not_completed', 'pd']);
 const VALID_WITHDRAWAL_STATUSES = new Set([null, 'WR', 'WD', 'BOTH']);
 
 function validateRecord(record) {
@@ -280,7 +281,7 @@ export function isFullyCompleted(record) {
 }
 
 export function isPartiallyCompleted(record) {
-  return Object.values(record.rules).some((s) => s === 'completed');
+  return Object.values(record.rules).some((s) => s === 'completed' || s === 'pd');
 }
 
 export function hasAnyData(record) {
@@ -313,6 +314,7 @@ export function computeStats(currentYearMonth = null) {
     const isPastOrToday = dateKey <= today;
     const rules = Object.values(record.rules || {});
     const completedCount = rules.filter((s) => s === 'completed').length;
+    const pdCount = rules.filter((s) => s === 'pd').length;
 
     if (isPastOrToday) {
       totalRulesCompleted += completedCount;
@@ -324,8 +326,8 @@ export function computeStats(currentYearMonth = null) {
         totalFullyCompleted++;
         fullCompletedDays.add(dateKey);
       }
-      // Partially stack: at least 1 rule completed ("percially stack means if one is done")
-      if (completedCount >= 1) {
+      // Partially stack: at least 1 rule completed or partially done
+      if (completedCount >= 1 || pdCount >= 1) {
         totalPartiallyCompleted++;
         partialCompletedDays.add(dateKey);
       }
